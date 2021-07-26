@@ -11,7 +11,7 @@ categories:
 unused_title: "## ❓ Unlabeled"
 ignore_labels:
   - "ignore"
-sort: "ASC"
+sort_field: "-number"
 template: |
   Project: Example release config
   Development area: Backend
