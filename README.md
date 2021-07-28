@@ -1,4 +1,4 @@
-# ReleaseIt!
+# ReleaseIt! [![Go](https://github.com/Semior001/releaseit/actions/workflows/.go.yaml/badge.svg)](https://github.com/Semior001/releaseit/actions/workflows/.go.yaml) [![go report card](https://goreportcard.com/badge/github.com/semior001/releaseit)](https://goreportcard.com/report/github.com/semior001/releaseit) [![PkgGoDev](https://pkg.go.dev/badge/github.com/Semior001/releaseit)](https://pkg.go.dev/github.com/Semior001/releaseit) [![Coverage Status](https://coveralls.io/repos/github/Semior001/releaseit/badge.svg?branch=master)](https://coveralls.io/github/Semior001/releaseit?branch=master)
 
 Utility for generating and publishing changelogs to different destinations.
 
