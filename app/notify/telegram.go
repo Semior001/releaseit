@@ -26,9 +26,7 @@ type TelegramParams struct {
 	Log                 *log.Logger
 
 	ChatID                string
-	Pin                   bool
 	Client                *http.Client
-	Timeout               time.Duration
 	Token                 string
 	DisableWebPagePreview bool
 

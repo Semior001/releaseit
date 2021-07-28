@@ -19,17 +19,8 @@ import (
 // ReleaseNotes builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type ReleaseNotes struct {
-	ConfLocation string `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
-	Github       struct {
-		Repo struct {
-			Owner string `long:"owner" env:"OWNER" description:"owner of the repository" required:"true"`
-			Name  string `long:"name" env:"NAME" description:"name of the repository" required:"true"`
-		} `group:"repo" namespace:"repo" env-namespace:"REPO"`
-		BasicAuth struct {
-			Username string `long:"username" env:"USERNAME" description:"username for basic auth"`
-			Password string `long:"password" env:"PASSWORD" description:"password for basic auth"`
-		} `group:"basic_auth" namespace:"basic_auth" env-namespace:"BASIC_AUTH"`
-	} `group:"github" namespace:"github" env-namespace:"GITHUB"`
+	ConfLocation string      `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
+	Github       GithubGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
 }
 
 // Execute the release-notes command.
