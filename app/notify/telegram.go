@@ -29,8 +29,6 @@ type TelegramParams struct {
 	Client                *http.Client
 	Token                 string
 	DisableWebPagePreview bool
-
-	apiBaseURL string // changed only in tests
 }
 
 const telegramAPIBaseURL = "https://api.telegram.org/bot"
@@ -41,9 +39,6 @@ func NewTelegram(params TelegramParams) *Telegram {
 
 	if res.Log == nil {
 		res.Log = log.Default()
-	}
-	if res.apiBaseURL == "" {
-		res.apiBaseURL = telegramAPIBaseURL
 	}
 	if res.Client == nil {
 		res.Client = &http.Client{Timeout: 5 * time.Second}
@@ -58,7 +53,7 @@ func (t *Telegram) sendMessage(ctx context.Context, msg string, chatID string) e
 	}
 
 	u := fmt.Sprintf("%s%s/sendMessage?chat_id=%s&parse_mode=Markdown&disable_web_page_preview=%t",
-		t.apiBaseURL, t.Token, chatID, t.DisableWebPagePreview)
+		telegramAPIBaseURL, t.Token, chatID, t.DisableWebPagePreview)
 	r, err := http.NewRequest("POST", u, strings.NewReader(msg))
 	if err != nil {
 		return fmt.Errorf("make telegram request: %w", err)
