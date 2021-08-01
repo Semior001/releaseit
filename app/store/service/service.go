@@ -64,7 +64,7 @@ func (s *Service) LastTag(ctx context.Context) (store.Tag, error) {
 
 // Changelog returns changelog of the specified tag name, i.e. all changes
 // between the specified tag and its predecessor (e.g. previous tag or HEAD
-// of the repo)
+// of the repo).
 func (s *Service) Changelog(ctx context.Context, tagName string) (store.Changelog, error) {
 	// resolving last two tags of the repo
 	tags, err := s.Engine.ListTags(ctx)
@@ -105,7 +105,7 @@ func (s *Service) Changelog(ctx context.Context, tagName string) (store.Changelo
 
 	return store.Changelog{
 		Tag:       tags[0],
-		ClosedPRs: prs,
+		ClosedPRs: unique(prs),
 	}, nil
 }
 
@@ -136,4 +136,19 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 	}
 
 	return res, nil
+}
+
+// unique unifies pull using their numbers as keys.
+func unique(prs []store.PullRequest) []store.PullRequest {
+	set := map[int]store.PullRequest{}
+	for _, pr := range prs {
+		if _, ok := set[pr.Number]; !ok {
+			set[pr.Number] = pr
+		}
+	}
+	res := make([]store.PullRequest, 0, len(set))
+	for _, pr := range set {
+		res = append(res, pr)
+	}
+	return res
 }
