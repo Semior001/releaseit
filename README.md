@@ -27,6 +27,13 @@ Help Options:
                                         [$GITHUB_BASIC_AUTH_USERNAME]
           --github.basic_auth.password= password for basic auth
                                         [$GITHUB_BASIC_AUTH_PASSWORD]
+
+    telegram:
+          --telegram.chat_id=           id of the chat, where the release notes
+                                        will be sent [$TELEGRAM_CHAT_ID]
+          --telegram.token=             bot token [$TELEGRAM_TOKEN]
+          --telegram.web_page_preview   request telegram to preview for web
+                                        links [$TELEGRAM_WEB_PAGE_PREVIEW]
 ```
 
 ## Release notes builder configuration

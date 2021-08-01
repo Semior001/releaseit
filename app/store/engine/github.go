@@ -19,18 +19,8 @@ type Github struct {
 	name  string
 }
 
-// BasicAuth describes basic authentication parameters
-// for API requests.
-type BasicAuth struct {
-	Username string
-	Password string
-}
-
-// Empty returns true if BasicAuth is empty.
-func (b BasicAuth) Empty() bool { return b.Username == "" && b.Password == "" }
-
 // NewGithub makes new instance of Github.
-func NewGithub(owner, name string, httpCl http.Client, basicAuth BasicAuth) *Github {
+func NewGithub(owner, name, basicAuthUsername, basicAuthPassword string, httpCl http.Client) (*Github, error) {
 	svc := &Github{
 		owner: owner,
 		name:  name,
@@ -38,13 +28,17 @@ func NewGithub(owner, name string, httpCl http.Client, basicAuth BasicAuth) *Git
 
 	cl := requester.New(httpCl)
 
-	if !basicAuth.Empty() {
-		cl.Use(middleware.BasicAuth(basicAuth.Username, basicAuth.Password))
+	if basicAuthUsername != "" && basicAuthPassword != "" {
+		cl.Use(middleware.BasicAuth(basicAuthUsername, basicAuthPassword))
 	}
 
 	svc.cl = gh.NewClient(cl.Client())
 
-	return svc
+	if _, _, err := svc.cl.Repositories.Get(context.Background(), svc.owner, svc.name); err != nil {
+		return nil, fmt.Errorf("check connection to github: %w", err)
+	}
+
+	return svc, nil
 }
 
 // Compare two commits by their SHA.

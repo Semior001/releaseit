@@ -1,14 +1,13 @@
 package notify
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/Semior001/releaseit/app/store"
 	"github.com/Semior001/releaseit/app/store/service"
@@ -22,11 +21,11 @@ type Telegram struct {
 
 // TelegramParams defines parameters needed to initialize Telegram notifier.
 type TelegramParams struct {
-	ReleaseNotesBuilder service.ReleaseNotesBuilder
+	ReleaseNotesBuilder *service.ReleaseNotesBuilder
 	Log                 *log.Logger
 
 	ChatID                string
-	Client                *http.Client
+	Client                http.Client
 	Token                 string
 	DisableWebPagePreview bool
 }
@@ -40,21 +39,42 @@ func NewTelegram(params TelegramParams) *Telegram {
 	if res.Log == nil {
 		res.Log = log.Default()
 	}
-	if res.Client == nil {
-		res.Client = &http.Client{Timeout: 5 * time.Second}
-	}
 
 	return &res
 }
 
-func (t *Telegram) sendMessage(ctx context.Context, msg string, chatID string) error {
+// String returns the string representation to identify this notifier.
+func (t *Telegram) String() string {
+	return fmt.Sprintf("telegram to chatID %s", t.ChatID)
+}
+
+// Send changelog via Telegram.
+func (t *Telegram) Send(ctx context.Context, changelog store.Changelog) error {
+	text, err := t.ReleaseNotesBuilder.Build(changelog)
+	if err != nil {
+		return fmt.Errorf("build release notes: %w", err)
+	}
+
+	msg, err := json.Marshal(tgMsg{Text: text, ParseMode: "MarkdownV2"})
+	if err != nil {
+		return fmt.Errorf("marshal tg message: %w", err)
+	}
+
+	if err := t.sendMessage(ctx, msg, t.ChatID); err != nil {
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	return nil
+}
+
+func (t *Telegram) sendMessage(ctx context.Context, msg []byte, chatID string) error {
 	if _, err := strconv.ParseInt(chatID, 10, 64); err != nil {
 		chatID = "@" + chatID // if chatID not a number enforce @ prefix
 	}
 
 	u := fmt.Sprintf("%s%s/sendMessage?chat_id=%s&parse_mode=Markdown&disable_web_page_preview=%t",
 		telegramAPIBaseURL, t.Token, chatID, t.DisableWebPagePreview)
-	r, err := http.NewRequest("POST", u, strings.NewReader(msg))
+	r, err := http.NewRequest("POST", u, bytes.NewReader(msg))
 	if err != nil {
 		return fmt.Errorf("make telegram request: %w", err)
 	}
@@ -94,25 +114,11 @@ func (t *Telegram) sendMessage(ctx context.Context, msg string, chatID string) e
 	return nil
 }
 
-// String returns the string representation to identify this notifier.
-func (t *Telegram) String() string {
-	return fmt.Sprintf("telegram to chatID %s", t.ChatID)
-}
-
-// Send changelog via Telegram.
-func (t *Telegram) Send(ctx context.Context, changelog store.Changelog) error {
-	text, err := t.ReleaseNotesBuilder.Build(changelog)
-	if err != nil {
-		return fmt.Errorf("build release notes: %w", err)
-	}
-
-	if err := t.sendMessage(ctx, text, t.ChatID); err != nil {
-		return fmt.Errorf("send message: %w", err)
-	}
-
-	return nil
-}
-
 type tgError struct {
 	Description string `json:"description"`
+}
+
+type tgMsg struct {
+	Text      string `json:"text"`
+	ParseMode string `json:"parse_mode,omitempty"`
 }

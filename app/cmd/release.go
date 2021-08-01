@@ -2,125 +2,127 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Semior001/releaseit/app/notify"
 	"github.com/Semior001/releaseit/app/store/engine"
 	"github.com/Semior001/releaseit/app/store/service"
-	"gopkg.in/yaml.v3"
 )
 
 // ReleaseNotes builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type ReleaseNotes struct {
-	ConfLocation string      `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
-	Github       GithubGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
+	ConfLocation string `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
+	Engine       struct {
+		Type   string      `long:"type" env:"TYPE" choice:"github" description:"type of the repository engine" required:"true"`
+		Github GithubGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
+	} `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
+	Notify struct {
+		Telegram TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
+		Github   GithubNotifierGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
+	} `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
 }
 
 // Execute the release-notes command.
 func (r ReleaseNotes) Execute(_ []string) error {
-	cfg, err := parseCfg(r.ConfLocation)
+	eng, err := r.makeEngine()
 	if err != nil {
-		return fmt.Errorf("parse release-notes builder config: %w", err)
+		return err
 	}
 
-	releaseNotesBuilder, err := service.NewChangelogBuilder(cfgToServiceParams(cfg))
+	notif, err := r.makeNotifier()
 	if err != nil {
-		return fmt.Errorf("initialize changelog builder: %w", err)
+		return err
 	}
 
-	httpCl := http.Client{Timeout: 5 * time.Second}
-
-	notifySrv := &notify.Service{
-		Log: log.Default(),
-		Destinations: []notify.Destination{
-			&notify.WriterNotifier{
-				ReleaseNotesBuilder: releaseNotesBuilder,
-				Writer:              os.Stdout,
-				Name:                "stdout",
-			},
-		},
-	}
-
-	srv := service.Service{
-		Engine: engine.NewGithub(r.Github.Repo.Owner, r.Github.Repo.Name, httpCl, engine.BasicAuth{
-			Username: r.Github.BasicAuth.Username,
-			Password: r.Github.BasicAuth.Password,
-		}),
-		Notifier: notifySrv,
-	}
-
-	if err = srv.Release(context.Background()); err != nil {
+	if err = service.NewService(eng, notif).Release(context.Background()); err != nil {
 		return fmt.Errorf("release: %w", err)
 	}
 
 	return nil
 }
 
-type cfg struct {
-	// categories to parse in pull requests
-	Categories []struct {
-		Title  string   `yaml:"title"`
-		Labels []string `yaml:"labels"`
-	} `yaml:"categories"`
-	// labels for pull requests, which won't be in release notes
-	IgnoreLabels []string `yaml:"ignore_labels"`
-	// field, by which pull requests must be sorted, in format +|-field
-	// currently supported fields: number, author, title, closed
-	SortField string `yaml:"sort_field"`
-	// template for a changelog.
-	Template string `yaml:"template"`
-	// template for release with no changes
-	EmptyTemplate string `yaml:"empty_template"`
-	// if set, the unused category will be built under this title at the
-	// end of the changelog
-	UnusedTitle string `yaml:"unused_title"`
+func (r ReleaseNotes) makeEngine() (engine.Interface, error) {
+	switch r.Engine.Type {
+	case "github":
+		return engine.NewGithub(
+			r.Engine.Github.Repo.Owner,
+			r.Engine.Github.Repo.Name,
+			r.Engine.Github.BasicAuth.Username,
+			r.Engine.Github.BasicAuth.Password,
+			http.Client{Timeout: 5 * time.Second},
+		)
+	}
+	return nil, fmt.Errorf("unsupported repository engine type %s", r.Engine.Type)
 }
 
-func (c cfg) Validate() error {
-	if len(c.Categories) == 0 {
-		return errors.New("categories are empty")
-	}
+func (r ReleaseNotes) makeNotifier() (*notify.Service, error) {
+	logger := log.Default()
 
-	if strings.TrimSpace(c.Template) == "" {
-		return errors.New("template is empty")
-	}
-
-	if strings.TrimSpace(c.EmptyTemplate) == "" {
-		return errors.New("template for empty changelog is empty")
-	}
-
-	return nil
-}
-
-func parseCfg(cfgPath string) (cfg, error) {
-	bytes, err := os.ReadFile(cfgPath)
+	// building stdout notifier
+	changelogBuilder, err := makeChangelogBuilder(r.ConfLocation)
 	if err != nil {
-		return cfg{}, fmt.Errorf("open file: %w", err)
+		return nil, fmt.Errorf("make changelog builder for stdout: %w", err)
 	}
 
-	var res cfg
-
-	if err = yaml.Unmarshal(bytes, &res); err != nil {
-		return cfg{}, fmt.Errorf("parse yaml: %w", err)
+	destinations := []notify.Destination{
+		&notify.WriterNotifier{
+			ReleaseNotesBuilder: changelogBuilder,
+			Writer:              os.Stdout,
+			Name:                "stdout",
+		},
 	}
 
-	// validating config
-	if err = res.Validate(); err != nil {
-		return cfg{}, fmt.Errorf("config is invalid: %w", err)
+	if !r.Notify.Telegram.Empty() {
+		if changelogBuilder, err = makeChangelogBuilder(r.Notify.Telegram.ConfLocation); err != nil {
+			return nil, fmt.Errorf("make changelog builder for telegram: %w", err)
+		}
+
+		destinations = append(destinations, notify.NewTelegram(notify.TelegramParams{
+			ReleaseNotesBuilder:   changelogBuilder,
+			Log:                   logger,
+			ChatID:                r.Notify.Telegram.ChatID,
+			Client:                http.Client{Timeout: 5 * time.Second},
+			Token:                 r.Notify.Telegram.Token,
+			DisableWebPagePreview: !r.Notify.Telegram.WebPagePreview,
+		}))
 	}
 
-	return res, nil
+	if !r.Notify.Github.Empty() {
+		if changelogBuilder, err = makeChangelogBuilder(r.Notify.Github.ConfLocation); err != nil {
+			return nil, fmt.Errorf("make changelog builder for github releases: %w", err)
+		}
+
+		gh, err := notify.NewGithub(notify.GithubParams{
+			Owner:               r.Notify.Github.Repo.Owner,
+			Name:                r.Notify.Github.Repo.Name,
+			BasicAuthUsername:   r.Notify.Github.BasicAuth.Username,
+			BasicAuthPassword:   r.Notify.Github.BasicAuth.Password,
+			HTTPClient:          http.Client{Timeout: 5 * time.Second},
+			ReleaseNotesBuilder: changelogBuilder,
+			ReleaseNameTmplText: r.Notify.Github.ReleaseNameTemplate,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("make github relases notifier: %w", err)
+		}
+
+		destinations = append(destinations, gh)
+	}
+
+	return notify.NewService(notify.Params{Log: logger, Destinations: destinations}), nil
 }
 
-func cfgToServiceParams(cfg cfg) service.Params {
-	res := service.Params{
+func makeChangelogBuilder(cfgLocation string) (*service.ReleaseNotesBuilder, error) {
+	cfg, err := parseCfg(cfgLocation)
+	if err != nil {
+		return nil, fmt.Errorf("parse release-notes builder config: %w", err)
+	}
+
+	params := service.Params{
 		Template:     cfg.Template,
 		IgnoreLabels: cfg.IgnoreLabels,
 		Categories:   make([]service.Category, len(cfg.Categories)),
@@ -129,11 +131,16 @@ func cfgToServiceParams(cfg cfg) service.Params {
 	}
 
 	for i, category := range cfg.Categories {
-		res.Categories[i] = service.Category{
+		params.Categories[i] = service.Category{
 			Title:  category.Title,
 			Labels: category.Labels,
 		}
 	}
 
-	return res
+	releaseNotesBuilder, err := service.NewChangelogBuilder(params)
+	if err != nil {
+		return nil, fmt.Errorf("initialize changelog builder: %w", err)
+	}
+
+	return releaseNotesBuilder, nil
 }

@@ -24,7 +24,7 @@ func (t testDestination) Send(context.Context, store.Changelog) error {
 
 func TestService_String(t *testing.T) {
 	s := (&Service{
-		Destinations: []Destination{
+		dest: []Destination{
 			testDestination{name: "test1"},
 			testDestination{name: "test2"},
 			testDestination{name: "test3"},

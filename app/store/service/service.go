@@ -19,6 +19,14 @@ type notifier interface {
 	Send(ctx context.Context, changelog store.Changelog) error
 }
 
+// NewService makes new instance of Service.
+func NewService(engine engine.Interface, notifier notifier) *Service {
+	return &Service{
+		Engine:   engine,
+		Notifier: notifier,
+	}
+}
+
 // Release aggregates the changelog from the changes of the latest tag and its predecessor
 // and notifies consumers via provided notifier.
 func (s *Service) Release(ctx context.Context) error {
@@ -34,7 +42,7 @@ func (s *Service) Release(ctx context.Context) error {
 	}
 
 	if err = s.Notifier.Send(ctx, cl); err != nil {
-		return fmt.Errorf("failed to notify: %w", err)
+		return fmt.Errorf("notify: %w", err)
 	}
 
 	return nil
