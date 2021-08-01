@@ -29,14 +29,8 @@ func NewService(engine engine.Interface, notifier notifier) *Service {
 
 // Release aggregates the changelog from the changes of the latest tag and its predecessor
 // and notifies consumers via provided notifier.
-func (s *Service) Release(ctx context.Context) error {
-	// fetch release data
-	tag, err := s.LastTag(ctx)
-	if err != nil {
-		return fmt.Errorf("get last tag: %w", err)
-	}
-
-	cl, err := s.Changelog(ctx, tag.Name)
+func (s *Service) Release(ctx context.Context, tag string) error {
+	cl, err := s.Changelog(ctx, tag)
 	if err != nil {
 		return fmt.Errorf("aggregate changelog: %w", err)
 	}
@@ -63,8 +57,8 @@ func (s *Service) LastTag(ctx context.Context) (store.Tag, error) {
 }
 
 // Changelog returns changelog of the specified tag name, i.e. all changes
-// between the specified tag and its predecessor (e.g. previous tag or HEAD
-// of the repo).
+// between the specified tag (provided by name or SHA) and its predecessor
+// (e.g. previous tag or HEAD of the repo).
 func (s *Service) Changelog(ctx context.Context, tagName string) (store.Changelog, error) {
 	// resolving last two tags of the repo
 	tags, err := s.Engine.ListTags(ctx)
@@ -75,7 +69,7 @@ func (s *Service) Changelog(ctx context.Context, tagName string) (store.Changelo
 	tagIdx := -1
 
 	for i, tag := range tags {
-		if tag.Name == tagName {
+		if tag.Name == tagName || tag.Commit.SHA == tagName {
 			tagIdx = i
 		}
 	}

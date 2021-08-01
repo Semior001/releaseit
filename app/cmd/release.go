@@ -17,6 +17,7 @@ import (
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type ReleaseNotes struct {
 	ConfLocation string `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
+	Tag          string `long:"tag" env:"TAG" description:"tag to be released" required:"true"`
 	Engine       struct {
 		Type   string      `long:"type" env:"TYPE" choice:"github" description:"type of the repository engine" required:"true"`
 		Github GithubGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
@@ -39,7 +40,7 @@ func (r ReleaseNotes) Execute(_ []string) error {
 		return err
 	}
 
-	if err = service.NewService(eng, notif).Release(context.Background()); err != nil {
+	if err = service.NewService(eng, notif).Release(context.Background(), r.Tag); err != nil {
 		return fmt.Errorf("release: %w", err)
 	}
 
