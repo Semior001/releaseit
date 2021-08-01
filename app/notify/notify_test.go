@@ -30,5 +30,5 @@ func TestService_String(t *testing.T) {
 			testDestination{name: "test3"},
 		},
 	}).String()
-	assert.Equal(t, "aggregated notifier with next notifiers: [test1 test2 test3]", s)
+	assert.Equal(t, "aggregated notifier with next destinations: [test1, test2, test3]", s)
 }

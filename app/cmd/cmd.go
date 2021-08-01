@@ -30,7 +30,7 @@ type GithubNotifierGroup struct {
 	ConfLocation        string `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file"`
 }
 
-// Empty returns true if the argument group is emtpy.
+// Empty returns true if the argument group is empty.
 func (g GithubNotifierGroup) Empty() bool {
 	return g.ReleaseNameTemplate == "" || g.GithubGroup.Empty()
 }
