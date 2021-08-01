@@ -7,33 +7,61 @@ Inspired by [mikepenz/release-changelog-builder-action](https://github.com/mikep
 ## All application options
 ```
 Application Options:
-      --dbg                             turn on debug mode [$DEBUG]
+      --dbg                                    turn on debug mode [$DEBUG]
 
 Help Options:
-  -h, --help                            Show this help message
+  -h, --help                                   Show this help message
 
 [release command options]
-          --conf_location=              location to the config file
-                                        [$CONF_LOCATION]
+          --conf_location=                     location to the config file
+                                               [$CONF_LOCATION]
+          --tag=                               tag to be released [$TAG]
+
+    engine:
+          --engine.type=[github]               type of the repository engine
+                                               [$ENGINE_TYPE]
 
     repo:
-          --github.repo.owner=          owner of the repository
-                                        [$GITHUB_REPO_OWNER]
-          --github.repo.name=           name of the repository
-                                        [$GITHUB_REPO_NAME]
+          --engine.github.repo.owner=          owner of the repository
+                                               [$ENGINE_GITHUB_REPO_OWNER]
+          --engine.github.repo.name=           name of the repository
+                                               [$ENGINE_GITHUB_REPO_NAME]
 
     basic_auth:
-          --github.basic_auth.username= username for basic auth
-                                        [$GITHUB_BASIC_AUTH_USERNAME]
-          --github.basic_auth.password= password for basic auth
-                                        [$GITHUB_BASIC_AUTH_PASSWORD]
+          --engine.github.basic_auth.username= username for basic auth
+                                               [$ENGINE_GITHUB_BASIC_AUTH_USERNAME]
+          --engine.github.basic_auth.password= password for basic auth
+                                               [$ENGINE_GITHUB_BASIC_AUTH_PASSWORD]
 
     telegram:
-          --telegram.chat_id=           id of the chat, where the release notes
-                                        will be sent [$TELEGRAM_CHAT_ID]
-          --telegram.token=             bot token [$TELEGRAM_TOKEN]
-          --telegram.web_page_preview   request telegram to preview for web
-                                        links [$TELEGRAM_WEB_PAGE_PREVIEW]
+          --notify.telegram.chat_id=           id of the chat, where the
+                                               release notes will be sent
+                                               [$NOTIFY_TELEGRAM_CHAT_ID]
+          --notify.telegram.token=             bot token
+                                               [$NOTIFY_TELEGRAM_TOKEN]
+          --notify.telegram.web_page_preview   request telegram to preview for
+                                               web links
+                                               [$NOTIFY_TELEGRAM_WEB_PAGE_PREVIEW]
+          --notify.telegram.conf_location=     location to the config file
+                                               [$NOTIFY_TELEGRAM_CONF_LOCATION]
+
+    github:
+          --notify.github.release_name_tmpl=   template for release name
+                                               [$NOTIFY_GITHUB_RELEASE_NAME_TMPL]
+          --notify.github.conf_location=       location to the config file
+                                               [$NOTIFY_GITHUB_CONF_LOCATION]
+
+    repo:
+          --notify.github.repo.owner=          owner of the repository
+                                               [$NOTIFY_GITHUB_REPO_OWNER]
+          --notify.github.repo.name=           name of the repository
+                                               [$NOTIFY_GITHUB_REPO_NAME]
+
+    basic_auth:
+          --notify.github.basic_auth.username= username for basic auth
+                                               [$NOTIFY_GITHUB_BASIC_AUTH_USERNAME]
+          --notify.github.basic_auth.password= password for basic auth
+                                               [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
 ```
 
 ## Release notes builder configuration
@@ -75,3 +103,25 @@ template: |
   {{end}}{{end}}
 empty_template: "- no changes"
 ```
+
+## Template variables for release notes builder
+
+| Name                       | Description                                                      | Example                    |
+|----------------------------|------------------------------------------------------------------|----------------------------|
+| {{.Tag}}                   | Tag name of the release                                          | v1.0.0                     |
+| {{.Date}}                  | Date of the commit which was tagged                              | Jan 02, 2006 15:04:05 UTC  |
+|                            |                                                                  |                            |
+| {{.Categories.Title}}      | Title of the category from the config                            | Features                   |
+|                            |                                                                  |                            |
+| {{.Categories.PRs.Number}} | Number of the pull request                                       | 642                        |
+| {{.Categories.PRs.Title}}  | Title of the pull request                                        | Some awesome feature added |
+| {{.Categories.PRs.Author}} | Username of the author of pull request                           | Semior001                  |
+| {{.Categories.PRs.Closed}} | Timestamp, when the pull request was closed (might be empty)     | Jan 02, 2006 15:04:05 UTC  |
+
+The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes.
+
+## (Github) Template variables for release title
+
+| Name         | Description             | Example |
+|--------------|-------------------------|---------|
+| {{.TagName}} | Tag name of the release | v1.0.0  |
