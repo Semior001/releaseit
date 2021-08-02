@@ -13,55 +13,39 @@ Help Options:
   -h, --help                                   Show this help message
 
 [release command options]
-          --conf_location=                     location to the config file
-                                               [$CONF_LOCATION]
           --tag=                               tag to be released [$TAG]
 
     engine:
-          --engine.type=[github]               type of the repository engine
-                                               [$ENGINE_TYPE]
+          --engine.type=[github]               type of the repository engine [$ENGINE_TYPE]
 
     repo:
-          --engine.github.repo.owner=          owner of the repository
-                                               [$ENGINE_GITHUB_REPO_OWNER]
-          --engine.github.repo.name=           name of the repository
-                                               [$ENGINE_GITHUB_REPO_NAME]
+          --engine.github.repo.owner=          owner of the repository [$ENGINE_GITHUB_REPO_OWNER]
+          --engine.github.repo.name=           name of the repository [$ENGINE_GITHUB_REPO_NAME]
 
     basic_auth:
-          --engine.github.basic_auth.username= username for basic auth
-                                               [$ENGINE_GITHUB_BASIC_AUTH_USERNAME]
-          --engine.github.basic_auth.password= password for basic auth
-                                               [$ENGINE_GITHUB_BASIC_AUTH_PASSWORD]
+          --engine.github.basic_auth.username= username for basic auth [$ENGINE_GITHUB_BASIC_AUTH_USERNAME]
+          --engine.github.basic_auth.password= password for basic auth [$ENGINE_GITHUB_BASIC_AUTH_PASSWORD]
 
     telegram:
-          --notify.telegram.chat_id=           id of the chat, where the
-                                               release notes will be sent
-                                               [$NOTIFY_TELEGRAM_CHAT_ID]
-          --notify.telegram.token=             bot token
-                                               [$NOTIFY_TELEGRAM_TOKEN]
-          --notify.telegram.web_page_preview   request telegram to preview for
-                                               web links
-                                               [$NOTIFY_TELEGRAM_WEB_PAGE_PREVIEW]
-          --notify.telegram.conf_location=     location to the config file
-                                               [$NOTIFY_TELEGRAM_CONF_LOCATION]
+          --notify.telegram.chat_id=           id of the chat, where the release notes will be sent [$NOTIFY_TELEGRAM_CHAT_ID]
+          --notify.telegram.token=             bot token [$NOTIFY_TELEGRAM_TOKEN]
+          --notify.telegram.web_page_preview   request telegram to preview for web links [$NOTIFY_TELEGRAM_WEB_PAGE_PREVIEW]
+          --notify.telegram.conf_location=     location to the config file [$NOTIFY_TELEGRAM_CONF_LOCATION]
 
     github:
-          --notify.github.release_name_tmpl=   template for release name
-                                               [$NOTIFY_GITHUB_RELEASE_NAME_TMPL]
-          --notify.github.conf_location=       location to the config file
-                                               [$NOTIFY_GITHUB_CONF_LOCATION]
+          --notify.github.release_name_tmpl=   template for release name [$NOTIFY_GITHUB_RELEASE_NAME_TMPL]
+          --notify.github.conf_location=       location to the config file [$NOTIFY_GITHUB_CONF_LOCATION]
 
     repo:
-          --notify.github.repo.owner=          owner of the repository
-                                               [$NOTIFY_GITHUB_REPO_OWNER]
-          --notify.github.repo.name=           name of the repository
-                                               [$NOTIFY_GITHUB_REPO_NAME]
+          --notify.github.repo.owner=          owner of the repository [$NOTIFY_GITHUB_REPO_OWNER]
+          --notify.github.repo.name=           name of the repository [$NOTIFY_GITHUB_REPO_NAME]
 
     basic_auth:
-          --notify.github.basic_auth.username= username for basic auth
-                                               [$NOTIFY_GITHUB_BASIC_AUTH_USERNAME]
-          --notify.github.basic_auth.password= password for basic auth
-                                               [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
+          --notify.github.basic_auth.username= username for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_USERNAME]
+          --notify.github.basic_auth.password= password for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
+
+    stdout:
+          --notify.stdout.conf_location=       location to the config file [$NOTIFY_STDOUT_CONF_LOCATION]
 ```
 
 ## Release notes builder configuration

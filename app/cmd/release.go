@@ -16,15 +16,15 @@ import (
 // ReleaseNotes builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type ReleaseNotes struct {
-	ConfLocation string `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
-	Tag          string `long:"tag" env:"TAG" description:"tag to be released" required:"true"`
-	Engine       struct {
+	Tag    string `long:"tag" env:"TAG" description:"tag to be released" required:"true"`
+	Engine struct {
 		Type   string      `long:"type" env:"TYPE" choice:"github" description:"type of the repository engine" required:"true"`
 		Github GithubGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
 	} `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
 	Notify struct {
 		Telegram TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
 		Github   GithubNotifierGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
+		Stdout   StdoutGroup         `group:"stdout" namespace:"stdout" env-namespace:"STDOUT"`
 	} `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
 }
 
@@ -64,22 +64,24 @@ func (r ReleaseNotes) makeEngine() (engine.Interface, error) {
 func (r ReleaseNotes) makeNotifier() (*notify.Service, error) {
 	logger := log.Default()
 
-	// building stdout notifier
-	changelogBuilder, err := makeChangelogBuilder(r.ConfLocation)
-	if err != nil {
-		return nil, fmt.Errorf("make changelog builder for stdout: %w", err)
-	}
+	var destinations []notify.Destination
 
-	destinations := []notify.Destination{
-		&notify.WriterNotifier{
+	if !r.Notify.Stdout.Empty() {
+		changelogBuilder, err := makeChangelogBuilder(r.Notify.Stdout.ConfLocation)
+		if err != nil {
+			return nil, fmt.Errorf("make changelog builder for stdout: %w", err)
+		}
+
+		destinations = append(destinations, &notify.WriterNotifier{
 			ReleaseNotesBuilder: changelogBuilder,
 			Writer:              os.Stdout,
 			Name:                "stdout",
-		},
+		})
 	}
 
 	if !r.Notify.Telegram.Empty() {
-		if changelogBuilder, err = makeChangelogBuilder(r.Notify.Telegram.ConfLocation); err != nil {
+		changelogBuilder, err := makeChangelogBuilder(r.Notify.Telegram.ConfLocation)
+		if err != nil {
 			return nil, fmt.Errorf("make changelog builder for telegram: %w", err)
 		}
 
@@ -94,7 +96,8 @@ func (r ReleaseNotes) makeNotifier() (*notify.Service, error) {
 	}
 
 	if !r.Notify.Github.Empty() {
-		if changelogBuilder, err = makeChangelogBuilder(r.Notify.Github.ConfLocation); err != nil {
+		changelogBuilder, err := makeChangelogBuilder(r.Notify.Github.ConfLocation)
+		if err != nil {
 			return nil, fmt.Errorf("make changelog builder for github releases: %w", err)
 		}
 

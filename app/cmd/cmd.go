@@ -41,6 +41,16 @@ type BasicAuthGroup struct {
 	Password string `long:"password" env:"PASSWORD" description:"password for basic auth"`
 }
 
+// StdoutGroup defines parameters for printing release notes to stdout.
+type StdoutGroup struct {
+	ConfLocation string `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file"`
+}
+
+// Empty returns true if stdout group is empty.
+func (g StdoutGroup) Empty() bool {
+	return g.ConfLocation == ""
+}
+
 // TelegramGroup defines parameters for telegram notifier.
 type TelegramGroup struct {
 	ChatID         string `long:"chat_id" env:"CHAT_ID" description:"id of the chat, where the release notes will be sent"`
