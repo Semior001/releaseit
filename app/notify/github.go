@@ -8,11 +8,12 @@ import (
 	"text/template"
 
 	"github.com/Semior001/releaseit/app/store"
-	"github.com/Semior001/releaseit/app/store/service"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	gh "github.com/google/go-github/v37/github"
 )
+
+//go:generate moq -out mock_release_builder.go . releaseBuilder
 
 // Github makes a new release on Github on the given version.
 type Github struct {
@@ -22,6 +23,10 @@ type Github struct {
 	releaseNameTmpl *template.Template
 }
 
+type releaseBuilder interface {
+	Build(changelog store.Changelog) (string, error)
+}
+
 // GithubParams describes parameters to initialize github releaser.
 type GithubParams struct {
 	Owner               string
@@ -29,7 +34,7 @@ type GithubParams struct {
 	BasicAuthUsername   string
 	BasicAuthPassword   string
 	HTTPClient          http.Client
-	ReleaseNotesBuilder *service.ReleaseNotesBuilder
+	ReleaseNotesBuilder releaseBuilder
 	ReleaseNameTmplText string
 }
 
@@ -50,7 +55,7 @@ func NewGithub(params GithubParams) (*Github, error) {
 		return nil, fmt.Errorf("check connection to github: %w", err)
 	}
 
-	svc.releaseNameTmpl, err = template.New("github_notify").Parse(svc.ReleaseNameTmplText)
+	svc.releaseNameTmpl, err = template.New("github_notify_name").Parse(svc.ReleaseNameTmplText)
 	if err != nil {
 		return nil, fmt.Errorf("parse release name template: %w", err)
 	}
