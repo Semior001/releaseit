@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 
 	"github.com/Semior001/releaseit/app/cmd"
 	"github.com/hashicorp/logutils"
@@ -16,10 +17,18 @@ type Opts struct {
 	Debug        bool             `long:"dbg" env:"DEBUG" description:"turn on debug mode"`
 }
 
-var version = "unknown"
+var buildVersion = "unknown"
+
+func version() string {
+	v, ok := debug.ReadBuildInfo()
+	if !ok {
+		return buildVersion
+	}
+	return v.Main.Version
+}
 
 func main() {
-	fmt.Printf("releaseit, version: %s\n", version)
+	fmt.Printf("releaseit, version: %s\n", version())
 
 	var opts Opts
 	p := flags.NewParser(&opts, flags.Default)
