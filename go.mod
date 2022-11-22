@@ -1,6 +1,6 @@
 module github.com/Semior001/releaseit
 
-go 1.18
+go 1.16
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
