@@ -8,24 +8,25 @@ import (
 	"github.com/Semior001/releaseit/app/service"
 )
 
-// ReleaseNotes builds the release-notes from the specified template
+// Changelog builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
-type ReleaseNotes struct {
-	Tag    string          `long:"tag" env:"TAG" description:"tag to be released" required:"true"`
+type Changelog struct {
+	From   string          `long:"from" env:"FROM" description:"sha to start release notes from" required:"true"`
+	To     string          `long:"to" env:"TO" description:"sha to end release notes to" required:"true"`
 	Engine flg.EngineGroup `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
 	Notify flg.NotifyGroup `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
 }
 
 // Execute the release-notes command.
-func (r ReleaseNotes) Execute(_ []string) error {
+func (r Changelog) Execute(_ []string) error {
 	eng, err := r.Engine.Build()
 	if err != nil {
-		return err
+		return fmt.Errorf("prepare engine: %w", err)
 	}
 
 	notif, err := r.Notify.Build()
 	if err != nil {
-		return err
+		return fmt.Errorf("prepare notifier: %w", err)
 	}
 
 	rnb, err := r.Notify.ReleaseNotesBuilder()
@@ -39,7 +40,7 @@ func (r ReleaseNotes) Execute(_ []string) error {
 		Notifier:            notif,
 	}
 
-	if err = svc.ReleaseTag(context.Background(), r.Tag); err != nil {
+	if err = svc.ReleaseBetween(context.Background(), r.From, r.To); err != nil {
 		return fmt.Errorf("release: %w", err)
 	}
 

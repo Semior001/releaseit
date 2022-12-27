@@ -7,11 +7,10 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/Semior001/releaseit/app/git"
-	"github.com/Semior001/releaseit/app/git/service"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	gh "github.com/google/go-github/v37/github"
+	"github.com/samber/lo"
 )
 
 // Github makes a new release on Github on the given version.
@@ -29,7 +28,6 @@ type GithubParams struct {
 	BasicAuthUsername   string
 	BasicAuthPassword   string
 	HTTPClient          http.Client
-	ReleaseNotesBuilder *service.ReleaseNotesBuilder
 	ReleaseNameTmplText string
 }
 
@@ -68,26 +66,24 @@ type releaseNameTmplData struct {
 }
 
 // Send makes new release on github repository.
-func (g *Github) Send(ctx context.Context, changelog git.Changelog) error {
+func (g *Github) Send(ctx context.Context, tagName, text string) error {
+	if tagName == "" {
+		return fmt.Errorf("tag name is empty")
+	}
+
 	buf := &bytes.Buffer{}
 
-	if err := g.releaseNameTmpl.Execute(buf, releaseNameTmplData{TagName: changelog.Tag.Name}); err != nil {
+	if err := g.releaseNameTmpl.Execute(buf, releaseNameTmplData{TagName: tagName}); err != nil {
 		return fmt.Errorf("build release name: %w", err)
 	}
 
-	releaseName := buf.String()
-
-	text, err := g.ReleaseNotesBuilder.Build(changelog)
-	if err != nil {
-		return fmt.Errorf("build release notes: %w", err)
+	release := &gh.RepositoryRelease{
+		TagName: &tagName,
+		Name:    lo.ToPtr(buf.String()),
+		Body:    &text,
 	}
 
-	_, _, err = g.cl.Repositories.CreateRelease(ctx, g.Owner, g.Name, &gh.RepositoryRelease{
-		TagName: &changelog.Tag.Name,
-		Name:    &releaseName,
-		Body:    &text,
-	})
-	if err != nil {
+	if _, _, err := g.cl.Repositories.CreateRelease(ctx, g.Owner, g.Name, release); err != nil {
 		return fmt.Errorf("github returned error: %w", err)
 	}
 

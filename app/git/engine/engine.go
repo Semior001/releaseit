@@ -1,7 +1,7 @@
-package util
+// Package engine contains interfaces for different git providers.
+package engine
 
-// Transform converts a slice to another slice using the provided function.
-func Transform[T any, V any](initial []T, transform func(T) V) []V {
+func transform[T any, V any](initial []T, transform func(T) V) []V {
 	if len(initial) == 0 {
 		return nil
 	}

@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
 	"github.com/Semior001/releaseit/app/git"
+	"github.com/samber/lo"
 )
 
 const defaultTemplate = `Version {{.Tag}}
@@ -20,11 +22,14 @@ const defaultTemplate = `Version {{.Tag}}
 
 // ReleaseNotesBuilder provides methods to form changelog.
 type ReleaseNotesBuilder struct {
-	changelogTmpl *template.Template
-	categories    []Category
-	ignoreLabels  []string
-	unusedTitle   string
-	sortField     string
+	Template     string
+	Categories   []Category
+	IgnoreLabels []string
+	UnusedTitle  string
+	SortField    string
+
+	tmpl *template.Template
+	once sync.Once
 }
 
 // Category describes pull request category with its title,
@@ -33,36 +38,6 @@ type ReleaseNotesBuilder struct {
 type Category struct {
 	Title  string
 	Labels []string
-}
-
-// Params specifies parameters needed
-// to initialize ReleaseNotesBuilder.
-type Params struct {
-	Template     string
-	IgnoreLabels []string
-	Categories   []Category
-	UnusedTitle  string
-	SortField    string
-}
-
-// NewChangelogBuilder makes new service from the specified parameters.
-func NewChangelogBuilder(params Params) (*ReleaseNotesBuilder, error) {
-	if params.Template == "" {
-		params.Template = defaultTemplate
-	}
-
-	tmpl, err := template.New("changelog").Parse(params.Template)
-	if err != nil {
-		return nil, fmt.Errorf("parse changelogTmpl: %w", err)
-	}
-
-	return &ReleaseNotesBuilder{
-		changelogTmpl: tmpl,
-		categories:    params.Categories,
-		ignoreLabels:  params.IgnoreLabels,
-		sortField:     params.SortField,
-		unusedTitle:   params.UnusedTitle,
-	}, nil
 }
 
 type changelogTmplData struct {
@@ -84,22 +59,33 @@ type prTmplData struct {
 }
 
 // Build builds the changelog for the tag.
-func (s *ReleaseNotesBuilder) Build(cl git.Changelog) (string, error) {
+func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest) (string, error) {
+	var err error
+	s.once.Do(func() {
+		if s.Template == "" {
+			s.Template = defaultTemplate
+		}
+		s.tmpl, err = template.New("changelog").Parse(s.Template)
+	})
+	if err != nil {
+		return "", fmt.Errorf("parse template: %w", err)
+	}
+
 	// building template data
-	data := changelogTmplData{Tag: cl.Tag.Name, Date: time.Now()}
+	data := changelogTmplData{Tag: version, Date: time.Now()}
 
-	usedPRs := make([]bool, len(cl.ClosedPRs))
+	usedPRs := make([]bool, len(closedPRs))
 
-	for _, category := range s.categories {
+	for _, category := range s.Categories {
 		categoryData := categoryTmplData{Title: category.Title}
 
-		for i, pr := range cl.ClosedPRs {
-			if containsOneOf(pr.Labels, s.ignoreLabels) {
+		for i, pr := range closedPRs {
+			if len(lo.Intersect(pr.Labels, s.IgnoreLabels)) > 0 {
 				usedPRs[i] = true
 				continue
 			}
 
-			if containsOneOf(pr.Labels, category.Labels) {
+			if len(lo.Intersect(pr.Labels, category.Labels)) > 0 {
 				usedPRs[i] = true
 				categoryData.PRs = append(categoryData.PRs, prTmplData{
 					Number: pr.Number,
@@ -118,8 +104,8 @@ func (s *ReleaseNotesBuilder) Build(cl git.Changelog) (string, error) {
 		data.Categories = append(data.Categories, categoryData)
 	}
 
-	if s.unusedTitle != "" {
-		if unlabeled := s.makeUnlabeledCategory(usedPRs, cl.ClosedPRs); len(unlabeled.PRs) > 0 {
+	if s.UnusedTitle != "" {
+		if unlabeled := s.makeUnlabeledCategory(usedPRs, closedPRs); len(unlabeled.PRs) > 0 {
 			s.sortPRs(unlabeled.PRs)
 			data.Categories = append(data.Categories, unlabeled)
 		}
@@ -127,7 +113,7 @@ func (s *ReleaseNotesBuilder) Build(cl git.Changelog) (string, error) {
 
 	buf := &bytes.Buffer{}
 
-	if err := s.changelogTmpl.Execute(buf, data); err != nil {
+	if err := s.tmpl.Execute(buf, data); err != nil {
 		return "", fmt.Errorf("executing template for changelog: %w", err)
 	}
 
@@ -135,7 +121,7 @@ func (s *ReleaseNotesBuilder) Build(cl git.Changelog) (string, error) {
 }
 
 func (s *ReleaseNotesBuilder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) categoryTmplData {
-	category := categoryTmplData{Title: s.unusedTitle}
+	category := categoryTmplData{Title: s.UnusedTitle}
 
 	for i, pr := range prs {
 		if used[i] {
@@ -154,14 +140,14 @@ func (s *ReleaseNotesBuilder) makeUnlabeledCategory(used []bool, prs []git.PullR
 
 func (s *ReleaseNotesBuilder) sortPRs(prs []prTmplData) {
 	sort.Slice(prs, func(i, j int) bool {
-		switch s.sortField {
+		switch s.SortField {
 		case "+number", "-number", "number":
-			if strings.HasPrefix(s.sortField, "-") {
+			if strings.HasPrefix(s.SortField, "-") {
 				return prs[i].Number > prs[j].Number
 			}
 			return prs[i].Number < prs[j].Number
 		case "+author", "-author", "author":
-			if strings.HasPrefix(s.sortField, "-") {
+			if strings.HasPrefix(s.SortField, "-") {
 				if prs[i].Author == prs[j].Author {
 					return prs[i].Number < prs[j].Number
 				}
@@ -172,12 +158,12 @@ func (s *ReleaseNotesBuilder) sortPRs(prs []prTmplData) {
 			}
 			return prs[i].Author < prs[j].Author
 		case "+title", "-title", "title":
-			if strings.HasPrefix(s.sortField, "-") {
+			if strings.HasPrefix(s.SortField, "-") {
 				return prs[i].Title > prs[j].Title
 			}
 			return prs[i].Title < prs[j].Title
 		case "+closed", "-closed", "closed":
-			if strings.HasPrefix(s.sortField, "-") {
+			if strings.HasPrefix(s.SortField, "-") {
 				return prs[i].Closed.After(prs[j].Closed)
 			}
 			return prs[i].Closed.Before(prs[j].Closed)
@@ -185,15 +171,4 @@ func (s *ReleaseNotesBuilder) sortPRs(prs []prTmplData) {
 			return prs[i].Number < prs[j].Number
 		}
 	})
-}
-
-func containsOneOf(arr []string, entries []string) bool {
-	for _, m := range arr {
-		for _, entry := range entries {
-			if m == entry {
-				return true
-			}
-		}
-	}
-	return false
 }

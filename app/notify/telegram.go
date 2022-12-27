@@ -8,9 +8,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-
-	"github.com/Semior001/releaseit/app/git"
-	"github.com/Semior001/releaseit/app/git/service"
 )
 
 // Telegram implements Destination to send changelogs to specified
@@ -21,8 +18,7 @@ type Telegram struct {
 
 // TelegramParams defines parameters needed to initialize Telegram notifier.
 type TelegramParams struct {
-	ReleaseNotesBuilder *service.ReleaseNotesBuilder
-	Log                 *log.Logger
+	Log *log.Logger
 
 	ChatID                string
 	Client                http.Client
@@ -49,12 +45,7 @@ func (t *Telegram) String() string {
 }
 
 // Send changelog via Telegram.
-func (t *Telegram) Send(ctx context.Context, changelog git.Changelog) error {
-	text, err := t.ReleaseNotesBuilder.Build(changelog)
-	if err != nil {
-		return fmt.Errorf("build release notes: %w", err)
-	}
-
+func (t *Telegram) Send(ctx context.Context, _, text string) error {
 	msg, err := json.Marshal(tgMsg{Text: text, ParseMode: "MarkdownV2"})
 	if err != nil {
 		return fmt.Errorf("marshal tg message: %w", err)

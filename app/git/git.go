@@ -1,10 +1,11 @@
+// Package git contains types and engines to work with git repositories.
 package git
 
 import "time"
 
 // Changelog represents a basic changelog.
 type Changelog struct {
-	Tag       Tag
+	TagName   string
 	ClosedPRs []PullRequest
 }
 
