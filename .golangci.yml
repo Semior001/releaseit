@@ -9,19 +9,19 @@ linters:
   enable:
     - unconvert
     - megacheck
-    - structcheck
     - gas
     - gocyclo
     - dupl
     - misspell
     - unparam
-    - varcheck
-    - deadcode
     - typecheck
     - ineffassign
-    - varcheck
     - revive
   disable-all: true
 
 issues:
   exclude-use-default: false
+  # supress duplicating struct tags in staticcheck
+  exclude-rules:
+      - linters: [staticcheck]
+        text: "SA5008: duplicate struct tag"

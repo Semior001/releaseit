@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Semior001/releaseit/app/git"
-	"github.com/Semior001/releaseit/app/util"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	gh "github.com/google/go-github/v37/github"
@@ -122,11 +121,11 @@ func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
 	case *gh.Commit:
 		res.Author = g.commitAuthorToStore(cmt.GetAuthor())
 		res.Committer = g.commitAuthorToStore(cmt.GetCommitter())
-		res.ParentSHAs = util.Transform(cmt.Parents, func(c *gh.Commit) string { return c.GetSHA() })
+		res.ParentSHAs = transform(cmt.Parents, func(c *gh.Commit) string { return c.GetSHA() })
 	case *gh.RepositoryCommit:
 		res.Author = g.commitAuthorToStore(cmt.GetAuthor())
 		res.Committer = g.commitAuthorToStore(cmt.GetCommitter())
-		res.ParentSHAs = util.Transform(cmt.Parents, func(c *gh.Commit) string { return c.GetSHA() })
+		res.ParentSHAs = transform(cmt.Parents, func(c *gh.Commit) string { return c.GetSHA() })
 	}
 	return res
 }

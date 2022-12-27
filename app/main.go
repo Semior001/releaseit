@@ -1,3 +1,4 @@
+// Package main is an entrypoint for application
 package main
 
 import (
@@ -12,7 +13,8 @@ import (
 
 // Opts describes cli commands, arguments and flags of the application.
 type Opts struct {
-	ReleaseNotes cmd.ReleaseNotes `command:"release"`
+	ReleaseNotes cmd.ReleaseNotes `command:"release"      description:"build release notes for a particular tag"`
+	Changelog    cmd.Changelog    `command:"changelog"    description:"build release notes for a pair of commits"`
 	Debug        bool             `long:"dbg" env:"DEBUG" description:"turn on debug mode"`
 }
 
