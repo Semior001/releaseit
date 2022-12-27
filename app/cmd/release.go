@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/Semior001/releaseit/app/git/engine"
+	"github.com/Semior001/releaseit/app/git/service"
 	"github.com/Semior001/releaseit/app/notify"
-	"github.com/Semior001/releaseit/app/store/engine"
-	"github.com/Semior001/releaseit/app/store/service"
 )
 
 // ReleaseNotes builds the release-notes from the specified template
@@ -18,8 +18,9 @@ import (
 type ReleaseNotes struct {
 	Tag    string `long:"tag" env:"TAG" description:"tag to be released" required:"true"`
 	Engine struct {
-		Type   string      `long:"type" env:"TYPE" choice:"github" description:"type of the repository engine" required:"true"`
+		Type   string      `long:"type" env:"TYPE" choice:"github" choice:"gitlab" description:"type of the repository engine" required:"true"`
 		Github GithubGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
+		Gitlab GitlabGroup `group:"gitlab" namespace:"gitlab" env-namespace:"GITLAB"`
 	} `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
 	Notify struct {
 		Telegram TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
@@ -55,6 +56,13 @@ func (r ReleaseNotes) makeEngine() (engine.Interface, error) {
 			r.Engine.Github.Repo.Name,
 			r.Engine.Github.BasicAuth.Username,
 			r.Engine.Github.BasicAuth.Password,
+			http.Client{Timeout: 5 * time.Second},
+		)
+	case "gitlab":
+		return engine.NewGitlab(
+			r.Engine.Gitlab.Token,
+			r.Engine.Gitlab.BaseURL,
+			r.Engine.Gitlab.ProjectID,
 			http.Client{Timeout: 5 * time.Second},
 		)
 	}

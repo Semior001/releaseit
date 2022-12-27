@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Semior001/releaseit/app/store"
-	"github.com/Semior001/releaseit/app/store/service"
+	"github.com/Semior001/releaseit/app/git"
+	"github.com/Semior001/releaseit/app/git/service"
 )
 
 // WriterNotifier prints the changelog to the specified writer.
@@ -24,7 +24,7 @@ func (w *WriterNotifier) String() string {
 }
 
 // Send writes changelog to writer.
-func (w *WriterNotifier) Send(_ context.Context, changelog store.Changelog) error {
+func (w *WriterNotifier) Send(_ context.Context, changelog git.Changelog) error {
 	text, err := w.ReleaseNotesBuilder.Build(changelog)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)

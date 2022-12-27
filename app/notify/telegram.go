@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Semior001/releaseit/app/store"
-	"github.com/Semior001/releaseit/app/store/service"
+	"github.com/Semior001/releaseit/app/git"
+	"github.com/Semior001/releaseit/app/git/service"
 )
 
 // Telegram implements Destination to send changelogs to specified
@@ -49,7 +49,7 @@ func (t *Telegram) String() string {
 }
 
 // Send changelog via Telegram.
-func (t *Telegram) Send(ctx context.Context, changelog store.Changelog) error {
+func (t *Telegram) Send(ctx context.Context, changelog git.Changelog) error {
 	text, err := t.ReleaseNotesBuilder.Build(changelog)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)

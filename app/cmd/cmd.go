@@ -18,6 +18,13 @@ type GithubGroup struct {
 	BasicAuth BasicAuthGroup `group:"basic_auth" namespace:"basic_auth" env-namespace:"BASIC_AUTH"`
 }
 
+// GitlabGroup defines parameters to connect to the gitlab repository.
+type GitlabGroup struct {
+	Token     string `long:"token" env:"TOKEN" description:"token to connect to the gitlab repository"`
+	BaseURL   string `long:"base_url" env:"BASE_URL" description:"base url of the gitlab instance"`
+	ProjectID string `long:"project_id" env:"PROJECT_ID" description:"project id of the repository"`
+}
+
 // Empty returns true if the argument group is empty.
 func (g GithubGroup) Empty() bool {
 	return g.Repo.Owner == "" || g.Repo.Name == ""

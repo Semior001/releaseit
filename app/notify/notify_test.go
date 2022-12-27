@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Semior001/releaseit/app/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +16,7 @@ func (t testDestination) String() string {
 	return t.name
 }
 
-func (t testDestination) Send(context.Context, store.Changelog) error {
+func (t testDestination) Send(context.Context, git.Changelog) error {
 	t.called = true
 	return nil
 }

@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Semior001/releaseit/app/store"
+	"github.com/Semior001/releaseit/app/git"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -14,7 +14,7 @@ import (
 // like telegram, email or stdout.
 type Destination interface {
 	fmt.Stringer
-	Send(ctx context.Context, changelog store.Changelog) error
+	Send(ctx context.Context, changelog git.Changelog) error
 }
 
 // Service delivers changelog to multiple destinations.
@@ -51,7 +51,7 @@ func (s *Service) String() string {
 }
 
 // Send sends the changelog to all destinations.
-func (s *Service) Send(ctx context.Context, changelog store.Changelog) error {
+func (s *Service) Send(ctx context.Context, changelog git.Changelog) error {
 	eg, nestedCtx := errgroup.WithContext(ctx)
 	for _, destination := range s.dest {
 		destination := destination

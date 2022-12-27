@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/Semior001/releaseit/app/store"
-	"github.com/Semior001/releaseit/app/store/service"
+	"github.com/Semior001/releaseit/app/git"
+	"github.com/Semior001/releaseit/app/git/service"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	gh "github.com/google/go-github/v37/github"
@@ -68,7 +68,7 @@ type releaseNameTmplData struct {
 }
 
 // Send makes new release on github repository.
-func (g *Github) Send(ctx context.Context, changelog store.Changelog) error {
+func (g *Github) Send(ctx context.Context, changelog git.Changelog) error {
 	buf := &bytes.Buffer{}
 
 	if err := g.releaseNameTmpl.Execute(buf, releaseNameTmplData{TagName: changelog.Tag.Name}); err != nil {
