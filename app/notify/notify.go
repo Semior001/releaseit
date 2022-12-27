@@ -1,70 +1,58 @@
+// Package notify defines interfaces each supported notification destination should implement.
 package notify
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
+	"sync"
 
-	"github.com/Semior001/releaseit/app/store"
-	"golang.org/x/sync/errgroup"
+	"github.com/hashicorp/go-multierror"
 )
 
 // Destination defines interface for a given destination service,
 // like telegram, email or stdout.
 type Destination interface {
 	fmt.Stringer
-	Send(ctx context.Context, changelog store.Changelog) error
+	Send(ctx context.Context, tagName, text string) error
 }
 
-// Service delivers changelog to multiple destinations.
-type Service struct {
-	l    *log.Logger
-	dest []Destination
-}
+// Destinations is an aggregation of notifiers.
+type Destinations []Destination
 
-// Params describes parameters to initialize notifier service.
-type Params struct {
-	Log          *log.Logger
-	Destinations []Destination
-}
-
-// NewService makes new instance of Service.
-func NewService(params Params) *Service {
-	svc := &Service{
-		l:    params.Log,
-		dest: params.Destinations,
-	}
-
-	svc.l.Printf("[INFO] initialized notifier service: %s", svc.String())
-
-	return svc
-}
-
-// String used for debugging purposes.
-func (s *Service) String() string {
-	dests := make([]string, len(s.dest))
-	for i, dest := range s.dest {
+// String returns the names of all destinations.
+func (d Destinations) String() string {
+	dests := make([]string, len(d))
+	for i, dest := range d {
 		dests[i] = dest.String()
 	}
-	return fmt.Sprintf("aggregated notifier with next destinations: [%s]", strings.Join(dests, ", "))
+	return fmt.Sprintf("[%s]", strings.Join(dests, ", "))
 }
 
-// Send sends the changelog to all destinations.
-func (s *Service) Send(ctx context.Context, changelog store.Changelog) error {
-	eg, nestedCtx := errgroup.WithContext(ctx)
-	for _, destination := range s.dest {
-		destination := destination
-		eg.Go(func() error {
-			if err := destination.Send(nestedCtx, changelog); err != nil {
-				s.l.Printf("[WARN] failed to send changelog to destination %s: %v", destination.String(), err)
-				return err
+// Send sends the message to all destinations.
+func (d Destinations) Send(ctx context.Context, tagName, text string) error {
+	wg := &sync.WaitGroup{}
+	wg.Add(len(d))
+
+	errs := make(chan error, len(d))
+	for _, dest := range d {
+		go func(dest Destination) {
+			defer wg.Done()
+			if err := dest.Send(ctx, tagName, text); err != nil {
+				errs <- fmt.Errorf("%s: %w", dest, err)
 			}
-			return nil
-		})
+		}(dest)
 	}
-	if err := eg.Wait(); err != nil {
-		return fmt.Errorf("notify: %w", err)
+
+	wg.Wait()
+	close(errs)
+
+	var merr *multierror.Error
+	for err := range errs {
+		if err != nil {
+			merr = multierror.Append(merr, err)
+		}
 	}
-	return nil
+
+	return merr.ErrorOrNil()
 }
