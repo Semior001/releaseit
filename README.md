@@ -186,3 +186,5 @@ The golang's [text/template package](https://pkg.go.dev/text/template) is used f
 | Name         | Description             | Example |
 |--------------|-------------------------|---------|
 | {{.TagName}} | Tag name of the release | v1.0.0  |
+
+.
