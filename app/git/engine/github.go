@@ -95,11 +95,6 @@ func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 	return res, nil
 }
 
-// HeadCommit returns the alias of the oldest commit in the repository
-func (g *Github) HeadCommit(_ context.Context) (string, error) {
-	return "HEAD", nil
-}
-
 // ListTags returns all tags of the repository.
 func (g *Github) ListTags(ctx context.Context) ([]git.Tag, error) {
 	tags, _, err := g.cl.Repositories.ListTags(ctx, g.owner, g.name, &gh.ListOptions{})

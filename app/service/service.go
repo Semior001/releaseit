@@ -68,11 +68,7 @@ func (s *Service) ReleaseTag(ctx context.Context, tagName string) error {
 	to := tags[tagIdx].Commit.SHA
 
 	if len(tags) == 1 {
-		// if the given tag is the only tag in the repository, then fetch
-		// changelog since HEAD commit
-		if from, err = s.Engine.HeadCommit(ctx); err != nil {
-			return fmt.Errorf("get head commit: %w", err)
-		}
+		from = "HEAD"
 	} else {
 		// otherwise use the previous tag (tags sorted in descending order of creation)
 		from = tags[tagIdx+1].Commit.SHA
@@ -104,8 +100,7 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 	}
 
 	for _, commit := range commits.Commits {
-		// if commit has more than one parent - probably it's a merge
-		// commit
+		// if commit has more than one parent - probably it's a merge commit
 		// FIXME: needs better guessing, doesn't work with squash commits
 		if len(commit.ParentSHAs) > 1 {
 			prs, err := s.Engine.ListPRsOfCommit(ctx, commit.ParentSHAs[1])
@@ -126,7 +121,6 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 
 func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
 	return template.FuncMap{
-		"head": func() (string, error) { return s.Engine.HeadCommit(ctx) },
 		"last_commit": func(branch string) (string, error) {
 			return s.Engine.GetLastCommitOfBranch(ctx, branch)
 		},
