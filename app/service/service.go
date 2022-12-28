@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"text/template"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/git/engine"
@@ -20,12 +22,21 @@ type Service struct {
 
 // ReleaseBetween makes a release between two commit SHAs.
 func (s *Service) ReleaseBetween(ctx context.Context, from, to string) error {
+	from, err := s.getCommitSHA(ctx, from)
+	if err != nil {
+		return fmt.Errorf("get 'from' commit SHA: %w", err)
+	}
+
+	if to, err = s.getCommitSHA(ctx, to); err != nil {
+		return fmt.Errorf("get 'to' commit SHA: %w", err)
+	}
+
 	prs, err := s.closedPRsBetweenSHA(ctx, from, to)
 	if err != nil {
 		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
 	}
 
-	text, err := s.ReleaseNotesBuilder.Build(fmt.Sprintf("%s...%s", from, to), prs)
+	text, err := s.ReleaseNotesBuilder.Build(fmt.Sprintf("%s...%s", from[:7], to[:7]), prs)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)
 	}
@@ -111,4 +122,32 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 	}
 
 	return lo.UniqBy(res, func(item git.PullRequest) int { return item.Number }), nil
+}
+
+func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
+	return template.FuncMap{
+		"head": func() (string, error) { return s.Engine.HeadCommit(ctx) },
+		"last_commit": func(branch string) (string, error) {
+			return s.Engine.GetLastCommitOfBranch(ctx, branch)
+		},
+	}
+}
+
+func (s *Service) getCommitSHA(ctx context.Context, expr string) (string, error) {
+	if !strings.HasPrefix(expr, "$") {
+		return expr, nil
+	}
+
+	tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(strings.TrimPrefix(expr, "$"))
+	if err != nil {
+		return "", fmt.Errorf("parse expression: %w", err)
+	}
+
+	res := &strings.Builder{}
+
+	if err = tmpl.Execute(res, nil); err != nil {
+		return "", fmt.Errorf("execute expression: %w", err)
+	}
+
+	return res.String(), nil
 }

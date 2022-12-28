@@ -5,11 +5,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/Semior001/releaseit/app/config"
 	"github.com/Semior001/releaseit/app/notify"
 	"github.com/Semior001/releaseit/app/service"
+	"github.com/samber/lo"
 )
 
 // NotifyGroup defines parameters for the notifier.
@@ -128,8 +130,9 @@ func (r *NotifyGroup) ReleaseNotesBuilder() (*service.ReleaseNotesBuilder, error
 
 	for i, category := range cfg.Categories {
 		rnb.Categories[i] = service.Category{
-			Title:  category.Title,
-			Labels: category.Labels,
+			Title:        category.Title,
+			Labels:       category.Labels,
+			BranchRegexp: lo.Ternary(category.Branch == "", nil, regexp.MustCompile(category.Branch)),
 		}
 	}
 

@@ -1,11 +1,14 @@
 categories:
   - title: "## 🚀 Features"
+    branch: "^(feat|feature)/"
     labels:
       - "feature"
   - title: "## 🐛 Fixes"
+    branch: "^fix/"
     labels:
       - "fix"
   - title: "## 🧰 Maintenance"
+    branch: "^chore/"
     labels:
       - "maintenance"
 unused_title: "## ❓ Unlabeled"
@@ -15,9 +18,9 @@ sort_field: "-number"
 template: |
   Project: Example release config
   Development area: Backend
-  Version {{.Tag}}
+  Version {{.Version}}
   Date: {{.Date.Format "Jan 02, 2006 15:04:05 UTC"}}
   {{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}} | {{ len .PRs }}
-  {{range .PRs}}- !{{.Number}} | {{.Title}} by @{{.Author}}
+  {{range .PRs}}- [!{{.Number}}]({{.URL}}) {{.Title}} | by @{{.Author}}, closed at {{.ClosedAt.Format "02.01.2006 15:04:05 MST"}}
   {{end}}{{end}}
 empty_template: "- no changes"
