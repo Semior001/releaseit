@@ -16,6 +16,7 @@ import (
 type NotifyGroup struct {
 	Telegram     TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
 	Github       GithubNotifierGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
+	Mattermost   MattermostGroup     `group:"mattermost" namespace:"mattermost" env-namespace:"MATTERMOST"`
 	Stdout       bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
 	ConfLocation string              `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file"`
 }
@@ -41,6 +42,20 @@ type TelegramGroup struct {
 // Empty returns true if the config group is not filled.
 func (g TelegramGroup) Empty() bool {
 	return g.ChatID == "" || g.Token == ""
+}
+
+// MattermostGroup defines parameters for mattermost notifier.
+type MattermostGroup struct {
+	BaseURL   string `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
+	ChannelID string `long:"channel_id" env:"CHANNEL_ID" description:"id of the channel, where the release notes will be sent"`
+	LoginID   string `long:"login_id" env:"LOGIN_ID" description:"login id of the user, who will send the release notes"`
+	Password  string `long:"password" env:"PASSWORD" description:"password of the user, who will send the release notes"`
+	LDAP      bool   `long:"ldap" env:"LDAP" description:"use ldap auth"`
+}
+
+// Empty returns true if the config group is not filled.
+func (g MattermostGroup) Empty() bool {
+	return g.BaseURL == "" || g.ChannelID == "" || g.LoginID == "" || g.Password == ""
 }
 
 // Build builds the notifier.
@@ -75,6 +90,22 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 		}
 
 		destinations = append(destinations, gh)
+	}
+
+	if !r.Mattermost.Empty() {
+		mm, err := notify.NewMattermost(notify.MattermostParams{
+			Client:    http.Client{Timeout: 5 * time.Second},
+			BaseURL:   r.Mattermost.BaseURL,
+			ChannelID: r.Mattermost.ChannelID,
+			LoginID:   r.Mattermost.LoginID,
+			Password:  r.Mattermost.Password,
+			LDAP:      r.Mattermost.LDAP,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("make mattermost notifier: %w", err)
+		}
+
+		destinations = append(destinations, mm)
 	}
 
 	return destinations, nil
