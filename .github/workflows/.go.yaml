@@ -25,13 +25,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: extract tag name
+        id: tag
+        uses: actions/github-script@0.2.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            return context.payload.ref.replace(/\/refs\/tags\//, '');
+
       - name: build and push hugo site
         id: docker_build
         uses: docker/build-push-action@v2
         with:
           push: true
           context: .
-          tags: ghcr.io/semior001/releaseit:latest,ghcr.io/semior001/releaseit:${{github.ref}}
+          tags: ghcr.io/semior001/releaseit:latest,ghcr.io/semior001/releaseit:${{steps.tag.outputs.result}}
 
   test:
     runs-on: ubuntu-latest
