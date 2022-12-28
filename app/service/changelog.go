@@ -185,5 +185,7 @@ func (s *ReleaseNotesBuilder) sortPRs(prs []prTmplData) {
 }
 
 var funcs = template.FuncMap{
-	"time_LoadLocation": time.LoadLocation,
+	"time_LoadLocation":  time.LoadLocation,
+	"regexp_Compile":     regexp.Compile,
+	"strings_TrimPrefix": strings.TrimPrefix,
 }
