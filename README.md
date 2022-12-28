@@ -166,18 +166,18 @@ empty_template: "- no changes"
 
 ## Template variables for release notes builder
 
-| Name                         | Description                                                  | Example                                       |
-|------------------------------|--------------------------------------------------------------|-----------------------------------------------|
-| {{.Version}}                 | Version name of the release, might be tag or diff.           | `v1.0.0` or `2bda1d3...82e35cf`               |
-| {{.Date}}                    | Date of the commit which was tagged                          | Jan 02, 2006 15:04:05 UTC                     |
-|                              |                                                              |                                               |
-| {{.Categories.Title}}        | Title of the category from the config                        | Features                                      |
-|                              |                                                              |                                               |
-| {{.Categories.PRs.Number}}   | Number of the pull request                                   | 642                                           |
-| {{.Categories.PRs.Title}}    | Title of the pull request                                    | Some awesome feature added                    |
-| {{.Categories.PRs.Author}}   | Username of the author of pull request                       | Semior001                                     |
-| {{.Categories.PRs.ClosedAt}} | Timestamp, when the pull request was closed (might be empty) | Jan 02, 2006 15:04:05 UTC                     |
-| {{.Categories.PRs.URL}}      | URL to the pull request                                      | https://github.com/Semior001/releaseit/pull/6 |
+| Name                         | Description                                                  | Example                                         |
+|------------------------------|--------------------------------------------------------------|-------------------------------------------------|
+| {{.Version}}                 | Version name of the release, might be tag or diff.           | `v1.0.0` or `2bda1d3...82e35cf`                 |
+| {{.Date}}                    | Date of the commit which was tagged                          | Jan 02, 2006 15:04:05 UTC                       |
+|                              |                                                              |                                                 |
+| {{.Categories.Title}}        | Title of the category from the config                        | Features                                        |
+|                              |                                                              |                                                 |
+| {{.Categories.PRs.Number}}   | Number of the pull request                                   | 642                                             |
+| {{.Categories.PRs.Title}}    | Title of the pull request                                    | Some awesome feature added                      |
+| {{.Categories.PRs.Author}}   | Username of the author of pull request                       | Semior001                                       |
+| {{.Categories.PRs.ClosedAt}} | Timestamp, when the pull request was closed (might be empty) | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Categories.PRs.URL}}      | URL to the pull request                                      | `https://github.com/Semior001/releaseit/pull/6` |
 
 The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes.
 
