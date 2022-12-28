@@ -15,9 +15,9 @@ import (
 	"github.com/go-pkgz/requester/middleware"
 )
 
-// Mattermost is a notifier for Mattermost.
-type Mattermost struct {
-	MattermostParams
+// MattermostBot is a notifier for MattermostBot.
+type MattermostBot struct {
+	MattermostBotParams
 	token struct {
 		value string
 		mu    *sync.Mutex
@@ -25,8 +25,8 @@ type Mattermost struct {
 	cl *http.Client
 }
 
-// MattermostParams are Mattermost notifier params.
-type MattermostParams struct {
+// MattermostBotParams are MattermostBot notifier params.
+type MattermostBotParams struct {
 	Client    http.Client
 	BaseURL   string
 	ChannelID string
@@ -36,11 +36,11 @@ type MattermostParams struct {
 	LDAP     bool
 }
 
-// NewMattermost makes a new Mattermost notifier.
-func NewMattermost(params MattermostParams) (*Mattermost, error) {
+// NewMattermostBot makes a new MattermostBot notifier.
+func NewMattermostBot(params MattermostBotParams) (*MattermostBot, error) {
 	params.BaseURL = strings.TrimRight(params.BaseURL, "/")
 
-	svc := &Mattermost{MattermostParams: params}
+	svc := &MattermostBot{MattermostBotParams: params}
 	svc.token.mu = &sync.Mutex{}
 
 	svc.cl = requester.New(svc.Client, svc.reloginMiddleware).Client()
@@ -56,7 +56,7 @@ func NewMattermost(params MattermostParams) (*Mattermost, error) {
 	return svc, nil
 }
 
-func (m *Mattermost) login(ctx context.Context) (token string, err error) {
+func (m *MattermostBot) login(ctx context.Context) (token string, err error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -97,7 +97,7 @@ func (m *Mattermost) login(ctx context.Context) (token string, err error) {
 	return m.token.value, nil
 }
 
-func (m *Mattermost) ping(ctx context.Context) error {
+func (m *MattermostBot) ping(ctx context.Context) error {
 	u := fmt.Sprintf("%s/api/v4/config/client?format=old", m.BaseURL)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, http.NoBody)
@@ -118,12 +118,12 @@ func (m *Mattermost) ping(ctx context.Context) error {
 }
 
 // String returns the name of the notifier.
-func (m *Mattermost) String() string {
-	return fmt.Sprintf("mattermost at: %s", m.BaseURL)
+func (m *MattermostBot) String() string {
+	return fmt.Sprintf("mattermost bot at: %s", m.BaseURL)
 }
 
 // Send sends a message to Mattermost.
-func (m *Mattermost) Send(ctx context.Context, _, text string) error {
+func (m *MattermostBot) Send(ctx context.Context, _, text string) error {
 	u := fmt.Sprintf("%s/api/v4/posts", m.BaseURL)
 
 	b, err := json.Marshal(map[string]string{"channel_id": m.ChannelID, "message": text})
@@ -148,7 +148,7 @@ func (m *Mattermost) Send(ctx context.Context, _, text string) error {
 	return nil
 }
 
-func (m *Mattermost) reloginMiddleware(next http.RoundTripper) http.RoundTripper {
+func (m *MattermostBot) reloginMiddleware(next http.RoundTripper) http.RoundTripper {
 	return middleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		resp, err := next.RoundTrip(req)
 		if err != nil {
@@ -167,4 +167,47 @@ func (m *Mattermost) reloginMiddleware(next http.RoundTripper) http.RoundTripper
 
 		return resp, nil
 	})
+}
+
+// MattermostHook sends messages to Mattermost via webhook.
+type MattermostHook struct {
+	cl      *http.Client
+	baseURL string
+	hookID  string
+}
+
+// NewMattermostHook makes a new MattermostHook notifier.
+func NewMattermostHook(cl http.Client, baseURL, hookID string) *MattermostHook {
+	return &MattermostHook{cl: &cl, baseURL: baseURL, hookID: hookID}
+}
+
+// String returns the name of the notifier.
+func (m *MattermostHook) String() string {
+	return fmt.Sprintf("mattermost hook at: %s", m.baseURL)
+}
+
+// Send sends a message to Mattermost.
+func (m *MattermostHook) Send(ctx context.Context, _, text string) error {
+	u := fmt.Sprintf("%s/hooks/%s", m.baseURL, m.hookID)
+
+	b, err := json.Marshal(map[string]string{"text": text})
+	if err != nil {
+		return fmt.Errorf("marshal body: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(b))
+	if err != nil {
+		return fmt.Errorf("build request: %w", err)
+	}
+
+	resp, err := m.cl.Do(req)
+	if err != nil {
+		return fmt.Errorf("do request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }

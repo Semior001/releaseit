@@ -16,12 +16,13 @@ import (
 
 // NotifyGroup defines parameters for the notifier.
 type NotifyGroup struct {
-	Telegram     TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
-	Github       GithubNotifierGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
-	Mattermost   MattermostGroup     `group:"mattermost" namespace:"mattermost" env-namespace:"MATTERMOST"`
-	Stdout       bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
-	ConfLocation string              `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file"`
-	Extras       map[string]string   `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
+	Telegram       TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
+	Github         GithubNotifierGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
+	Mattermost     MattermostGroup     `group:"mattermost" namespace:"mattermost" env-namespace:"MATTERMOST"`
+	MattermostHook MattermostHookGroup `group:"mattermost-hook" namespace:"mattermost-hook" env-namespace:"MATTERMOST_HOOK"`
+	Stdout         bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
+	ConfLocation   string              `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file"`
+	Extras         map[string]string   `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
 }
 
 // GithubNotifierGroup defines parameters to make release in the github.
@@ -61,12 +62,24 @@ func (g MattermostGroup) Empty() bool {
 	return g.BaseURL == "" || g.ChannelID == "" || g.LoginID == "" || g.Password == ""
 }
 
+// MattermostHookGroup defines parameters for mattermost hook notifier.
+type MattermostHookGroup struct {
+	BaseURL string `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
+	ID      string `long:"id" env:"ID" description:"id of the hook, where the release notes will be sent"`
+}
+
+// Empty returns true if the config group is not filled.
+func (g MattermostHookGroup) Empty() bool {
+	return g.BaseURL == "" || g.ID == ""
+}
+
 // Build builds the notifier.
 func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 	logger := log.Default()
 
 	if r.Stdout {
 		destinations = append(destinations, &notify.WriterNotifier{Writer: os.Stdout, Name: "stdout"})
+		log.Printf("[INFO] printing notes to stdout is enabled")
 	}
 
 	if !r.Telegram.Empty() {
@@ -77,6 +90,7 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 			Token:                 r.Telegram.Token,
 			DisableWebPagePreview: !r.Telegram.WebPagePreview,
 		}))
+		log.Printf("[INFO] telegram notifier is enabled")
 	}
 
 	if !r.Github.Empty() {
@@ -93,10 +107,11 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 		}
 
 		destinations = append(destinations, gh)
+		log.Printf("[INFO] github releases notifier is enabled")
 	}
 
 	if !r.Mattermost.Empty() {
-		mm, err := notify.NewMattermost(notify.MattermostParams{
+		mm, err := notify.NewMattermostBot(notify.MattermostBotParams{
 			Client:    http.Client{Timeout: 5 * time.Second},
 			BaseURL:   r.Mattermost.BaseURL,
 			ChannelID: r.Mattermost.ChannelID,
@@ -109,6 +124,16 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 		}
 
 		destinations = append(destinations, mm)
+		log.Printf("[INFO] mattermost bot notifier is enabled")
+	}
+
+	if !r.MattermostHook.Empty() {
+		destinations = append(destinations, notify.NewMattermostHook(
+			http.Client{Timeout: 5 * time.Second},
+			r.MattermostHook.BaseURL,
+			r.MattermostHook.ID,
+		))
+		log.Printf("[INFO] mattermost hook notifier is enabled")
 	}
 
 	return destinations, nil
