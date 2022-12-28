@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine
+FROM golang:1.19-alpine
 LABEL maintainer="Semior <ura2178@gmail.com>"
 
 ENV CGO_ENABLED=0
