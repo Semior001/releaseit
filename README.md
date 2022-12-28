@@ -111,6 +111,15 @@ Help Options:
 
 </details>
 
+**Note**: `from` and `to` options of `changelog` command accept expressions, which must be written in gotemplate manner,
+and the whole expressions should start from `$` sign.
+
+Example (from .env file): `TO='${{ last_commit "develop" }}'`
+
+Supported functions:
+- `last_commit(branch_name)`
+- `head`
+
 ## Release notes builder configuration
 | Name              | Description                                                                                                                                             |
 |-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
