@@ -18,6 +18,8 @@ type PullRequest struct {
 	Author   User
 	Labels   []string
 	ClosedAt time.Time
+	Branch   string
+	URL      string
 }
 
 // User holds user data.

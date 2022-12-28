@@ -5,6 +5,7 @@ package service
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -15,7 +16,7 @@ import (
 	"github.com/samber/lo"
 )
 
-const defaultTemplate = `Version {{.Tag}}
+const defaultTemplate = `Version {{.Version}}
 {{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}}
 {{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}{{end}}
 {{end}}`
@@ -36,12 +37,13 @@ type ReleaseNotesBuilder struct {
 // which will be derived to template and labels, that indicates
 // the belonging to this category.
 type Category struct {
-	Title  string
-	Labels []string
+	Title        string
+	Labels       []string
+	BranchRegexp *regexp.Regexp
 }
 
 type changelogTmplData struct {
-	Tag        string
+	Version    string
 	Categories []categoryTmplData
 	Date       time.Time
 }
@@ -52,10 +54,11 @@ type categoryTmplData struct {
 }
 
 type prTmplData struct {
-	Number int
-	Title  string
-	Author string
-	Closed time.Time
+	Number   int
+	Title    string
+	Author   string
+	URL      string
+	ClosedAt time.Time
 }
 
 // Build builds the changelog for the tag.
@@ -72,7 +75,7 @@ func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest)
 	}
 
 	// building template data
-	data := changelogTmplData{Tag: version, Date: time.Now()}
+	data := changelogTmplData{Version: version, Date: time.Now()}
 
 	usedPRs := make([]bool, len(closedPRs))
 
@@ -85,13 +88,17 @@ func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest)
 				continue
 			}
 
-			if len(lo.Intersect(pr.Labels, category.Labels)) > 0 {
+			hasBranchPrefix := category.BranchRegexp != nil && category.BranchRegexp.MatchString(pr.Branch)
+			hasAnyOfLabels := len(lo.Intersect(pr.Labels, category.Labels)) > 0
+
+			if hasAnyOfLabels || hasBranchPrefix {
 				usedPRs[i] = true
 				categoryData.PRs = append(categoryData.PRs, prTmplData{
-					Number: pr.Number,
-					Title:  pr.Title,
-					Author: pr.Author.Username,
-					Closed: pr.ClosedAt,
+					Number:   pr.Number,
+					Title:    pr.Title,
+					Author:   pr.Author.Username,
+					ClosedAt: pr.ClosedAt,
+					URL:      pr.URL,
 				})
 			}
 		}
@@ -129,9 +136,11 @@ func (s *ReleaseNotesBuilder) makeUnlabeledCategory(used []bool, prs []git.PullR
 		}
 
 		category.PRs = append(category.PRs, prTmplData{
-			Number: pr.Number,
-			Title:  pr.Title,
-			Author: pr.Author.Username,
+			Number:   pr.Number,
+			Title:    pr.Title,
+			Author:   pr.Author.Username,
+			URL:      pr.URL,
+			ClosedAt: pr.ClosedAt,
 		})
 	}
 
@@ -164,9 +173,9 @@ func (s *ReleaseNotesBuilder) sortPRs(prs []prTmplData) {
 			return prs[i].Title < prs[j].Title
 		case "+closed", "-closed", "closed":
 			if strings.HasPrefix(s.SortField, "-") {
-				return prs[i].Closed.After(prs[j].Closed)
+				return prs[i].ClosedAt.After(prs[j].ClosedAt)
 			}
-			return prs[i].Closed.Before(prs[j].Closed)
+			return prs[i].ClosedAt.Before(prs[j].ClosedAt)
 		default:
 			return prs[i].Number < prs[j].Number
 		}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -16,6 +17,9 @@ type Config struct {
 	Categories []struct {
 		Title  string   `yaml:"title"`
 		Labels []string `yaml:"labels"`
+
+		// regexp to match branch name
+		Branch string `yaml:"branch"`
 	} `yaml:"categories"`
 	// labels for pull requests, which won't be in release notes
 	IgnoreLabels []string `yaml:"ignore_labels"`
@@ -43,6 +47,14 @@ func (c Config) Validate() error {
 
 	if strings.TrimSpace(c.EmptyTemplate) == "" {
 		return errors.New("template for empty changelog is empty")
+	}
+
+	for _, category := range c.Categories {
+		if category.Branch != "" {
+			if _, err := regexp.Compile(category.Branch); err != nil {
+				return fmt.Errorf("invalid regexp for branch: %w", err)
+			}
+		}
 	}
 
 	return nil

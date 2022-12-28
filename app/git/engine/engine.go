@@ -1,13 +1,24 @@
 // Package engine contains interfaces for different git providers.
 package engine
 
-func transform[T any, V any](initial []T, transform func(T) V) []V {
-	if len(initial) == 0 {
-		return nil
-	}
-	result := make([]V, 0, len(initial))
-	for _, item := range initial {
-		result = append(result, transform(item))
-	}
-	return result
+import (
+	"context"
+
+	"github.com/Semior001/releaseit/app/git"
+)
+
+// Interface defines methods to retrieve information about repository.
+type Interface interface {
+	// Compare returns comparison between two commits,
+	// given by their SHA.
+	Compare(ctx context.Context, fromSHA, toSHA string) (git.CommitsComparison, error)
+	// ListPRsOfCommit returns pull/merge requests
+	// associated with the commit, given by its SHA.
+	ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullRequest, error)
+	// ListTags returns tags of the repository in descending order of creation.
+	ListTags(ctx context.Context) ([]git.Tag, error)
+	// HeadCommit returns the SHA or alias of the oldest commit in the repository
+	HeadCommit(ctx context.Context) (string, error)
+	// GetLastCommitOfBranch returns the SHA or alias of the last commit in the branch.
+	GetLastCommitOfBranch(ctx context.Context, branch string) (string, error)
 }

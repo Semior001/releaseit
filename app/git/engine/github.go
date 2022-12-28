@@ -41,6 +41,16 @@ func NewGithub(owner, name, basicAuthUsername, basicAuthPassword string, httpCl 
 	return svc, nil
 }
 
+// GetLastCommitOfBranch returns the SHA or alias of the last commit in the branch.
+func (g *Github) GetLastCommitOfBranch(ctx context.Context, branchName string) (string, error) {
+	branch, _, err := g.cl.Repositories.GetBranch(ctx, g.owner, g.name, branchName, true)
+	if err != nil {
+		return "", fmt.Errorf("get branch: %w", err)
+	}
+
+	return branch.GetCommit().GetSHA(), nil
+}
+
 // Compare two commits by their SHA.
 func (g *Github) Compare(ctx context.Context, fromSHA, toSHA string) (git.CommitsComparison, error) {
 	comp, _, err := g.cl.Repositories.CompareCommits(ctx, g.owner, g.name, fromSHA, toSHA)
@@ -64,7 +74,7 @@ func (g *Github) Compare(ctx context.Context, fromSHA, toSHA string) (git.Commit
 func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullRequest, error) {
 	prs, _, err := g.cl.PullRequests.ListPullRequestsWithCommit(ctx, g.owner, g.name, sha, &gh.PullRequestListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("github returned error: %w", err)
+		return nil, fmt.Errorf("list pull requests with commit: %w", err)
 	}
 
 	res := make([]git.PullRequest, len(prs))
@@ -76,11 +86,9 @@ func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			Body:     pr.GetBody(),
 			ClosedAt: pr.GetClosedAt(),
 			Author:   git.User{Username: pr.GetUser().GetLogin(), Email: pr.GetUser().GetEmail()},
-			Labels:   make([]string, len(pr.Labels)),
-		}
-
-		for j, lbl := range pr.Labels {
-			res[i].Labels[j] = lbl.GetName()
+			Labels:   transform(pr.Labels, func(l *gh.Label) string { return l.GetName() }),
+			Branch:   pr.Base.GetRef(),
+			URL:      pr.GetURL(),
 		}
 	}
 
@@ -150,4 +158,15 @@ func (g *Github) commitAuthorToStore(user ghUser) git.User {
 	}
 
 	return res
+}
+
+func transform[T any, V any](initial []T, transform func(T) V) []V {
+	if len(initial) == 0 {
+		return nil
+	}
+	result := make([]V, 0, len(initial))
+	for _, item := range initial {
+		result = append(result, transform(item))
+	}
+	return result
 }

@@ -59,6 +59,16 @@ func (g *Gitlab) Compare(ctx context.Context, fromSHA, toSHA string) (git.Commit
 	}, nil
 }
 
+// GetLastCommitOfBranch returns the SHA or alias of the last commit in the branch.
+func (g *Gitlab) GetLastCommitOfBranch(ctx context.Context, branchName string) (string, error) {
+	branch, _, err := g.cl.Branches.GetBranch(g.projectID, branchName, gl.WithContext(ctx))
+	if err != nil {
+		return "", fmt.Errorf("do request: %w", err)
+	}
+
+	return branch.Commit.ID, nil
+}
+
 // ListPRsOfCommit returns pull requests associated with commit by the given SHA.
 func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullRequest, error) {
 	mrs, _, err := g.cl.Commits.ListMergeRequestsByCommit(g.projectID, sha, gl.WithContext(ctx))
@@ -75,6 +85,8 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			Author:   git.User{Username: lo.FromPtr(mr.Author).Username},
 			Labels:   mr.Labels,
 			ClosedAt: lo.FromPtr(mr.MergedAt),
+			Branch:   mr.SourceBranch,
+			URL:      mr.WebURL,
 		}
 	}
 
