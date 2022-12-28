@@ -23,4 +23,3 @@ template: |
   {{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}} | {{ len .PRs }}
   {{range .PRs}}- [!{{.Number}}]({{.URL}}) {{.Title}} | by @{{.Author}}, closed at {{.ClosedAt.Format "02.01.2006 15:04:05 MST"}}
   {{end}}{{end}}
-empty_template: "- no changes"

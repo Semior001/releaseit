@@ -58,6 +58,7 @@ type prTmplData struct {
 	Title    string
 	Author   string
 	URL      string
+	Branch   string
 	ClosedAt time.Time
 }
 
@@ -68,7 +69,7 @@ func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest)
 		if s.Template == "" {
 			s.Template = defaultTemplate
 		}
-		s.tmpl, err = template.New("changelog").Parse(s.Template)
+		s.tmpl, err = template.New("changelog").Funcs(funcs).Parse(s.Template)
 	})
 	if err != nil {
 		return "", fmt.Errorf("parse template: %w", err)
@@ -99,6 +100,7 @@ func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest)
 					Author:   pr.Author.Username,
 					ClosedAt: pr.ClosedAt,
 					URL:      pr.URL,
+					Branch:   pr.Branch,
 				})
 			}
 		}
@@ -180,4 +182,8 @@ func (s *ReleaseNotesBuilder) sortPRs(prs []prTmplData) {
 			return prs[i].Number < prs[j].Number
 		}
 	})
+}
+
+var funcs = template.FuncMap{
+	"time_LoadLocation": time.LoadLocation,
 }

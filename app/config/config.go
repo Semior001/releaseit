@@ -28,8 +28,6 @@ type Config struct {
 	SortField string `yaml:"sort_field"`
 	// template for a changelog.
 	Template string `yaml:"template"`
-	// template for release with no changes
-	EmptyTemplate string `yaml:"empty_template"`
 	// if set, the unused category will be built under this title at the
 	// end of the changelog
 	UnusedTitle string `yaml:"unused_title"`
@@ -43,10 +41,6 @@ func (c Config) Validate() error {
 
 	if strings.TrimSpace(c.Template) == "" {
 		return errors.New("template is empty")
-	}
-
-	if strings.TrimSpace(c.EmptyTemplate) == "" {
-		return errors.New("template for empty changelog is empty")
 	}
 
 	for _, category := range c.Categories {

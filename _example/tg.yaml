@@ -21,4 +21,3 @@ template: |
   {{.Title}}
   {{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}
   {{end}}{{end}}
-empty_template: "- no changes"
