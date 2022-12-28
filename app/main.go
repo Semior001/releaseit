@@ -38,7 +38,8 @@ func main() {
 		setupLog(opts.Debug)
 
 		if err := cmd.Execute(args); err != nil {
-			log.Printf("[ERROR] failed to execute command %+v", err)
+			log.Printf("[ERROR] failed to execute command: %+v", err)
+			os.Exit(1)
 		}
 		return nil
 	}

@@ -134,11 +134,12 @@ func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
 }
 
 func (s *Service) getCommitSHA(ctx context.Context, expr string) (string, error) {
-	if !strings.HasPrefix(expr, "$") {
+	const exprPrefix = "!!"
+	if !strings.HasPrefix(expr, exprPrefix) {
 		return expr, nil
 	}
 
-	tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(strings.TrimPrefix(expr, "$"))
+	tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(strings.TrimPrefix(expr, exprPrefix))
 	if err != nil {
 		return "", fmt.Errorf("parse expression: %w", err)
 	}

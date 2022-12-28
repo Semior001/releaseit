@@ -41,7 +41,7 @@ func (r Changelog) Execute(_ []string) error {
 	}
 
 	if err = svc.ReleaseBetween(context.Background(), r.From, r.To); err != nil {
-		return fmt.Errorf("release: %w", err)
+		return fmt.Errorf("assemble changelog: %w", err)
 	}
 
 	return nil
