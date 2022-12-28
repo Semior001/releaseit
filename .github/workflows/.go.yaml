@@ -28,7 +28,7 @@ jobs:
       - uses: olegtarasov/get-tag@v2.1.2
         id: tagName
 
-      - name: build and push hugo site
+      - name: build and push image
         id: docker_build
         uses: docker/build-push-action@v2
         with:
