@@ -21,6 +21,7 @@ type NotifyGroup struct {
 	Mattermost   MattermostGroup     `group:"mattermost" namespace:"mattermost" env-namespace:"MATTERMOST"`
 	Stdout       bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
 	ConfLocation string              `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file"`
+	Extras       map[string]string   `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
 }
 
 // GithubNotifierGroup defines parameters to make release in the github.
@@ -126,6 +127,7 @@ func (r *NotifyGroup) ReleaseNotesBuilder() (*service.ReleaseNotesBuilder, error
 		Categories:   make([]service.Category, len(cfg.Categories)),
 		UnusedTitle:  cfg.UnusedTitle,
 		SortField:    cfg.SortField,
+		Extras:       r.Extras,
 	}
 
 	for i, category := range cfg.Categories {

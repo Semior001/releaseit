@@ -28,6 +28,7 @@ type ReleaseNotesBuilder struct {
 	IgnoreLabels []string
 	UnusedTitle  string
 	SortField    string
+	Extras       map[string]string
 
 	tmpl *template.Template
 	once sync.Once
@@ -46,6 +47,7 @@ type changelogTmplData struct {
 	Version    string
 	Categories []categoryTmplData
 	Date       time.Time
+	Extras     map[string]string
 }
 
 type categoryTmplData struct {
@@ -76,7 +78,7 @@ func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest)
 	}
 
 	// building template data
-	data := changelogTmplData{Version: version, Date: time.Now()}
+	data := changelogTmplData{Version: version, Date: time.Now(), Extras: s.Extras}
 
 	usedPRs := make([]bool, len(closedPRs))
 
