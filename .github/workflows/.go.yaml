@@ -31,7 +31,7 @@ jobs:
         with:
           push: true
           context: .
-          tags: ghcr.io/semior001/releaseit:latest,ghcr.io/semior001/releaseit:${{github.sha}}
+          tags: ghcr.io/semior001/releaseit:latest,ghcr.io/semior001/releaseit:${{github.ref}}
 
   test:
     runs-on: ubuntu-latest
