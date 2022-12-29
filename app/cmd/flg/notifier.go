@@ -142,12 +142,12 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 
 func (g PostGroup) empty() bool           { return g.URL == "" }
 func (g MattermostHookGroup) empty() bool { return g.BaseURL == "" || g.ID == "" }
-func (g GithubGroup) empty() bool         { return g.Repo.Owner == "" || g.Repo.Name == "" }
-func (g GithubNotifierGroup) empty() bool { return g.ReleaseNameTemplate == "" || g.GithubGroup.empty() }
 func (g TelegramGroup) empty() bool       { return g.ChatID == "" || g.Token == "" }
-
 func (g MattermostGroup) empty() bool {
 	return g.BaseURL == "" || g.ChannelID == "" || g.LoginID == "" || g.Password == ""
+}
+func (g GithubNotifierGroup) empty() bool {
+	return g.ReleaseNameTemplate == "" || g.Repo.Owner == "" || g.Repo.Name == ""
 }
 
 // ReleaseNotesBuilder builds the release notes builder.

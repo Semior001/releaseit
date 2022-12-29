@@ -29,22 +29,12 @@ type User struct {
 	Email    string
 }
 
-// Empty returns true if user is empty.
-func (u User) Empty() bool {
-	return u.Date.IsZero() && u.Username == "" && u.Email == ""
-}
-
 // Commit represents a repository commit.
 type Commit struct {
 	SHA        string
 	Committer  User
 	Author     User
 	ParentSHAs []string
-}
-
-// Empty returns true if SHA of the commit is not specified.
-func (c Commit) Empty() bool {
-	return c.SHA == ""
 }
 
 // CommitsComparison is the result of comparing two commits.
@@ -57,9 +47,4 @@ type CommitsComparison struct {
 type Tag struct {
 	Name   string
 	Commit Commit
-}
-
-// Empty returns true if the tag is empty.
-func (t Tag) Empty() bool {
-	return t.Name == "" && t.Commit.Empty()
 }
