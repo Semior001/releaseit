@@ -37,7 +37,7 @@ func (g GithubNotifierGroup) build() (notify.Destination, error) {
 		Name:                g.Repo.Name,
 		BasicAuthUsername:   g.BasicAuth.Username,
 		BasicAuthPassword:   g.BasicAuth.Password,
-		HTTPClient:          http.Client{Timeout: 5 * time.Second},
+		HTTPClient:          http.Client{Timeout: g.Timeout},
 		ReleaseNameTmplText: g.ReleaseNameTemplate,
 	})
 }
@@ -49,16 +49,17 @@ func (g GithubNotifierGroup) Empty() bool {
 
 // TelegramGroup defines parameters for telegram notifier.
 type TelegramGroup struct {
-	ChatID         string `long:"chat_id" env:"CHAT_ID" description:"id of the chat, where the release notes will be sent"`
-	Token          string `long:"token" env:"TOKEN" description:"bot token"`
-	WebPagePreview bool   `long:"web_page_preview" env:"WEB_PAGE_PREVIEW" description:"request telegram to preview for web links"`
+	ChatID         string        `long:"chat_id" env:"CHAT_ID" description:"id of the chat, where the release notes will be sent"`
+	Token          string        `long:"token" env:"TOKEN" description:"bot token"`
+	WebPagePreview bool          `long:"web_page_preview" env:"WEB_PAGE_PREVIEW" description:"request telegram to preview for web links"`
+	Timeout        time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
 func (g TelegramGroup) build() (notify.Destination, error) {
 	return notify.NewTelegram(notify.TelegramParams{
 		Log:                   log.Default(),
 		ChatID:                g.ChatID,
-		Client:                http.Client{Timeout: 5 * time.Second},
+		Client:                http.Client{Timeout: g.Timeout},
 		Token:                 g.Token,
 		DisableWebPagePreview: !g.WebPagePreview,
 	}), nil
@@ -71,16 +72,17 @@ func (g TelegramGroup) Empty() bool {
 
 // MattermostGroup defines parameters for mattermost notifier.
 type MattermostGroup struct {
-	BaseURL   string `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
-	ChannelID string `long:"channel_id" env:"CHANNEL_ID" description:"id of the channel, where the release notes will be sent"`
-	LoginID   string `long:"login_id" env:"LOGIN_ID" description:"login id of the user, who will send the release notes"`
-	Password  string `long:"password" env:"PASSWORD" description:"password of the user, who will send the release notes"`
-	LDAP      bool   `long:"ldap" env:"LDAP" description:"use ldap auth"`
+	BaseURL   string        `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
+	ChannelID string        `long:"channel_id" env:"CHANNEL_ID" description:"id of the channel, where the release notes will be sent"`
+	LoginID   string        `long:"login_id" env:"LOGIN_ID" description:"login id of the user, who will send the release notes"`
+	Password  string        `long:"password" env:"PASSWORD" description:"password of the user, who will send the release notes"`
+	LDAP      bool          `long:"ldap" env:"LDAP" description:"use ldap auth"`
+	Timeout   time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
 func (g MattermostGroup) build() (notify.Destination, error) {
 	return notify.NewMattermostBot(notify.MattermostBotParams{
-		Client:    http.Client{Timeout: 5 * time.Second},
+		Client:    http.Client{Timeout: g.Timeout},
 		BaseURL:   g.BaseURL,
 		ChannelID: g.ChannelID,
 		LoginID:   g.LoginID,
@@ -96,13 +98,14 @@ func (g MattermostGroup) Empty() bool {
 
 // MattermostHookGroup defines parameters for mattermost hook notifier.
 type MattermostHookGroup struct {
-	BaseURL string `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
-	ID      string `long:"id" env:"ID" description:"id of the hook, where the release notes will be sent"`
+	BaseURL string        `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
+	ID      string        `long:"id" env:"ID" description:"id of the hook, where the release notes will be sent"`
+	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
 func (g MattermostHookGroup) build() (notify.Destination, error) {
 	return notify.NewMattermostHook(
-		http.Client{Timeout: 5 * time.Second},
+		http.Client{Timeout: g.Timeout},
 		g.BaseURL,
 		g.ID,
 	), nil

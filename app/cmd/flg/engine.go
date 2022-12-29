@@ -25,14 +25,14 @@ func (r EngineGroup) Build() (engine.Interface, error) {
 			r.Github.Repo.Name,
 			r.Github.BasicAuth.Username,
 			r.Github.BasicAuth.Password,
-			http.Client{Timeout: 5 * time.Second},
+			http.Client{Timeout: r.Github.Timeout},
 		)
 	case "gitlab":
 		return engine.NewGitlab(
 			r.Gitlab.Token,
 			r.Gitlab.BaseURL,
 			r.Gitlab.ProjectID,
-			http.Client{Timeout: 5 * time.Second},
+			http.Client{Timeout: r.Gitlab.Timeout},
 		)
 	}
 	return nil, fmt.Errorf("unsupported repository engine type %s", r.Type)
@@ -48,6 +48,7 @@ type GithubGroup struct {
 		Username string `long:"username" env:"USERNAME" description:"username for basic auth"`
 		Password string `long:"password" env:"PASSWORD" description:"password for basic auth"`
 	} `group:"basic_auth" namespace:"basic_auth" env-namespace:"BASIC_AUTH"`
+	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
 // Empty returns true if the argument group is empty.
@@ -57,7 +58,8 @@ func (g GithubGroup) Empty() bool {
 
 // GitlabGroup defines parameters to connect to the gitlab repository.
 type GitlabGroup struct {
-	Token     string `long:"token" env:"TOKEN" description:"token to connect to the gitlab repository"`
-	BaseURL   string `long:"base_url" env:"BASE_URL" description:"base url of the gitlab instance"`
-	ProjectID string `long:"project_id" env:"PROJECT_ID" description:"project id of the repository"`
+	Token     string        `long:"token" env:"TOKEN" description:"token to connect to the gitlab repository"`
+	BaseURL   string        `long:"base_url" env:"BASE_URL" description:"base url of the gitlab instance"`
+	ProjectID string        `long:"project_id" env:"PROJECT_ID" description:"project id of the repository"`
+	Timeout   time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
