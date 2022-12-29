@@ -31,6 +31,17 @@ type GithubNotifierGroup struct {
 	ReleaseNameTemplate string `long:"release_name_tmpl" env:"RELEASE_NAME_TMPL" description:"template for release name"`
 }
 
+func (g GithubNotifierGroup) build() (notify.Destination, error) {
+	return notify.NewGithub(notify.GithubParams{
+		Owner:               g.Repo.Owner,
+		Name:                g.Repo.Name,
+		BasicAuthUsername:   g.BasicAuth.Username,
+		BasicAuthPassword:   g.BasicAuth.Password,
+		HTTPClient:          http.Client{Timeout: 5 * time.Second},
+		ReleaseNameTmplText: g.ReleaseNameTemplate,
+	})
+}
+
 // Empty returns true if the argument group is empty.
 func (g GithubNotifierGroup) Empty() bool {
 	return g.ReleaseNameTemplate == "" || g.GithubGroup.Empty()
@@ -41,6 +52,16 @@ type TelegramGroup struct {
 	ChatID         string `long:"chat_id" env:"CHAT_ID" description:"id of the chat, where the release notes will be sent"`
 	Token          string `long:"token" env:"TOKEN" description:"bot token"`
 	WebPagePreview bool   `long:"web_page_preview" env:"WEB_PAGE_PREVIEW" description:"request telegram to preview for web links"`
+}
+
+func (g TelegramGroup) build() (notify.Destination, error) {
+	return notify.NewTelegram(notify.TelegramParams{
+		Log:                   log.Default(),
+		ChatID:                g.ChatID,
+		Client:                http.Client{Timeout: 5 * time.Second},
+		Token:                 g.Token,
+		DisableWebPagePreview: !g.WebPagePreview,
+	}), nil
 }
 
 // Empty returns true if the config group is not filled.
@@ -57,6 +78,17 @@ type MattermostGroup struct {
 	LDAP      bool   `long:"ldap" env:"LDAP" description:"use ldap auth"`
 }
 
+func (g MattermostGroup) build() (notify.Destination, error) {
+	return notify.NewMattermostBot(notify.MattermostBotParams{
+		Client:    http.Client{Timeout: 5 * time.Second},
+		BaseURL:   g.BaseURL,
+		ChannelID: g.ChannelID,
+		LoginID:   g.LoginID,
+		Password:  g.Password,
+		LDAP:      g.LDAP,
+	})
+}
+
 // Empty returns true if the config group is not filled.
 func (g MattermostGroup) Empty() bool {
 	return g.BaseURL == "" || g.ChannelID == "" || g.LoginID == "" || g.Password == ""
@@ -68,6 +100,14 @@ type MattermostHookGroup struct {
 	ID      string `long:"id" env:"ID" description:"id of the hook, where the release notes will be sent"`
 }
 
+func (g MattermostHookGroup) build() (notify.Destination, error) {
+	return notify.NewMattermostHook(
+		http.Client{Timeout: 5 * time.Second},
+		g.BaseURL,
+		g.ID,
+	), nil
+}
+
 // Empty returns true if the config group is not filled.
 func (g MattermostHookGroup) Empty() bool {
 	return g.BaseURL == "" || g.ID == ""
@@ -75,66 +115,32 @@ func (g MattermostHookGroup) Empty() bool {
 
 // Build builds the notifier.
 func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
-	logger := log.Default()
-
 	if r.Stdout {
 		destinations = append(destinations, &notify.WriterNotifier{Writer: os.Stdout, Name: "stdout"})
-		log.Printf("[INFO] printing notes to stdout is enabled")
 	}
 
-	if !r.Telegram.Empty() {
-		destinations = append(destinations, notify.NewTelegram(notify.TelegramParams{
-			Log:                   logger,
-			ChatID:                r.Telegram.ChatID,
-			Client:                http.Client{Timeout: 5 * time.Second},
-			Token:                 r.Telegram.Token,
-			DisableWebPagePreview: !r.Telegram.WebPagePreview,
-		}))
-		log.Printf("[INFO] telegram notifier is enabled")
-	}
-
-	if !r.Github.Empty() {
-		gh, err := notify.NewGithub(notify.GithubParams{
-			Owner:               r.Github.Repo.Owner,
-			Name:                r.Github.Repo.Name,
-			BasicAuthUsername:   r.Github.BasicAuth.Username,
-			BasicAuthPassword:   r.Github.BasicAuth.Password,
-			HTTPClient:          http.Client{Timeout: 5 * time.Second},
-			ReleaseNameTmplText: r.Github.ReleaseNameTemplate,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("make github relases notifier: %w", err)
+	for _, d := range []struct {
+		name  string
+		empty bool
+		build func() (notify.Destination, error)
+	}{
+		{name: "telegram", empty: r.Telegram.Empty(), build: r.Telegram.build},
+		{name: "github", empty: r.Github.Empty(), build: r.Github.build},
+		{name: "mattermost", empty: r.Mattermost.Empty(), build: r.Mattermost.build},
+		{name: "mattermost-hook", empty: r.MattermostHook.Empty(), build: r.MattermostHook.build},
+	} {
+		if d.empty {
+			continue
 		}
 
-		destinations = append(destinations, gh)
-		log.Printf("[INFO] github releases notifier is enabled")
-	}
-
-	if !r.Mattermost.Empty() {
-		mm, err := notify.NewMattermostBot(notify.MattermostBotParams{
-			Client:    http.Client{Timeout: 5 * time.Second},
-			BaseURL:   r.Mattermost.BaseURL,
-			ChannelID: r.Mattermost.ChannelID,
-			LoginID:   r.Mattermost.LoginID,
-			Password:  r.Mattermost.Password,
-			LDAP:      r.Mattermost.LDAP,
-		})
+		dest, err := d.build()
 		if err != nil {
-			return nil, fmt.Errorf("make mattermost notifier: %w", err)
+			return nil, fmt.Errorf("failed to build %s notifier: %w", d.name, err)
 		}
-
-		destinations = append(destinations, mm)
-		log.Printf("[INFO] mattermost bot notifier is enabled")
+		destinations = append(destinations, dest)
 	}
 
-	if !r.MattermostHook.Empty() {
-		destinations = append(destinations, notify.NewMattermostHook(
-			http.Client{Timeout: 5 * time.Second},
-			r.MattermostHook.BaseURL,
-			r.MattermostHook.ID,
-		))
-		log.Printf("[INFO] mattermost hook notifier is enabled")
-	}
+	log.Printf("[INFO] initialized %d notifiers: %s", len(destinations), destinations.String())
 
 	return destinations, nil
 }
