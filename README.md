@@ -36,13 +36,9 @@ Help Options:
 
     basic_auth:
           --engine.github.basic_auth.username= username for basic auth
-                                               [$ENGINE_GITHUB_BASIC_AUTH_USERN-
-
-                                               AME]
+                                               [$ENGINE_GITHUB_BASIC_AUTH_USERNAME]
           --engine.github.basic_auth.password= password for basic auth
-                                               [$ENGINE_GITHUB_BASIC_AUTH_PASSW-
-
-                                               ORD]
+                                               [$ENGINE_GITHUB_BASIC_AUTH_PASSWORD]
 
     gitlab:
           --engine.gitlab.token=               token to connect to the gitlab
@@ -59,22 +55,16 @@ Help Options:
                                                [$NOTIFY_CONF_LOCATION]
 
     telegram:
-          --notify.telegram.chat_id=           id of the chat, where the
-                                               release notes will be sent
+          --notify.telegram.chat_id=           id of the chat, where the release notes will be sent
                                                [$NOTIFY_TELEGRAM_CHAT_ID]
           --notify.telegram.token=             bot token
                                                [$NOTIFY_TELEGRAM_TOKEN]
-          --notify.telegram.web_page_preview   request telegram to preview for
-                                               web links
-                                               [$NOTIFY_TELEGRAM_WEB_PAGE_PREVI-
-
-                                               EW]
+          --notify.telegram.web_page_preview   request telegram to preview for web links
+                                               [$NOTIFY_TELEGRAM_WEB_PAGE_PREVIEW]
 
     github:
           --notify.github.release_name_tmpl=   template for release name
-                                               [$NOTIFY_GITHUB_RELEASE_NAME_TMP-
-
-                                               L]
+                                               [$NOTIFY_GITHUB_RELEASE_NAME_TMPL]
 
     repo:
           --notify.github.repo.owner=          owner of the repository
@@ -84,29 +74,27 @@ Help Options:
 
     basic_auth:
           --notify.github.basic_auth.username= username for basic auth
-                                               [$NOTIFY_GITHUB_BASIC_AUTH_USERN-
-
-                                               AME]
+                                               [$NOTIFY_GITHUB_BASIC_AUTH_USERNAME]
           --notify.github.basic_auth.password= password for basic auth
-                                               [$NOTIFY_GITHUB_BASIC_AUTH_PASSW-
-
-                                               ORD]
+                                               [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
 
     mattermost:
-          --notify.mattermost.base_url=        base url of the mattermost
-                                               server
+          --notify.mattermost.base_url=        base url of the mattermost server
                                                [$NOTIFY_MATTERMOST_BASE_URL]
-          --notify.mattermost.channel_id=      id of the channel, where the
-                                               release notes will be sent
+          --notify.mattermost.channel_id=      id of the channel, where the release notes will be sent
                                                [$NOTIFY_MATTERMOST_CHANNEL_ID]
-          --notify.mattermost.login_id=        login id of the user, who will
-                                               send the release notes
+          --notify.mattermost.login_id=        login id of the user, who will send the release notes
                                                [$NOTIFY_MATTERMOST_LOGIN_ID]
-          --notify.mattermost.password=        password of the user, who will
-                                               send the release notes
+          --notify.mattermost.password=        password of the user, who will send the release notes
                                                [$NOTIFY_MATTERMOST_PASSWORD]
           --notify.mattermost.ldap             use ldap auth
                                                [$NOTIFY_MATTERMOST_LDAP]
+
+    mattermost-hook:
+          --notify.mattermost-hook.base_url=   base url of the mattermost server
+                                               [$NOTIFY_MATTERMOST_HOOK_BASE_URL]
+          --notify.mattermost-hook.id=         id of the hook, where the release notes will be sent
+                                               [$NOTIFY_MATTERMOST_HOOK_ID]
 ```
 
 </details>

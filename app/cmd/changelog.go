@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/Semior001/releaseit/app/cmd/flg"
 	"github.com/Semior001/releaseit/app/service"
@@ -11,10 +12,11 @@ import (
 // Changelog builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type Changelog struct {
-	From   string          `long:"from" env:"FROM" description:"sha to start release notes from" required:"true"`
-	To     string          `long:"to" env:"TO" description:"sha to end release notes to" required:"true"`
-	Engine flg.EngineGroup `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
-	Notify flg.NotifyGroup `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
+	From    string          `long:"from" env:"FROM" description:"sha to start release notes from" required:"true"`
+	To      string          `long:"to" env:"TO" description:"sha to end release notes to" required:"true"`
+	Timeout time.Duration   `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`
+	Engine  flg.EngineGroup `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
+	Notify  flg.NotifyGroup `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
 }
 
 // Execute the release-notes command.
@@ -40,7 +42,10 @@ func (r Changelog) Execute(_ []string) error {
 		Notifier:            notif,
 	}
 
-	if err = svc.ReleaseBetween(context.Background(), r.From, r.To); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	if err = svc.ReleaseBetween(ctx, r.From, r.To); err != nil {
 		return fmt.Errorf("assemble changelog: %w", err)
 	}
 

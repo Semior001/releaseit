@@ -113,11 +113,6 @@ func (g *Gitlab) ListTags(ctx context.Context) ([]git.Tag, error) {
 	return res, nil
 }
 
-// HeadCommit returns the alias of the oldest commit in the repository
-func (g *Gitlab) HeadCommit(_ context.Context) (string, error) {
-	return "HEAD", nil
-}
-
 func (g *Gitlab) commitToStore(commit *gl.Commit) git.Commit {
 	return git.Commit{
 		SHA: commit.ID,

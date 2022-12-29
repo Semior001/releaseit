@@ -17,8 +17,6 @@ type Interface interface {
 	ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullRequest, error)
 	// ListTags returns tags of the repository in descending order of creation.
 	ListTags(ctx context.Context) ([]git.Tag, error)
-	// HeadCommit returns the SHA or alias of the oldest commit in the repository
-	HeadCommit(ctx context.Context) (string, error)
 	// GetLastCommitOfBranch returns the SHA or alias of the last commit in the branch.
 	GetLastCommitOfBranch(ctx context.Context, branch string) (string, error)
 }
