@@ -51,11 +51,6 @@ type GithubGroup struct {
 	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
-// Empty returns true if the argument group is empty.
-func (g GithubGroup) Empty() bool {
-	return g.Repo.Owner == "" || g.Repo.Name == ""
-}
-
 // GitlabGroup defines parameters to connect to the gitlab repository.
 type GitlabGroup struct {
 	Token     string        `long:"token" env:"TOKEN" description:"token to connect to the gitlab repository"`
