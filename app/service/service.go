@@ -1,3 +1,4 @@
+// Package service provides the core functionality of the application.
 package service
 
 import (
@@ -10,13 +11,14 @@ import (
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/notify"
+	"github.com/Semior001/releaseit/app/service/notes"
 	"github.com/samber/lo"
 )
 
 // Service wraps repository storage and services
 type Service struct {
 	Engine              engine.Interface
-	ReleaseNotesBuilder *ReleaseNotesBuilder
+	ReleaseNotesBuilder *notes.Builder
 	Notifier            notify.Destination
 }
 

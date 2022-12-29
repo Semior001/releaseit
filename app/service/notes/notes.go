@@ -1,6 +1,6 @@
-// Package service wraps engine interfaces with common logic
+// Package notes wraps engine interfaces with common logic
 // unrelated to any particular engine implementation.
-package service
+package notes
 
 import (
 	"bytes"
@@ -21,17 +21,25 @@ const defaultTemplate = `Version {{.Version}}
 {{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}{{end}}
 {{end}}`
 
-// ReleaseNotesBuilder provides methods to form changelog.
-type ReleaseNotesBuilder struct {
-	Template     string
-	Categories   []Category
-	IgnoreLabels []string
-	UnusedTitle  string
-	SortField    string
-	Extras       map[string]string
+// Builder provides methods to form changelog.
+type Builder struct {
+	config
+	Extras map[string]string
 
 	tmpl *template.Template
 	once sync.Once
+}
+
+// NewBuilder creates a new Builder.
+func NewBuilder(cfgPath string, extras map[string]string) (*Builder, error) {
+	cfg, err := readCfg(cfgPath)
+	if err != nil {
+		return nil, fmt.Errorf("read config: %w", err)
+	}
+
+	svc := &Builder{Extras: extras, config: cfg}
+
+	return svc, nil
 }
 
 // Category describes pull request category with its title,
@@ -65,7 +73,7 @@ type prTmplData struct {
 }
 
 // Build builds the changelog for the tag.
-func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest) (string, error) {
+func (s *Builder) Build(version string, closedPRs []git.PullRequest) (string, error) {
 	var err error
 	s.once.Do(func() {
 		if s.Template == "" {
@@ -91,7 +99,7 @@ func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest)
 				continue
 			}
 
-			hasBranchPrefix := category.BranchRegexp != nil && category.BranchRegexp.MatchString(pr.Branch)
+			hasBranchPrefix := category.branchRe != nil && category.branchRe.MatchString(pr.Branch)
 			hasAnyOfLabels := len(lo.Intersect(pr.Labels, category.Labels)) > 0
 
 			if hasAnyOfLabels || hasBranchPrefix {
@@ -131,7 +139,7 @@ func (s *ReleaseNotesBuilder) Build(version string, closedPRs []git.PullRequest)
 	return buf.String(), nil
 }
 
-func (s *ReleaseNotesBuilder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) categoryTmplData {
+func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) categoryTmplData {
 	category := categoryTmplData{Title: s.UnusedTitle}
 
 	for i, pr := range prs {
@@ -151,7 +159,7 @@ func (s *ReleaseNotesBuilder) makeUnlabeledCategory(used []bool, prs []git.PullR
 	return category
 }
 
-func (s *ReleaseNotesBuilder) sortPRs(prs []prTmplData) {
+func (s *Builder) sortPRs(prs []prTmplData) {
 	sort.Slice(prs, func(i, j int) bool {
 		switch s.SortField {
 		case "+number", "-number", "number":
