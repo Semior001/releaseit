@@ -16,6 +16,7 @@ import (
 type Opts struct {
 	ReleaseNotes cmd.ReleaseNotes `command:"release"      description:"build release notes for a particular tag"`
 	Changelog    cmd.Changelog    `command:"changelog"    description:"build release notes for a pair of commits"`
+	Preview      cmd.Preview      `command:"preview"      description:"preview release notes with data read from file"`
 	Debug        bool             `long:"dbg" env:"DEBUG" description:"turn on debug mode"`
 }
 

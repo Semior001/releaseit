@@ -19,7 +19,7 @@ type NotifyGroup struct {
 	MattermostHook MattermostHookGroup `group:"mattermost-hook" namespace:"mattermost-hook" env-namespace:"MATTERMOST_HOOK"`
 	Post           PostGroup           `group:"post" namespace:"post" env-namespace:"POST"`
 	Stdout         bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
-	ConfLocation   string              `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file"`
+	ConfLocation   string              `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
 	Extras         map[string]string   `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
 }
 
