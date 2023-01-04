@@ -13,31 +13,33 @@ import (
 
 // Preview command prints the release notes to stdout.
 type Preview struct {
-	Version  string `long:"version" env:"VERSION" description:"version to be released" required:"true"`
-	DataFile string `long:"data-file" env:"DATA_FILE" description:"path to the file with release data" required:"true"`
-
-	ConfLocation string            `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
-	Extras       map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
+	DataFile     string `long:"data-file" env:"DATA_FILE" description:"path to the file with release data" required:"true"`
+	ConfLocation string `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
 }
 
 // Execute prints the release notes to stdout.
 func (p Preview) Execute(_ []string) error {
-	builder, err := notes.NewBuilder(p.ConfLocation, p.Extras)
-	if err != nil {
-		return fmt.Errorf("prepare release notes builder: %w", err)
-	}
-
-	data, err := os.ReadFile(p.DataFile)
+	f, err := os.ReadFile(p.DataFile)
 	if err != nil {
 		return fmt.Errorf("read data file: %w", err)
 	}
 
-	var prs []git.PullRequest
-	if err = yaml.Unmarshal(data, &prs); err != nil {
+	var data struct {
+		Version      string            `yaml:"version"`
+		Extras       map[string]string `yaml:"extras"`
+		PullRequests []git.PullRequest `yaml:"pull_requests"`
+	}
+
+	if err = yaml.Unmarshal(f, &data); err != nil {
 		return fmt.Errorf("unmarshal data: %w", err)
 	}
 
-	rn, err := builder.Build(p.Version, prs)
+	builder, err := notes.NewBuilder(p.ConfLocation, data.Extras)
+	if err != nil {
+		return fmt.Errorf("prepare release notes builder: %w", err)
+	}
+
+	rn, err := builder.Build(data.Version, data.PullRequests)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)
 	}

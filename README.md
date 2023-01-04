@@ -16,10 +16,8 @@ Help Options:
   -h, --help                                   Show this help message
 
 [preview command options]
-          --version=                           version to be released [$VERSION]
           --data-file=                         path to the file with release data [$DATA_FILE]
           --conf_location=                     location to the config file [$CONF_LOCATION]
-          --extras=                            extra variables to use in the template [$EXTRAS]
 
 [changelog command options]
           --from=                              sha to start release notes from [$FROM]
@@ -82,13 +80,39 @@ Help Options:
 **Note**: `from` and `to` options of `changelog` command accept expressions, which must be written in gotemplate manner,
 and the whole expressions should start from `!!` prefix.
 
-You can see [examples](_example) for configuration and preview data templates.
-
 Example (from .env file): `TO='${{ last_commit "develop" }}'`
 
 Supported functions:
 - `last_commit(branch_name)`
 - `head`
+
+## Preview data file structure
+```go
+var data struct {
+    Version      string            `yaml:"version"`
+    Extras       map[string]string `yaml:"extras"`
+    PullRequests []git.PullRequest `yaml:"pull_requests"`
+}
+
+type PullRequest struct {
+    Number   int       `yaml:"number"`
+    Title    string    `yaml:"title"`
+    Body     string    `yaml:"body"`
+    Author   User      `yaml:"author"`
+    Labels   []string  `yaml:"labels"`
+    ClosedAt time.Time `yaml:"closed_at"`
+    Branch   string    `yaml:"branch"`
+    URL      string    `yaml:"url"`
+}
+
+type User struct {
+    Date     time.Time `yaml:"date"`
+    Username string    `yaml:"username"`
+    Email    string    `yaml:"email"`
+}
+```
+
+See [example](_example/preview_data.yaml) for details.
 
 ## Release notes builder configuration
 | Name              | Description                                                                                                                                             |
@@ -102,37 +126,6 @@ Supported functions:
 | template          | Template for a changelog in golang's text template language                                                                                             |
 | empty_template    | Template for release with no changes                                                                                                                    |
 | unused_title      | If set, the unused category will be built under this title at the end of the changelog                                                                  |
-
-## Example release notes builder configuration
-
-```yaml
-categories:
-  - title: "## 🚀 Features"
-    branch: "^(feat|feature)/"
-    labels:
-      - "feature"
-  - title: "## 🐛 Fixes"
-    branch: "^fix/"
-    labels:
-      - "fix"
-  - title: "## 🧰 Maintenance"
-    branch: "^chore/"
-    labels:
-      - "maintenance"
-unused_title: "## ❓ Unlabeled"
-ignore_labels:
-  - "ignore"
-sort_field: "-number"
-template: |
-  Project: Example release config
-  Development area: Backend
-  Version {{.Version}}
-  Date: {{.Date.Format "Jan 02, 2006 15:04:05 UTC"}}
-  {{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}} | {{ len .PRs }}
-  {{range .PRs}}- [!{{.Number}}]({{.URL}}) {{.Title}} | by @{{.Author}}, closed at {{.ClosedAt.Format "02.01.2006 15:04:05 MST"}}
-  {{end}}{{end}}
-empty_template: "- no changes"
-```
 
 ## Template variables for release notes builder
 
@@ -156,3 +149,5 @@ The golang's [text/template package](https://pkg.go.dev/text/template) is used f
 | Name         | Description             | Example |
 |--------------|-------------------------|---------|
 | {{.TagName}} | Tag name of the release | v1.0.0  |
+
+See [example](_example/config.yaml) for more details.
