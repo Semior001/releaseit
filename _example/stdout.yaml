@@ -18,6 +18,7 @@ sort_field: "-number"
 template: |
   Project: Example release config
   Development area: Backend
+  Pipeline: ({{ index .Extras "PIPELINE_URL" }})
   Version {{.Version}}
   Date: {{.Date.Format "Jan 02, 2006 15:04:05 UTC"}}
   {{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}} | {{ len .PRs }}

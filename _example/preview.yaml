@@ -1,0 +1,40 @@
+- number: 1
+  title: "[T-123] Added new feature"
+  body: |
+    Feature includes lorem ipsum dolor sit amet, consectetur adipiscing elit,
+    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+  author:
+    date: "2021-01-01T00:00:00Z"
+    username: "semior001"
+    email: "mail@example.com"
+  labels:
+    - "feature"
+  closed_at: "2021-01-01T01:00:00Z"
+  branch: "feature/T-123"
+  url: "github.com/user/repo/pull/1"
+- number: 2
+  title: "[FIX-125] Fixed bug"
+  body: |
+    Bugfix includes lorem ipsum dolor sit amet, consectetur adipiscing elit,
+    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+  author:
+    date: "2021-01-03T00:00:00Z"
+    username: "vasyapupkin"
+    email: "vasiliy@example.com"
+  labels: []
+  closed_at: "2021-01-03T01:00:00Z"
+  branch: "fix/T-123"
+  url: "github.com/user/repo/pull/2"
+- number: 3
+  title: "[CHORE-123] Fixed bug"
+  body: |
+    Bugfix includes lorem ipsum dolor sit amet, consectetur adipiscing elit,
+    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+  author:
+    date: "2021-01-04T00:00:00Z"
+    username: "vasyapupkin"
+    email: "vasiliy@example.com"
+  labels: []
+  closed_at: "2021-01-04T01:00:00Z"
+  branch: "chore/T-123"
+  url: "github.com/user/repo/pull/3"

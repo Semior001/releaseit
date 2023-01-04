@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/notify"
 	"github.com/Semior001/releaseit/app/service/notes"
+	"gopkg.in/yaml.v3"
 )
 
 // Preview command prints the release notes to stdout.
@@ -33,7 +33,7 @@ func (p Preview) Execute(_ []string) error {
 	}
 
 	var prs []git.PullRequest
-	if err = json.Unmarshal(data, &prs); err != nil {
+	if err = yaml.Unmarshal(data, &prs); err != nil {
 		return fmt.Errorf("unmarshal data: %w", err)
 	}
 
