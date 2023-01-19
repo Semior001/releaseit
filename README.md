@@ -142,7 +142,9 @@ See [example](_example/preview_data.yaml) for details.
 | {{.Categories.PRs.ClosedAt}} | Timestamp, when the pull request was closed (might be empty) | Jan 02, 2006 15:04:05 UTC                       |
 | {{.Categories.PRs.URL}}      | URL to the pull request                                      | `https://github.com/Semior001/releaseit/pull/6` |
 
-The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes.
+The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes. 
+It also imports functions from [sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) library in 
+order to provide common used template functions.
 
 ## (Github) Template variables for release title
 

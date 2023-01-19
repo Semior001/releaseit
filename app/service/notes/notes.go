@@ -12,6 +12,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/Masterminds/sprig"
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/samber/lo"
 )
@@ -79,7 +80,12 @@ func (s *Builder) Build(version string, closedPRs []git.PullRequest) (string, er
 		if s.Template == "" {
 			s.Template = defaultTemplate
 		}
-		s.tmpl, err = template.New("changelog").Funcs(funcs).Parse(s.Template)
+		s.tmpl, err = template.New("changelog").
+			Funcs(lo.Assign(
+				lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"}),
+				funcs,
+			)).
+			Parse(s.Template)
 	})
 	if err != nil {
 		return "", fmt.Errorf("parse template: %w", err)
