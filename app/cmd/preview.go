@@ -8,13 +8,15 @@ import (
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/notify"
 	"github.com/Semior001/releaseit/app/service/notes"
+	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
 )
 
 // Preview command prints the release notes to stdout.
 type Preview struct {
-	DataFile     string `long:"data-file" env:"DATA_FILE" description:"path to the file with release data" required:"true"`
-	ConfLocation string `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
+	DataFile     string            `long:"data-file" env:"DATA_FILE" description:"path to the file with release data" required:"true"`
+	Extras       map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template, will be merged (env primary) with ones in the config file"`
+	ConfLocation string            `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
 }
 
 // Execute prints the release notes to stdout.
@@ -34,7 +36,7 @@ func (p Preview) Execute(_ []string) error {
 		return fmt.Errorf("unmarshal data: %w", err)
 	}
 
-	builder, err := notes.NewBuilder(p.ConfLocation, data.Extras)
+	builder, err := notes.NewBuilder(p.ConfLocation, lo.Assign(data.Extras, p.Extras))
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}

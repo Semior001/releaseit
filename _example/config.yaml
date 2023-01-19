@@ -1,26 +1,34 @@
 categories:
-  - title: "## 🚀 Features"
+  - title: "**🚀 Features**"
     branch: "^(feat|feature)/"
-    labels:
-      - "feature"
-  - title: "## 🐛 Fixes"
+  - title: "**🐛 Fixes**"
     branch: "^fix/"
-    labels:
-      - "fix"
-  - title: "## 🧰 Maintenance"
+  - title: "**🔧 Maintenance**"
     branch: "^chore/"
-    labels:
-      - "maintenance"
-unused_title: "## ❓ Unlabeled"
-ignore_labels:
-  - "ignore"
-sort_field: "-number"
+  - title: "**🔄 Intermediate features/fixes (merged into other branches)**"
+    branch: "^ref/"
+unused_title: "**❓ Unlabeled**"
+ignore_labels: ["ignore"]
+sort_field: "+closed"
 template: |
-  Project: Example release config
+  {{ $msk := (time_LoadLocation "Europe/Moscow") }}### Release {{(.Date.In $msk).Format "Jan 02, 2006 15:04:05"}}
+  Project: [{{ index .Extras "PROJECT_NAME" }}]({{ index .Extras "PROJECT_URL" }})
   Development area: Backend
-  Pipeline: ({{ index .Extras "PIPELINE_URL" }})
-  Version {{.Version}}
-  Date: {{.Date.Format "Jan 02, 2006 15:04:05 UTC"}}
-  {{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}} | {{ len .PRs }}
-  {{range .PRs}}- [!{{.Number}}]({{.URL}}) {{.Title}} | by @{{.Author}}, closed at {{.ClosedAt.Format "02.01.2006 15:04:05 MST"}}
-  {{end}}{{end}}
+  Version: {{.Version}}
+  [Pipeline]({{ index .Extras "PIPELINE_URL" }})
+  {{if not .Categories}}- Changes were not endured into MRs{{end -}}
+  {{- range .Categories}}
+  {{.Title}} - {{ len .PRs }} MRs merged
+    {{ range .PRs }}
+      {{- $taskNum := "" -}}
+      {{- $taskTitle := .Title -}}
+      {{- $tokens := ((regexp_Compile "^\\[(\\w+-\\d+)\\]").FindStringSubmatch .Title) -}}
+      {{- if $tokens -}}
+        {{- $taskNum = (index $tokens 1) -}}
+        {{- $taskTitle = (strings_TrimPrefix .Title (printf "[%s] " $taskNum)) -}}
+      {{- end -}}
+      - {{ if (not (eq $taskNum "")) -}} [[{{$taskNum}}](https://jira.sbercloud.tech/browse/{{$taskNum}})] {{ end -}}
+          {{$taskTitle}} ([!{{.Number}}]({{.URL}})) merged at {{(.ClosedAt.In $msk).Format "02.01.2006 15:04:05"}} by @{{.Author}}
+    {{end}}
+  {{ end -}}
+
