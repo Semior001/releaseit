@@ -35,6 +35,7 @@ type Commit struct {
 	Committer  User
 	Author     User
 	ParentSHAs []string
+	Message    string
 }
 
 // CommitsComparison is the result of comparing two commits.

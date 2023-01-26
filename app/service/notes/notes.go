@@ -53,10 +53,11 @@ type Category struct {
 }
 
 type changelogTmplData struct {
-	Version    string
-	Categories []categoryTmplData
-	Date       time.Time
-	Extras     map[string]string
+	Version        string
+	FromSHA, ToSHA string
+	Categories     []categoryTmplData
+	Date           time.Time
+	Extras         map[string]string
 }
 
 type categoryTmplData struct {
@@ -73,8 +74,16 @@ type prTmplData struct {
 	ClosedAt time.Time
 }
 
+// BuildRequest is a request for changelog building.
+type BuildRequest struct {
+	Version   string
+	FromSHA   string
+	ToSHA     string
+	ClosedPRs []git.PullRequest
+}
+
 // Build builds the changelog for the tag.
-func (s *Builder) Build(version string, closedPRs []git.PullRequest) (string, error) {
+func (s *Builder) Build(req BuildRequest) (string, error) {
 	var err error
 	s.once.Do(func() {
 		if s.Template == "" {
@@ -92,14 +101,20 @@ func (s *Builder) Build(version string, closedPRs []git.PullRequest) (string, er
 	}
 
 	// building template data
-	data := changelogTmplData{Version: version, Date: time.Now(), Extras: s.Extras}
+	data := changelogTmplData{
+		Version: req.Version,
+		FromSHA: req.FromSHA,
+		ToSHA:   req.ToSHA,
+		Date:    time.Now(),
+		Extras:  s.Extras,
+	}
 
-	usedPRs := make([]bool, len(closedPRs))
+	usedPRs := make([]bool, len(req.ClosedPRs))
 
 	for _, category := range s.Categories {
 		categoryData := categoryTmplData{Title: category.Title}
 
-		for i, pr := range closedPRs {
+		for i, pr := range req.ClosedPRs {
 			if len(lo.Intersect(pr.Labels, s.IgnoreLabels)) > 0 {
 				usedPRs[i] = true
 				continue
@@ -130,7 +145,7 @@ func (s *Builder) Build(version string, closedPRs []git.PullRequest) (string, er
 	}
 
 	if s.UnusedTitle != "" {
-		if unlabeled := s.makeUnlabeledCategory(usedPRs, closedPRs); len(unlabeled.PRs) > 0 {
+		if unlabeled := s.makeUnlabeledCategory(usedPRs, req.ClosedPRs); len(unlabeled.PRs) > 0 {
 			s.sortPRs(unlabeled.PRs)
 			data.Categories = append(data.Categories, unlabeled)
 		}

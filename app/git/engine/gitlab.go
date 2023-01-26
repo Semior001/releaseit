@@ -127,5 +127,6 @@ func (g *Gitlab) commitToStore(commit *gl.Commit) git.Commit {
 			Email:    commit.AuthorEmail,
 		},
 		ParentSHAs: commit.ParentIDs,
+		Message:    commit.Message,
 	}
 }
