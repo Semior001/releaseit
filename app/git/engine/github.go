@@ -125,10 +125,12 @@ func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
 		res.Author = g.commitAuthorToStore(cmt.GetAuthor())
 		res.Committer = g.commitAuthorToStore(cmt.GetCommitter())
 		res.ParentSHAs = transform(cmt.Parents, func(c *gh.Commit) string { return c.GetSHA() })
+		res.Message = cmt.GetMessage()
 	case *gh.RepositoryCommit:
 		res.Author = g.commitAuthorToStore(cmt.GetAuthor())
 		res.Committer = g.commitAuthorToStore(cmt.GetCommitter())
 		res.ParentSHAs = transform(cmt.Parents, func(c *gh.Commit) string { return c.GetSHA() })
+		res.Message = cmt.GetCommit().GetMessage()
 	}
 	return res
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -17,9 +18,10 @@ import (
 
 // Service wraps repository storage and services
 type Service struct {
-	Engine              engine.Interface
-	ReleaseNotesBuilder *notes.Builder
-	Notifier            notify.Destination
+	Engine                engine.Interface
+	ReleaseNotesBuilder   *notes.Builder
+	Notifier              notify.Destination
+	SquashCommitMessageRx *regexp.Regexp
 }
 
 // ReleaseBetween makes a release between two commit SHAs.
@@ -102,23 +104,36 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 	}
 
 	for _, commit := range commits.Commits {
-		// if commit has more than one parent - probably it's a merge commit
-		// FIXME: needs better guessing, doesn't work with squash commits
-		if len(commit.ParentSHAs) > 1 {
-			prs, err := s.Engine.ListPRsOfCommit(ctx, commit.ParentSHAs[1])
-			if err != nil {
-				return nil, fmt.Errorf("list pull requests of commit %s: %w", commit.ParentSHAs[1], err)
-			}
+		refCommitSHA, ok := s.isMergeCommit(commit)
+		if !ok {
+			continue
+		}
 
-			for _, pr := range prs {
-				if !pr.ClosedAt.IsZero() {
-					res = append(res, pr)
-				}
+		prs, err := s.Engine.ListPRsOfCommit(ctx, refCommitSHA)
+		if err != nil {
+			return nil, fmt.Errorf("list pull requests of commit %s: %w", refCommitSHA, err)
+		}
+
+		for _, pr := range prs {
+			if !pr.ClosedAt.IsZero() {
+				res = append(res, pr)
 			}
 		}
 	}
 
 	return lo.UniqBy(res, func(item git.PullRequest) int { return item.Number }), nil
+}
+
+func (s *Service) isMergeCommit(commit git.Commit) (prAttachedSHA string, ok bool) {
+	if len(commit.ParentSHAs) > 1 {
+		return commit.ParentSHAs[1], true
+	}
+
+	if s.SquashCommitMessageRx.MatchString(commit.Message) {
+		return commit.SHA, true
+	}
+
+	return "", false
 }
 
 func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
