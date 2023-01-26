@@ -41,7 +41,7 @@ func (s *Service) ReleaseBetween(ctx context.Context, from, to string) error {
 	}
 
 	req := notes.BuildRequest{
-		Version:   fmt.Sprintf("%s..%s", from, to),
+		Version:   fmt.Sprintf("%s..%s", lo.Substring(from, 0, 7), lo.Substring(to, 0, 7)),
 		FromSHA:   from,
 		ToSHA:     to,
 		ClosedPRs: prs,
