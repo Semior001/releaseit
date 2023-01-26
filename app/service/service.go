@@ -126,6 +126,7 @@ func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
 		"last_commit": func(branch string) (string, error) {
 			return s.Engine.GetLastCommitOfBranch(ctx, branch)
 		},
+		"head": func() string { return "HEAD" },
 	}
 }
 
