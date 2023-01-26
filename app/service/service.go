@@ -40,7 +40,14 @@ func (s *Service) ReleaseBetween(ctx context.Context, from, to string) error {
 		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
 	}
 
-	text, err := s.ReleaseNotesBuilder.Build(fmt.Sprintf("%s...%s", from[:7], to[:7]), prs)
+	req := notes.BuildRequest{
+		Version:   fmt.Sprintf("%s..%s", from, to),
+		FromSHA:   from,
+		ToSHA:     to,
+		ClosedPRs: prs,
+	}
+
+	text, err := s.ReleaseNotesBuilder.Build(req)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)
 	}
@@ -83,7 +90,14 @@ func (s *Service) ReleaseTag(ctx context.Context, tagName string) error {
 		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
 	}
 
-	text, err := s.ReleaseNotesBuilder.Build(tagName, prs)
+	req := notes.BuildRequest{
+		Version:   fmt.Sprintf("%s..%s", from, to),
+		FromSHA:   from,
+		ToSHA:     to,
+		ClosedPRs: prs,
+	}
+
+	text, err := s.ReleaseNotesBuilder.Build(req)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)
 	}

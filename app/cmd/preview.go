@@ -28,6 +28,8 @@ func (p Preview) Execute(_ []string) error {
 
 	var data struct {
 		Version      string            `yaml:"version"`
+		FromSHA      string            `yaml:"from_sha"`
+		ToSHA        string            `yaml:"to_sha"`
 		Extras       map[string]string `yaml:"extras"`
 		PullRequests []git.PullRequest `yaml:"pull_requests"`
 	}
@@ -41,7 +43,12 @@ func (p Preview) Execute(_ []string) error {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}
 
-	rn, err := builder.Build(data.Version, data.PullRequests)
+	rn, err := builder.Build(notes.BuildRequest{
+		Version:   data.Version,
+		FromSHA:   data.FromSHA,
+		ToSHA:     data.ToSHA,
+		ClosedPRs: data.PullRequests,
+	})
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)
 	}

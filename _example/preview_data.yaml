@@ -1,4 +1,6 @@
 version: v3.0.0
+from_sha: 1a2b3c4d
+to_sha: 5e6f7g8h
 extras:
   PIPELINE_URL: https://example.com
 pull_requests:

@@ -15,6 +15,7 @@ template: |
   Project: [{{ index .Extras "PROJECT_NAME" }}]({{ index .Extras "PROJECT_URL" }})
   Development area: Backend
   Version: {{.Version}}
+  Diff: [{{.FromSHA}}..{{.ToSHA}}](https://gitlab.com/.../compare/{{.FromSHA}}...{{.ToSHA}})
   [Pipeline]({{ index .Extras "PIPELINE_URL" }})
   {{if not .Categories}}- Changes were not endured into MRs{{end -}}
   {{- range .Categories}}
@@ -27,7 +28,7 @@ template: |
         {{- $taskNum = (index $tokens 1) -}}
         {{- $taskTitle = (strings_TrimPrefix .Title (printf "[%s] " $taskNum)) -}}
       {{- end -}}
-      - {{ if (not (eq $taskNum "")) -}} [[{{$taskNum}}](https://jira.sbercloud.tech/browse/{{$taskNum}})] {{ end -}}
+      - {{ if (not (eq $taskNum "")) -}} [[{{$taskNum}}](https://jira.exampleorg.com/browse/{{$taskNum}})] {{ end -}}
           {{$taskTitle}} ([!{{.Number}}]({{.URL}})) merged at {{(.ClosedAt.In $msk).Format "02.01.2006 15:04:05"}} by @{{.Author}}
     {{end}}
   {{ end -}}
