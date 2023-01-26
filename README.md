@@ -27,6 +27,10 @@ Help Options:
           --tag=                               tag to be released [$TAG]
 
 [changelog & release options]
+     --timeout=                                timeout for assembling the release (default: 5m) [$TIMEOUT]
+     
+     --squash-commit-rx=                       regexp to match squash commits (default: ^squash:(.?)+$) [$SQUASH_COMMIT_RX]
+
     engine:
           --engine.type=[github|gitlab]        type of the repository engine [$ENGINE_TYPE]
 
@@ -90,6 +94,8 @@ Supported functions:
 ```go
 var data struct {
     Version      string            `yaml:"version"`
+    FromSHA      string            `yaml:"from_sha"`
+    ToSHA        string            `yaml:"to_sha"`
     Extras       map[string]string `yaml:"extras"`
     PullRequests []git.PullRequest `yaml:"pull_requests"`
 }
@@ -132,6 +138,8 @@ See [example](_example/preview_data.yaml) for details.
 | Name                         | Description                                                  | Example                                         |
 |------------------------------|--------------------------------------------------------------|-------------------------------------------------|
 | {{.Version}}                 | Version name of the release, might be tag or diff.           | `v1.0.0` or `2bda1d3...82e35cf`                 |
+| {{.FromSHA }}                | SHA or tag where diff starts at                              | `v1.0.0` or `2bda1d3`                           |
+| {{.ToSHA }}                  | SHA or tag where diff ends at                                | `v2.0.0` or `82e35cf`                           |
 | {{.Date}}                    | Date of the commit which was tagged                          | Jan 02, 2006 15:04:05 UTC                       |
 |                              |                                                              |                                                 |
 | {{.Categories.Title}}        | Title of the category from the config                        | Features                                        |
