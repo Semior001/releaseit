@@ -3,12 +3,9 @@
 package notes
 
 import (
-	"bytes"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"text/template"
 	"time"
 
@@ -24,39 +21,37 @@ const defaultTemplate = `Version {{.ToSHA}}
 
 // Builder provides methods to form changelog.
 type Builder struct {
-	config
+	Config
 	Extras map[string]string
 
 	tmpl *template.Template
-	once sync.Once
 }
 
 // NewBuilder creates a new Builder.
-func NewBuilder(cfgPath string, extras map[string]string) (*Builder, error) {
-	cfg, err := readCfg(cfgPath)
-	if err != nil {
-		return nil, fmt.Errorf("read config: %w", err)
+func NewBuilder(cfg Config, extras map[string]string) (*Builder, error) {
+	svc := &Builder{Extras: extras, Config: cfg}
+
+	if svc.Template == "" {
+		svc.Template = defaultTemplate
 	}
 
-	svc := &Builder{Extras: extras, config: cfg}
+	tmpl, err := template.New("changelog").
+		Funcs(lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"})).
+		Parse(svc.Template)
+	if err != nil {
+		return nil, fmt.Errorf("parsing template: %w", err)
+	}
+
+	svc.tmpl = tmpl
 
 	return svc, nil
 }
 
-// Category describes pull request category with its title,
-// which will be derived to template and labels, that indicates
-// the belonging to this category.
-type Category struct {
-	Title        string
-	Labels       []string
-	BranchRegexp *regexp.Regexp
-}
-
-type changelogTmplData struct {
+type tmplData struct {
 	FromSHA    string
 	ToSHA      string
 	Categories []categoryTmplData
-	Date       time.Time
+	Date       time.Time // always set to the time when the changelog is generated
 	Extras     map[string]string
 }
 
@@ -83,21 +78,7 @@ type BuildRequest struct {
 
 // Build builds the changelog for the tag.
 func (s *Builder) Build(req BuildRequest) (string, error) {
-	var err error
-	s.once.Do(func() {
-		if s.Template == "" {
-			s.Template = defaultTemplate
-		}
-		s.tmpl, err = template.New("changelog").
-			Funcs(lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"})).
-			Parse(s.Template)
-	})
-	if err != nil {
-		return "", fmt.Errorf("parse template: %w", err)
-	}
-
-	// building template data
-	data := changelogTmplData{
+	data := tmplData{
 		FromSHA: req.FromSHA,
 		ToSHA:   req.ToSHA,
 		Date:    time.Now(),
@@ -115,7 +96,7 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 				continue
 			}
 
-			hasBranchPrefix := category.branchRe != nil && category.branchRe.MatchString(pr.Branch)
+			hasBranchPrefix := category.BranchRe != nil && category.BranchRe.MatchString(pr.Branch)
 			hasAnyOfLabels := len(lo.Intersect(pr.Labels, category.Labels)) > 0
 
 			if hasAnyOfLabels || hasBranchPrefix {
@@ -146,7 +127,7 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 		}
 	}
 
-	buf := &bytes.Buffer{}
+	buf := &strings.Builder{}
 
 	if err := s.tmpl.Execute(buf, data); err != nil {
 		return "", fmt.Errorf("executing template for changelog: %w", err)

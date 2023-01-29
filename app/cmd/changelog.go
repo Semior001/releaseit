@@ -38,7 +38,12 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("prepare notifier: %w", err)
 	}
 
-	rnb, err := notes.NewBuilder(r.ConfLocation, r.Extras)
+	rnbCfg, err := notes.ConfigFromFile(r.ConfLocation)
+	if err != nil {
+		return fmt.Errorf("read release notes builder config: %w", err)
+	}
+
+	rnb, err := notes.NewBuilder(rnbCfg, r.Extras)
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}
