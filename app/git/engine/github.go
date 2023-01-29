@@ -19,17 +19,26 @@ type Github struct {
 	name  string
 }
 
+// GithubParams contains parameters for github engine.
+type GithubParams struct {
+	Owner             string
+	Name              string
+	BasicAuthUsername string
+	BasicAuthPassword string
+	HTTPClient        http.Client
+}
+
 // NewGithub makes new instance of Github.
-func NewGithub(owner, name, basicAuthUsername, basicAuthPassword string, httpCl http.Client) (*Github, error) {
+func NewGithub(params GithubParams) (*Github, error) {
 	svc := &Github{
-		owner: owner,
-		name:  name,
+		owner: params.Owner,
+		name:  params.Name,
 	}
 
-	cl := requester.New(httpCl)
+	cl := requester.New(params.HTTPClient)
 
-	if basicAuthUsername != "" && basicAuthPassword != "" {
-		cl.Use(middleware.BasicAuth(basicAuthUsername, basicAuthPassword))
+	if params.BasicAuthUsername != "" && params.BasicAuthPassword != "" {
+		cl.Use(middleware.BasicAuth(params.BasicAuthUsername, params.BasicAuthPassword))
 	}
 
 	svc.cl = gh.NewClient(cl.Client())

@@ -23,13 +23,13 @@ type EngineGroup struct {
 func (r EngineGroup) Build() (engine.Interface, error) {
 	switch r.Type {
 	case "github":
-		return engine.NewGithub(
-			r.Github.Repo.Owner,
-			r.Github.Repo.Name,
-			r.Github.BasicAuth.Username,
-			r.Github.BasicAuth.Password,
-			http.Client{Timeout: r.Github.Timeout},
-		)
+		return engine.NewGithub(engine.GithubParams{
+			Owner:             r.Github.Repo.Owner,
+			Name:              r.Github.Repo.Name,
+			BasicAuthUsername: r.Github.BasicAuth.Username,
+			BasicAuthPassword: r.Github.BasicAuth.Password,
+			HTTPClient:        http.Client{Timeout: r.Github.Timeout},
+		})
 	case "gitlab":
 		return engine.NewGitlab(
 			r.Gitlab.Token,
