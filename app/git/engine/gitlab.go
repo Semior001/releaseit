@@ -82,7 +82,7 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			Body:     mr.Description,
 			Author:   git.User{Username: lo.FromPtr(mr.Author).Username},
 			Labels:   mr.Labels,
-			ClosedAt: lo.FromPtr(mr.MergedAt),
+			ClosedAt: lo.FromPtr(mr.ClosedAt),
 			Branch:   mr.SourceBranch,
 			URL:      mr.WebURL,
 		}
