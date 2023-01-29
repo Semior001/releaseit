@@ -24,15 +24,11 @@ type Service struct {
 	SquashCommitMessageRx *regexp.Regexp
 }
 
-// ReleaseBetween makes a release between two commit SHAs.
-func (s *Service) ReleaseBetween(ctx context.Context, from, to string) error {
-	from, err := s.getCommitSHA(ctx, from)
+// Changelog makes a release between two commit SHAs.
+func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error {
+	from, to, err := s.evalCommitIDs(ctx, fromExpr, toExpr)
 	if err != nil {
-		return fmt.Errorf("get 'from' commit SHA: %w", err)
-	}
-
-	if to, err = s.getCommitSHA(ctx, to); err != nil {
-		return fmt.Errorf("get 'to' commit SHA: %w", err)
+		return fmt.Errorf("evaluate commit IDs: %w", err)
 	}
 
 	prs, err := s.closedPRsBetweenSHA(ctx, from, to)
@@ -40,69 +36,14 @@ func (s *Service) ReleaseBetween(ctx context.Context, from, to string) error {
 		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
 	}
 
-	req := notes.BuildRequest{
-		Version:   fmt.Sprintf("%s..%s", lo.Substring(from, 0, 7), lo.Substring(to, 0, 7)),
-		FromSHA:   from,
-		ToSHA:     to,
-		ClosedPRs: prs,
-	}
+	req := notes.BuildRequest{FromSHA: from, ToSHA: to, ClosedPRs: prs}
 
 	text, err := s.ReleaseNotesBuilder.Build(req)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)
 	}
 
-	if err = s.Notifier.Send(ctx, "", text); err != nil {
-		return fmt.Errorf("notify: %w", err)
-	}
-
-	return nil
-}
-
-// ReleaseTag aggregates the changelog from the changes of the latest tag and its predecessor
-// and notifies consumers via provided notifier.
-func (s *Service) ReleaseTag(ctx context.Context, tagName string) error {
-	// resolving last two tags of the repo
-	tags, err := s.Engine.ListTags(ctx)
-	if err != nil {
-		return fmt.Errorf("list tags: %w", err)
-	}
-
-	_, tagIdx, ok := lo.FindIndexOf(tags, func(tag git.Tag) bool {
-		return tag.Name == tagName || tag.Commit.SHA == tagName
-	})
-	if !ok {
-		return errors.New("tag not found")
-	}
-
-	var from string
-	to := tags[tagIdx].Commit.SHA
-
-	if len(tags) == 1 {
-		from = "HEAD"
-	} else {
-		// otherwise use the previous tag (tags sorted in descending order of creation)
-		from = tags[tagIdx+1].Commit.SHA
-	}
-
-	prs, err := s.closedPRsBetweenSHA(ctx, from, to)
-	if err != nil {
-		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
-	}
-
-	req := notes.BuildRequest{
-		Version:   fmt.Sprintf("%s..%s", from, to),
-		FromSHA:   from,
-		ToSHA:     to,
-		ClosedPRs: prs,
-	}
-
-	text, err := s.ReleaseNotesBuilder.Build(req)
-	if err != nil {
-		return fmt.Errorf("build release notes: %w", err)
-	}
-
-	if err = s.Notifier.Send(ctx, tagName, text); err != nil {
+	if err = s.Notifier.Send(ctx, to, text); err != nil {
 		return fmt.Errorf("notify: %w", err)
 	}
 
@@ -155,26 +96,60 @@ func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
 		"last_commit": func(branch string) (string, error) {
 			return s.Engine.GetLastCommitOfBranch(ctx, branch)
 		},
-		"head": func() string { return "HEAD" },
+		"previous_tag": func(tagName string) (string, error) {
+			tags, err := s.Engine.ListTags(ctx)
+			if err != nil {
+				return "", fmt.Errorf("list tags: %w", err)
+			}
+
+			_, tagIdx, ok := lo.FindIndexOf(tags, func(tag git.Tag) bool {
+				return tag.Name == tagName || tag.Commit.SHA == tagName
+			})
+			if !ok {
+				return "", errors.New("tag not found")
+			}
+
+			from := "HEAD"
+
+			if len(tags) > 1 {
+				// tags sorted in descending order of creation
+				from = tags[tagIdx+1].Commit.SHA
+			}
+
+			return from, nil
+		},
 	}
 }
 
-func (s *Service) getCommitSHA(ctx context.Context, expr string) (string, error) {
-	const exprPrefix = "!!"
-	if !strings.HasPrefix(expr, exprPrefix) {
-		return expr, nil
+func (s *Service) evalCommitIDs(ctx context.Context, fromExpr, toExpr string) (from string, to string, err error) {
+	data := struct{ From, To string }{From: fromExpr, To: toExpr}
+
+	evalID := func(expr string) (string, error) {
+		const exprPrefix = "!!"
+		if !strings.HasPrefix(expr, exprPrefix) {
+			return expr, nil
+		}
+
+		tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(strings.TrimPrefix(expr, exprPrefix))
+		if err != nil {
+			return "", fmt.Errorf("parse template: %w", err)
+		}
+
+		res := &strings.Builder{}
+		if err = tmpl.Execute(res, data); err != nil {
+			return "", fmt.Errorf("execute template: %w", err)
+		}
+
+		return res.String(), nil
 	}
 
-	tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(strings.TrimPrefix(expr, exprPrefix))
-	if err != nil {
-		return "", fmt.Errorf("parse expression: %w", err)
+	if from, err = evalID(fromExpr); err != nil {
+		return "", "", fmt.Errorf("evaluate 'from' expression: %w", err)
 	}
 
-	res := &strings.Builder{}
-
-	if err = tmpl.Execute(res, nil); err != nil {
-		return "", fmt.Errorf("execute expression: %w", err)
+	if to, err = evalID(toExpr); err != nil {
+		return "", "", fmt.Errorf("evaluate 'to' expression: %w", err)
 	}
 
-	return res.String(), nil
+	return from, to, nil
 }

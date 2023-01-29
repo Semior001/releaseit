@@ -14,6 +14,9 @@ import (
 // like telegram, email or stdout.
 type Destination interface {
 	fmt.Stringer
+	// Send the release notes to the destination.
+	// tagName is the name of the tag the release notes are for,
+	// might be empty and will be ignored by some destinations.
 	Send(ctx context.Context, tagName, text string) error
 }
 

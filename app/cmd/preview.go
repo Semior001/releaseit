@@ -44,7 +44,6 @@ func (p Preview) Execute(_ []string) error {
 	}
 
 	rn, err := builder.Build(notes.BuildRequest{
-		Version:   data.Version,
 		FromSHA:   data.FromSHA,
 		ToSHA:     data.ToSHA,
 		ClosedPRs: data.PullRequests,

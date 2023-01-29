@@ -17,7 +17,7 @@ import (
 	"github.com/samber/lo"
 )
 
-const defaultTemplate = `Version {{.Version}}
+const defaultTemplate = `Version {{.ToSHA}}
 {{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}}
 {{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}{{end}}
 {{end}}`
@@ -53,11 +53,11 @@ type Category struct {
 }
 
 type changelogTmplData struct {
-	Version        string
-	FromSHA, ToSHA string
-	Categories     []categoryTmplData
-	Date           time.Time
-	Extras         map[string]string
+	FromSHA    string
+	ToSHA      string
+	Categories []categoryTmplData
+	Date       time.Time
+	Extras     map[string]string
 }
 
 type categoryTmplData struct {
@@ -76,7 +76,6 @@ type prTmplData struct {
 
 // BuildRequest is a request for changelog building.
 type BuildRequest struct {
-	Version   string
 	FromSHA   string
 	ToSHA     string
 	ClosedPRs []git.PullRequest
@@ -90,10 +89,7 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 			s.Template = defaultTemplate
 		}
 		s.tmpl, err = template.New("changelog").
-			Funcs(lo.Assign(
-				lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"}),
-				funcs,
-			)).
+			Funcs(lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"})).
 			Parse(s.Template)
 	})
 	if err != nil {
@@ -102,7 +98,6 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 
 	// building template data
 	data := changelogTmplData{
-		Version: req.Version,
 		FromSHA: req.FromSHA,
 		ToSHA:   req.ToSHA,
 		Date:    time.Now(),
@@ -213,10 +208,4 @@ func (s *Builder) sortPRs(prs []prTmplData) {
 			return prs[i].Number < prs[j].Number
 		}
 	})
-}
-
-var funcs = template.FuncMap{
-	"time_LoadLocation":  time.LoadLocation,
-	"regexp_Compile":     regexp.Compile,
-	"strings_TrimPrefix": strings.TrimPrefix,
 }
