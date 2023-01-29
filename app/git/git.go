@@ -24,16 +24,13 @@ type PullRequest struct {
 
 // User holds user data.
 type User struct {
-	Date     time.Time `yaml:"date"`
-	Username string    `yaml:"username"`
-	Email    string    `yaml:"email"`
+	Username string `yaml:"username"`
+	Email    string `yaml:"email"`
 }
 
 // Commit represents a repository commit.
 type Commit struct {
 	SHA        string
-	Committer  User
-	Author     User
 	ParentSHAs []string
 	Message    string
 }

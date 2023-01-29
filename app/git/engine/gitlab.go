@@ -21,9 +21,7 @@ type Gitlab struct {
 func NewGitlab(token, baseURL, projectID string, httpCl http.Client) (*Gitlab, error) {
 	var (
 		cl  = requester.New(httpCl)
-		svc = &Gitlab{
-			projectID: projectID,
-		}
+		svc = &Gitlab{projectID: projectID}
 		err error
 	)
 
@@ -115,17 +113,7 @@ func (g *Gitlab) ListTags(ctx context.Context) ([]git.Tag, error) {
 
 func (g *Gitlab) commitToStore(commit *gl.Commit) git.Commit {
 	return git.Commit{
-		SHA: commit.ID,
-		Committer: git.User{
-			Date:     lo.FromPtr(commit.CommittedDate),
-			Username: commit.CommitterName,
-			Email:    commit.CommitterEmail,
-		},
-		Author: git.User{
-			Date:     lo.FromPtr(commit.AuthoredDate),
-			Username: commit.AuthorName,
-			Email:    commit.AuthorEmail,
-		},
+		SHA:        commit.ID,
 		ParentSHAs: commit.ParentIDs,
 		Message:    commit.Message,
 	}
