@@ -113,7 +113,7 @@ func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
 
 			if len(tags) > 1 {
 				// tags sorted in descending order of creation
-				from = tags[tagIdx+1].Commit.SHA
+				from = tags[tagIdx+1].Name
 			}
 
 			return from, nil

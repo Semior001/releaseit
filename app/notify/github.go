@@ -50,7 +50,9 @@ func NewGithub(params GithubParams) (*Github, error) {
 		return nil, fmt.Errorf("check connection to github: %w", err)
 	}
 
-	svc.releaseNameTmpl, err = template.New("github_notify").Parse(svc.ReleaseNameTmplText)
+	svc.releaseNameTmpl, err = template.New("github_notify").
+		Funcs(lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"})).
+		Parse(svc.ReleaseNameTmplText)
 	if err != nil {
 		return nil, fmt.Errorf("parse release name template: %w", err)
 	}
@@ -75,9 +77,7 @@ func (g *Github) Send(ctx context.Context, tagName, text string) error {
 
 	buf := &strings.Builder{}
 
-	err := g.releaseNameTmpl.
-		Funcs(lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"})).
-		Execute(buf, releaseNameTmplData{TagName: tagName})
+	err := g.releaseNameTmpl.Execute(buf, releaseNameTmplData{TagName: tagName})
 	if err != nil {
 		return fmt.Errorf("build release name: %w", err)
 	}

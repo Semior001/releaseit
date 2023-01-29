@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+//go:generate moq -out mock_destination.go . Destination
+
 // Destination defines interface for a given destination service,
 // like telegram, email or stdout.
 type Destination interface {

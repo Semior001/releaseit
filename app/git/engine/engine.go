@@ -7,6 +7,8 @@ import (
 	"github.com/Semior001/releaseit/app/git"
 )
 
+//go:generate moq -out mock_interface.go . Interface
+
 // Interface defines methods to retrieve information about repository.
 type Interface interface {
 	// Compare returns comparison between two commits,

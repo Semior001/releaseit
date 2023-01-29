@@ -64,12 +64,11 @@ type GitlabGroup struct {
 
 // NotifyGroup defines parameters for the notifier.
 type NotifyGroup struct {
-	Telegram       TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
-	Github         GithubNotifierGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
-	Mattermost     MattermostGroup     `group:"mattermost" namespace:"mattermost" env-namespace:"MATTERMOST"`
-	MattermostHook MattermostHookGroup `group:"mattermost-hook" namespace:"mattermost-hook" env-namespace:"MATTERMOST_HOOK"`
-	Post           PostGroup           `group:"post" namespace:"post" env-namespace:"POST"`
-	Stdout         bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
+	Telegram   TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
+	Github     GithubNotifierGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
+	Mattermost MattermostGroup     `group:"mattermost-hook" namespace:"mattermost-hook" env-namespace:"MATTERMOST_HOOK"`
+	Post       PostGroup           `group:"post" namespace:"post" env-namespace:"POST"`
+	Stdout     bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
 }
 
 // GithubNotifierGroup defines parameters to make release in the github.
@@ -107,36 +106,15 @@ func (g TelegramGroup) build() (notify.Destination, error) {
 	}), nil
 }
 
-// MattermostGroup defines parameters for mattermost notifier.
+// MattermostGroup defines parameters for mattermost hook notifier.
 type MattermostGroup struct {
-	BaseURL   string        `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
-	ChannelID string        `long:"channel_id" env:"CHANNEL_ID" description:"id of the channel, where the release notes will be sent"`
-	LoginID   string        `long:"login_id" env:"LOGIN_ID" description:"login id of the user, who will send the release notes"`
-	Password  string        `long:"password" env:"PASSWORD" description:"password of the user, who will send the release notes"`
-	LDAP      bool          `long:"ldap" env:"LDAP" description:"use ldap auth"`
-	Timeout   time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
-}
-
-func (g MattermostGroup) build() (notify.Destination, error) {
-	return notify.NewMattermostBot(notify.MattermostBotParams{
-		Client:    http.Client{Timeout: g.Timeout},
-		BaseURL:   g.BaseURL,
-		ChannelID: g.ChannelID,
-		LoginID:   g.LoginID,
-		Password:  g.Password,
-		LDAP:      g.LDAP,
-	})
-}
-
-// MattermostHookGroup defines parameters for mattermost hook notifier.
-type MattermostHookGroup struct {
 	BaseURL string        `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
 	ID      string        `long:"id" env:"ID" description:"id of the hook, where the release notes will be sent"`
 	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
-func (g MattermostHookGroup) build() (notify.Destination, error) {
-	return notify.NewMattermostHook(
+func (g MattermostGroup) build() (notify.Destination, error) {
+	return notify.NewMattermost(
 		http.Client{Timeout: g.Timeout},
 		g.BaseURL,
 		g.ID,
@@ -169,8 +147,7 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 	}{
 		{name: "telegram", empty: r.Telegram.empty(), build: r.Telegram.build},
 		{name: "github", empty: r.Github.empty(), build: r.Github.build},
-		{name: "mattermost", empty: r.Mattermost.empty(), build: r.Mattermost.build},
-		{name: "mattermost-hook", empty: r.MattermostHook.empty(), build: r.MattermostHook.build},
+		{name: "mattermost-hook", empty: r.Mattermost.empty(), build: r.Mattermost.build},
 		{name: "post", empty: r.Post.empty(), build: r.Post.build},
 	} {
 		if d.empty {
@@ -189,12 +166,9 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 	return destinations, nil
 }
 
-func (g PostGroup) empty() bool           { return g.URL == "" }
-func (g MattermostHookGroup) empty() bool { return g.BaseURL == "" || g.ID == "" }
-func (g TelegramGroup) empty() bool       { return g.ChatID == "" || g.Token == "" }
-func (g MattermostGroup) empty() bool {
-	return g.BaseURL == "" || g.ChannelID == "" || g.LoginID == "" || g.Password == ""
-}
+func (g PostGroup) empty() bool       { return g.URL == "" }
+func (g MattermostGroup) empty() bool { return g.BaseURL == "" || g.ID == "" }
+func (g TelegramGroup) empty() bool   { return g.ChatID == "" || g.Token == "" }
 func (g GithubNotifierGroup) empty() bool {
 	return g.ReleaseNameTemplate == "" || g.Repo.Owner == "" || g.Repo.Name == ""
 }
