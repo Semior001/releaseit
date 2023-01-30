@@ -100,3 +100,108 @@ func TestService_Changelog(t *testing.T) {
 		require.Equal(t, "Features: 1 Bug fixes: 2 Unused: 4 ", buf.String())
 	})
 }
+
+func TestService_exprFuncs(t *testing.T) {
+	t.Run("last_commit", func(t *testing.T) {
+		svc := &Service{Engine: &engine.InterfaceMock{
+			GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
+				assert.Equal(t, "master", branch)
+				return "sha", nil
+			},
+		}}
+
+		fn := svc.exprFuncs(context.Background())["last_commit"]
+
+		sha, err := fn.(func(string) (string, error))("master")
+		require.NoError(t, err)
+		assert.Equal(t, "sha", sha)
+	})
+
+	t.Run("previous_tag", func(t *testing.T) {
+		t.Run("just a tag", func(t *testing.T) {
+			svc := &Service{Engine: &engine.InterfaceMock{
+				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+					return []git.Tag{{Name: "v0.2.0"}, {Name: "v0.1.0"}}, nil
+				},
+			}}
+
+			fn := svc.exprFuncs(context.Background())["previous_tag"]
+
+			tag, err := fn.(func(string) (string, error))("v0.2.0")
+			require.NoError(t, err)
+			assert.Equal(t, "v0.1.0", tag)
+		})
+
+		t.Run("first tag", func(t *testing.T) {
+			svc := &Service{Engine: &engine.InterfaceMock{
+				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+					return []git.Tag{{Name: "v0.1.0"}}, nil
+				},
+			}}
+
+			fn := svc.exprFuncs(context.Background())["previous_tag"]
+			tag, err := fn.(func(string) (string, error))("v0.1.0")
+			require.NoError(t, err)
+			assert.Equal(t, "HEAD", tag)
+		})
+
+		t.Run("tag's commit SHA", func(t *testing.T) {
+			svc := &Service{Engine: &engine.InterfaceMock{
+				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+					return []git.Tag{
+						{Name: "v0.2.0", Commit: git.Commit{SHA: "sha"}},
+						{Name: "v0.1.0"},
+					}, nil
+				},
+			}}
+
+			fn := svc.exprFuncs(context.Background())["previous_tag"]
+			tag, err := fn.(func(string) (string, error))("sha")
+			require.NoError(t, err)
+			assert.Equal(t, "v0.1.0", tag)
+		})
+
+		t.Run("arbitrary commit SHA", func(t *testing.T) {
+			svc := &Service{Engine: &engine.InterfaceMock{
+				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+					return []git.Tag{
+						{Name: "v0.2.0"},
+						{Name: "v0.1.0"},
+					}, nil
+				},
+				CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
+					assert.Equal(t, "sha", to)
+					if from == "v0.2.0" {
+						return git.CommitsComparison{}, nil
+					}
+
+					assert.Equal(t, "v0.1.0", from)
+					return git.CommitsComparison{Commits: []git.Commit{{SHA: "sha"}}}, nil
+				},
+			}}
+
+			fn := svc.exprFuncs(context.Background())["previous_tag"]
+			tag, err := fn.(func(string) (string, error))("sha")
+			require.NoError(t, err)
+			assert.Equal(t, "v0.1.0", tag)
+		})
+
+		t.Run("nothing found", func(t *testing.T) {
+			svc := &Service{Engine: &engine.InterfaceMock{
+				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+					return []git.Tag{{Name: "v0.1.0"}}, nil
+				},
+				CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
+					assert.Equal(t, "sha", to)
+					assert.Equal(t, "v0.1.0", from)
+					return git.CommitsComparison{}, nil
+				},
+			}}
+
+			fn := svc.exprFuncs(context.Background())["previous_tag"]
+			tag, err := fn.(func(string) (string, error))("sha")
+			require.NoError(t, err)
+			assert.Equal(t, "HEAD", tag)
+		})
+	})
+}

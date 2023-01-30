@@ -3,7 +3,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -96,27 +95,36 @@ func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
 		"last_commit": func(branch string) (string, error) {
 			return s.Engine.GetLastCommitOfBranch(ctx, branch)
 		},
-		"previous_tag": func(tagName string) (string, error) {
+		"previous_tag": func(alias string) (string, error) {
 			tags, err := s.Engine.ListTags(ctx)
 			if err != nil {
 				return "", fmt.Errorf("list tags: %w", err)
 			}
 
-			_, tagIdx, ok := lo.FindIndexOf(tags, func(tag git.Tag) bool {
-				return tag.Name == tagName || tag.Commit.SHA == tagName
-			})
-			if !ok {
-				return "", errors.New("tag not found")
+			// if by any chance alias is a tag itself
+			for idx, tag := range tags {
+				if tag.Name == alias || tag.Commit.SHA == alias {
+					if idx+1 == len(tags) {
+						return "HEAD", nil
+					}
+
+					return tags[idx+1].Name, nil
+				}
 			}
 
-			from := "HEAD"
+			// otherwise, we find the closest tag
+			for _, tag := range tags {
+				comp, err := s.Engine.Compare(ctx, tag.Name, alias)
+				if err != nil {
+					return "", fmt.Errorf("compare tag %s with commit %s: %w", tag.Commit.SHA, alias, err)
+				}
 
-			if len(tags) > 1 {
-				// tags sorted in descending order of creation
-				from = tags[tagIdx+1].Name
+				if len(comp.Commits) > 0 {
+					return tag.Name, nil
+				}
 			}
 
-			return from, nil
+			return "HEAD", nil
 		},
 	}
 }
