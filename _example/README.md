@@ -3,6 +3,7 @@ With the [preview data](./preview_data.yaml) in this directory, [config](./confi
 ## Release 30.01.2023
 Project: [Example](https://example.com)
 Version: 1a2b3c4...3c4d5e6
+
 **🚀 Features** - 2 pull requests merged
 - [T-123] Added new feature ([!1](github.com/user/repo/pull/1)) merged at 01.01.2021 01:00:00 by @semior001
 - [T-124] Added new feature ([!4](github.com/user/repo/pull/4)) merged at 01.01.2021 06:00:00 by @semior001
