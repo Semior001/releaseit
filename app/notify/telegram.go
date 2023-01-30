@@ -18,8 +18,6 @@ type Telegram struct {
 
 // TelegramParams defines parameters needed to initialize Telegram notifier.
 type TelegramParams struct {
-	Log *log.Logger
-
 	ChatID                string
 	Client                http.Client
 	Token                 string
@@ -30,13 +28,7 @@ const telegramAPIBaseURL = "https://api.telegram.org/bot"
 
 // NewTelegram makes telegram bot for notifications
 func NewTelegram(params TelegramParams) *Telegram {
-	res := Telegram{TelegramParams: params}
-
-	if res.Log == nil {
-		res.Log = log.Default()
-	}
-
-	return &res
+	return &Telegram{TelegramParams: params}
 }
 
 // String returns the string representation to identify this notifier.
@@ -77,7 +69,7 @@ func (t *Telegram) sendMessage(ctx context.Context, msg []byte, chatID string) e
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			t.Log.Printf("[WARN] can't close request body, %s", err)
+			log.Printf("[WARN] can't close request body, %s", err)
 		}
 	}()
 
