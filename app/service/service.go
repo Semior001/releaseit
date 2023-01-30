@@ -133,12 +133,7 @@ func (s *Service) evalCommitIDs(ctx context.Context, fromExpr, toExpr string) (f
 	data := struct{ From, To string }{From: fromExpr, To: toExpr}
 
 	evalID := func(expr string) (string, error) {
-		const exprPrefix = "!!"
-		if !strings.HasPrefix(expr, exprPrefix) {
-			return expr, nil
-		}
-
-		tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(strings.TrimPrefix(expr, exprPrefix))
+		tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(expr)
 		if err != nil {
 			return "", fmt.Errorf("parse template: %w", err)
 		}

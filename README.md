@@ -22,7 +22,7 @@ Help Options:
 
 [changelog command options]
           --from=                              sha to start release notes from [$FROM]
-          --to=                                sha to end release notes to (default: !!{{ previous_tag .From }}) [$TO]
+          --to=                                sha to end release notes to (default: {{ previous_tag .From }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
           --squash-commit-rx=                  regexp to match squash commits (default: ^squash:(.?)+$) [$SQUASH_COMMIT_RX]
           --conf_location=                     location to the config file [$CONF_LOCATION]
@@ -81,8 +81,7 @@ Help Options:
 
 </details>
 
-**Note**: `from` and `to` options of `changelog` command accept expressions, which must be written in gotemplate manner,
-and the whole expressions should start from `!!` prefix.
+**Note**: `from` and `to` options of `changelog` command accept expressions, which must be written in gotemplate manner.
 
 Example (from .env file): `TO='${{ last_commit "develop" }}'`
 
