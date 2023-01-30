@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
@@ -32,6 +33,13 @@ func NewGitlab(token, baseURL, projectID string, httpCl http.Client) (*Gitlab, e
 	)
 	if err != nil {
 		return nil, fmt.Errorf("initialize gitlab client: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), defaultPingTimeout)
+	defer cancel()
+
+	if _, _, err = svc.cl.Projects.GetProject(projectID, &gl.GetProjectOptions{}, gl.WithContext(ctx)); err != nil {
+		return nil, fmt.Errorf("ping gitlab: %w", err)
 	}
 
 	return svc, nil
@@ -77,11 +85,14 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 	res := make([]git.PullRequest, len(mrs))
 	for i, mr := range mrs {
 		res[i] = git.PullRequest{
-			Number:   mr.IID,
-			Title:    mr.Title,
-			Body:     mr.Description,
-			Author:   git.User{Username: lo.FromPtr(mr.Author).Username},
-			Labels:   mr.Labels,
+			Number: mr.IID,
+			Title:  mr.Title,
+			Body:   mr.Description,
+			Author: git.User{Username: lo.FromPtr(mr.Author).Username},
+			// FIXME: by some reason, library encodes labels as a string, not a slice.
+			Labels: lo.Flatten(lo.Map(mr.Labels, func(s string, _ int) []string {
+				return strings.Split(s, ",")
+			})),
 			ClosedAt: lo.FromPtr(mr.ClosedAt),
 			Branch:   mr.SourceBranch,
 			URL:      mr.WebURL,

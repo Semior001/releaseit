@@ -43,7 +43,10 @@ func NewGithub(params GithubParams) (*Github, error) {
 
 	svc.cl = gh.NewClient(cl.Client())
 
-	if _, _, err := svc.cl.Repositories.Get(context.Background(), svc.owner, svc.name); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultPingTimeout)
+	defer cancel()
+
+	if _, _, err := svc.cl.Repositories.Get(ctx, svc.owner, svc.name); err != nil {
 		return nil, fmt.Errorf("check connection to github: %w", err)
 	}
 

@@ -173,6 +173,8 @@ func TestGithub_ListTags(t *testing.T) {
 }
 
 func newGithub(t *testing.T, h http.HandlerFunc) *Github {
+	t.Helper()
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, pwd, ok := r.BasicAuth()
 		require.True(t, ok, "basic auth is not set")
