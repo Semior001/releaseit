@@ -130,9 +130,7 @@ func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
 }
 
 func (s *Service) evalCommitIDs(ctx context.Context, fromExpr, toExpr string) (from string, to string, err error) {
-	data := struct{ From, To string }{From: fromExpr, To: toExpr}
-
-	evalID := func(expr string) (string, error) {
+	evalID := func(expr string, data any) (string, error) {
 		tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(expr)
 		if err != nil {
 			return "", fmt.Errorf("parse template: %w", err)
@@ -146,12 +144,12 @@ func (s *Service) evalCommitIDs(ctx context.Context, fromExpr, toExpr string) (f
 		return res.String(), nil
 	}
 
-	if from, err = evalID(fromExpr); err != nil {
-		return "", "", fmt.Errorf("evaluate 'from' expression: %w", err)
+	if to, err = evalID(toExpr, nil); err != nil {
+		return "", "", fmt.Errorf("evaluate 'to' expression: %w", err)
 	}
 
-	if to, err = evalID(toExpr); err != nil {
-		return "", "", fmt.Errorf("evaluate 'to' expression: %w", err)
+	if from, err = evalID(fromExpr, struct{ To string }{To: to}); err != nil {
+		return "", "", fmt.Errorf("evaluate 'from' expression: %w", err)
 	}
 
 	return from, to, nil
