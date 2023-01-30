@@ -48,28 +48,6 @@ func NewBuilder(cfg Config, extras map[string]string) (*Builder, error) {
 	return svc, nil
 }
 
-type tmplData struct {
-	FromSHA    string
-	ToSHA      string
-	Categories []categoryTmplData
-	Date       time.Time // always set to the time when the changelog is generated
-	Extras     map[string]string
-}
-
-type categoryTmplData struct {
-	Title string
-	PRs   []prTmplData
-}
-
-type prTmplData struct {
-	Number   int
-	Title    string
-	Author   string
-	URL      string
-	Branch   string
-	ClosedAt time.Time
-}
-
 // BuildRequest is a request for changelog building.
 type BuildRequest struct {
 	FromSHA   string
@@ -191,4 +169,26 @@ func (s *Builder) sortPRs(prs []prTmplData) {
 			return prs[i].Number < prs[j].Number
 		}
 	})
+}
+
+type tmplData struct {
+	FromSHA    string
+	ToSHA      string
+	Categories []categoryTmplData
+	Date       time.Time // always set to the time when the changelog is generated
+	Extras     map[string]string
+}
+
+type categoryTmplData struct {
+	Title string
+	PRs   []prTmplData
+}
+
+type prTmplData struct {
+	Number   int
+	Title    string
+	Author   string
+	URL      string
+	Branch   string
+	ClosedAt time.Time
 }
