@@ -35,7 +35,7 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
 	}
 
-	req := notes.BuildRequest{FromSHA: from, ToSHA: to, ClosedPRs: prs}
+	req := notes.BuildRequest{From: from, To: to, ClosedPRs: prs}
 
 	text, err := s.ReleaseNotesBuilder.Build(req)
 	if err != nil {

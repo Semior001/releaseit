@@ -13,14 +13,15 @@ import (
 // Changelog builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type Changelog struct {
-	From           string            `long:"from" env:"FROM" description:"sha to start release notes from" default:"{{ previous_tag .To }}"`
-	To             string            `long:"to" env:"TO" description:"sha to end release notes to" default:"{{ last_tag }}"`
+	From           string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previous_tag .To }}"`
+	To             string            `long:"to" env:"TO" description:"commit ref to end release notes to" default:"{{ last_tag }}"`
 	Timeout        time.Duration     `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`
 	SquashCommitRx string            `long:"squash-commit-rx" env:"SQUASH_COMMIT_RX" description:"regexp to match squash commits" default:"^squash:(.?)+$"`
-	Engine         EngineGroup       `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
-	Notify         NotifyGroup       `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
 	ConfLocation   string            `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
 	Extras         map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
+
+	Engine EngineGroup `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
+	Notify NotifyGroup `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
 }
 
 // Execute the release-notes command.

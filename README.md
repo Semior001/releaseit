@@ -21,8 +21,8 @@ Help Options:
           --conf_location= location to the config file [$CONF_LOCATION]
 
 [changelog command options]
-          --from=                              sha to start release notes from (default: {{ previous_tag .To }}) [$FROM]
-          --to=                                sha to end release notes to (default: {{ last_tag }}) [$TO]
+          --from=                              commit ref to start release notes from (default: {{ previous_tag .To }}) [$FROM]
+          --to=                                commit ref to end release notes to (default: {{ last_tag }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
           --squash-commit-rx=                  regexp to match squash commits (default: ^squash:(.?)+$) [$SQUASH_COMMIT_RX]
           --conf_location=                     location to the config file [$CONF_LOCATION]
@@ -95,9 +95,8 @@ Supported functions:
 ## Preview data file structure
 ```go
 var data struct {
-    Version      string            `yaml:"version"`
-    FromSHA      string            `yaml:"from_sha"`
-    ToSHA        string            `yaml:"to_sha"`
+    From         string            `yaml:"from"`
+    To           string            `yaml:"to"`
     Extras       map[string]string `yaml:"extras"`
     PullRequests []git.PullRequest `yaml:"pull_requests"`
 }
@@ -162,8 +161,8 @@ type CategoryConfig struct {
 ## Template variables for release notes builder
 ```go
 type tmplData struct {
-	FromSHA    string
-	ToSHA      string
+	From       string
+	To         string
 	Categories []categoryTmplData
 	Date       time.Time // always set to the time when the changelog is generated
 	Extras     map[string]string

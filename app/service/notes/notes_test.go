@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const tmpl = `FromSHA: {{.FromSHA}}, ToSHA: {{.ToSHA}}, Date: {{.Date.Format "2006-01-02T15:04:05Z07:00"}}, Extras: {{.Extras}}
+const tmpl = `From: {{.From}}, To: {{.To}}, Date: {{.Date.Format "2006-01-02T15:04:05Z07:00"}}, Extras: {{.Extras}}
 {{range .Categories}}{{.Title}}
 {{ range .PRs }}- {{.Title}} ([#{{.Number}}]({{ .URL }}), branch {{ .Branch }}) by @{{.Author}} at {{ .ClosedAt }}{{end}}
 {{end}}`
 
-const example = `FromSHA: 123, ToSHA: 456, Date: 2020-01-01T00:00:00Z, Extras: map[foo:bar]
+const example = `From: 123, To: 456, Date: 2020-01-01T00:00:00Z, Extras: map[foo:bar]
 Features
 - Add feature 1 ([#3](url3), branch feat/feature-1) by @user3 at 2020-01-01 00:00:00 +0000 UTC
 Bug fixes
@@ -47,8 +47,7 @@ func TestBuilder_Build(t *testing.T) {
 	svc.now = func() time.Time { return tm }
 
 	req := BuildRequest{
-		FromSHA: "123",
-		ToSHA:   "456",
+		From: "123", To: "456",
 		ClosedPRs: []git.PullRequest{
 			{
 				Number:   1,
