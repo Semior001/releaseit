@@ -10,31 +10,41 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type config struct {
+// Config describes the configuration of the changelog builder.
+type Config struct {
 	// categories to parse in pull requests
-	Categories []categoryConfig `yaml:"categories"`
-	// labels for pull requests, which won't be in release notes
-	IgnoreLabels []string `yaml:"ignore_labels"`
+	Categories []CategoryConfig `yaml:"categories"`
+
 	// field, by which pull requests must be sorted, in format +|-field
 	// currently supported fields: number, author, title, closed
 	SortField string `yaml:"sort_field"`
 	// template for a changelog.
 	Template string `yaml:"template"`
+
 	// if set, the unused category will be built under this title at the
 	// end of the changelog
 	UnusedTitle string `yaml:"unused_title"`
+	// labels for pull requests, which won't be in release notes
+	IgnoreLabels []string `yaml:"ignore_labels"`
+	// regexp for pull request branches, which won't be in release notes
+	IgnoreBranch string `yaml:"ignore_branch"`
+	// compiled regexp, used internally
+	IgnoreBranchRe *regexp.Regexp `yaml:"-"`
 }
 
-type categoryConfig struct {
+// CategoryConfig describes the category configuration.
+type CategoryConfig struct {
 	Title  string   `yaml:"title"`
 	Labels []string `yaml:"labels"`
 
 	// regexp to match branch name
-	Branch   string         `yaml:"branch"`
-	branchRe *regexp.Regexp `yaml:"-"`
+	Branch string `yaml:"branch"`
+
+	// compiled branch regexp, used internally
+	BranchRe *regexp.Regexp `yaml:"-"`
 }
 
-func (c *config) validate() error {
+func (c *Config) validate() error {
 	if len(c.Categories) == 0 {
 		return errors.New("categories are empty")
 	}
@@ -49,27 +59,28 @@ func (c *config) validate() error {
 			if err != nil {
 				return fmt.Errorf("invalid regexp for branch: %w", err)
 			}
-			c.Categories[idx].branchRe = re
+			c.Categories[idx].BranchRe = re
 		}
 	}
 
 	return nil
 }
 
-func readCfg(path string) (config, error) {
+// ConfigFromFile reads the configuration from the file.
+func ConfigFromFile(path string) (Config, error) {
 	bts, err := os.ReadFile(path) //nolint:gosec // we don't need to check permissions here
 	if err != nil {
-		return config{}, fmt.Errorf("open file: %w", err)
+		return Config{}, fmt.Errorf("open file: %w", err)
 	}
 
-	var res config
+	var res Config
 
 	if err = yaml.Unmarshal(bts, &res); err != nil {
-		return config{}, fmt.Errorf("parse yaml: %w", err)
+		return Config{}, fmt.Errorf("parse yaml: %w", err)
 	}
 
 	if err = res.validate(); err != nil {
-		return config{}, fmt.Errorf("config is invalid: %w", err)
+		return Config{}, fmt.Errorf("config is invalid: %w", err)
 	}
 
 	return res, nil

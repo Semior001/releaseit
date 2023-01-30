@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	gh "github.com/google/go-github/v37/github"
+	"github.com/samber/lo"
 )
 
 // Github implements Interface with github API below it.
@@ -19,22 +19,34 @@ type Github struct {
 	name  string
 }
 
+// GithubParams contains parameters for github engine.
+type GithubParams struct {
+	Owner             string
+	Name              string
+	BasicAuthUsername string
+	BasicAuthPassword string
+	HTTPClient        http.Client
+}
+
 // NewGithub makes new instance of Github.
-func NewGithub(owner, name, basicAuthUsername, basicAuthPassword string, httpCl http.Client) (*Github, error) {
+func NewGithub(params GithubParams) (*Github, error) {
 	svc := &Github{
-		owner: owner,
-		name:  name,
+		owner: params.Owner,
+		name:  params.Name,
 	}
 
-	cl := requester.New(httpCl)
+	cl := requester.New(params.HTTPClient)
 
-	if basicAuthUsername != "" && basicAuthPassword != "" {
-		cl.Use(middleware.BasicAuth(basicAuthUsername, basicAuthPassword))
+	if params.BasicAuthUsername != "" && params.BasicAuthPassword != "" {
+		cl.Use(middleware.BasicAuth(params.BasicAuthUsername, params.BasicAuthPassword))
 	}
 
 	svc.cl = gh.NewClient(cl.Client())
 
-	if _, _, err := svc.cl.Repositories.Get(context.Background(), svc.owner, svc.name); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultPingTimeout)
+	defer cancel()
+
+	if _, _, err := svc.cl.Repositories.Get(ctx, svc.owner, svc.name); err != nil {
 		return nil, fmt.Errorf("check connection to github: %w", err)
 	}
 
@@ -86,7 +98,7 @@ func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			Body:     pr.GetBody(),
 			ClosedAt: pr.GetClosedAt(),
 			Author:   git.User{Username: pr.GetUser().GetLogin(), Email: pr.GetUser().GetEmail()},
-			Labels:   transform(pr.Labels, func(l *gh.Label) string { return l.GetName() }),
+			Labels:   lo.Map(pr.Labels, func(l *gh.Label, _ int) string { return l.GetName() }),
 			Branch:   pr.Base.GetRef(),
 			URL:      pr.GetURL(),
 		}
@@ -122,48 +134,11 @@ func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
 	res := git.Commit{SHA: commitInterface.GetSHA()}
 	switch cmt := commitInterface.(type) {
 	case *gh.Commit:
-		res.Author = g.commitAuthorToStore(cmt.GetAuthor())
-		res.Committer = g.commitAuthorToStore(cmt.GetCommitter())
-		res.ParentSHAs = transform(cmt.Parents, func(c *gh.Commit) string { return c.GetSHA() })
+		res.ParentSHAs = lo.Map(cmt.Parents, func(c *gh.Commit, _ int) string { return c.GetSHA() })
 		res.Message = cmt.GetMessage()
 	case *gh.RepositoryCommit:
-		res.Author = g.commitAuthorToStore(cmt.GetAuthor())
-		res.Committer = g.commitAuthorToStore(cmt.GetCommitter())
-		res.ParentSHAs = transform(cmt.Parents, func(c *gh.Commit) string { return c.GetSHA() })
+		res.ParentSHAs = lo.Map(cmt.Parents, func(c *gh.Commit, _ int) string { return c.GetSHA() })
 		res.Message = cmt.GetCommit().GetMessage()
 	}
 	return res
-}
-
-type ghUser interface {
-	GetLogin() string
-	GetEmail() string
-}
-
-type dateGetter interface {
-	GetDate() time.Time
-}
-
-func (g *Github) commitAuthorToStore(user ghUser) git.User {
-	res := git.User{
-		Username: user.GetLogin(),
-		Email:    user.GetEmail(),
-	}
-
-	if dg, ok := user.(dateGetter); ok {
-		res.Date = dg.GetDate()
-	}
-
-	return res
-}
-
-func transform[T any, V any](initial []T, transform func(T) V) []V {
-	if len(initial) == 0 {
-		return nil
-	}
-	result := make([]V, 0, len(initial))
-	for _, item := range initial {
-		result = append(result, transform(item))
-	}
-	return result
 }

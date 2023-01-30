@@ -65,7 +65,7 @@ func (t *Telegram) sendMessage(ctx context.Context, msg []byte, chatID string) e
 
 	u := fmt.Sprintf("%s%s/sendMessage?chat_id=%s&parse_mode=Markdown&disable_web_page_preview=%t",
 		telegramAPIBaseURL, t.Token, chatID, t.DisableWebPagePreview)
-	r, err := http.NewRequest("POST", u, bytes.NewReader(msg))
+	r, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(msg))
 	if err != nil {
 		return fmt.Errorf("make telegram request: %w", err)
 	}

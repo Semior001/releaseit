@@ -1,12 +1,14 @@
 package notify
 
 import (
-	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	gh "github.com/google/go-github/v37/github"
@@ -48,7 +50,9 @@ func NewGithub(params GithubParams) (*Github, error) {
 		return nil, fmt.Errorf("check connection to github: %w", err)
 	}
 
-	svc.releaseNameTmpl, err = template.New("github_notify").Parse(svc.ReleaseNameTmplText)
+	svc.releaseNameTmpl, err = template.New("github_notify").
+		Funcs(lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"})).
+		Parse(svc.ReleaseNameTmplText)
 	if err != nil {
 		return nil, fmt.Errorf("parse release name template: %w", err)
 	}
@@ -68,12 +72,13 @@ type releaseNameTmplData struct {
 // Send makes new release on github repository.
 func (g *Github) Send(ctx context.Context, tagName, text string) error {
 	if tagName == "" {
-		return fmt.Errorf("tag name is empty")
+		return errors.New("tag name is empty")
 	}
 
-	buf := &bytes.Buffer{}
+	buf := &strings.Builder{}
 
-	if err := g.releaseNameTmpl.Execute(buf, releaseNameTmplData{TagName: tagName}); err != nil {
+	err := g.releaseNameTmpl.Execute(buf, releaseNameTmplData{TagName: tagName})
+	if err != nil {
 		return fmt.Errorf("build release name: %w", err)
 	}
 
@@ -83,7 +88,7 @@ func (g *Github) Send(ctx context.Context, tagName, text string) error {
 		Body:    &text,
 	}
 
-	if _, _, err := g.cl.Repositories.CreateRelease(ctx, g.Owner, g.Name, release); err != nil {
+	if _, _, err = g.cl.Repositories.CreateRelease(ctx, g.Owner, g.Name, release); err != nil {
 		return fmt.Errorf("github returned error: %w", err)
 	}
 

@@ -12,12 +12,10 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-// Opts describes cli commands, arguments and flags of the application.
-type Opts struct {
-	ReleaseNotes cmd.ReleaseNotes `command:"release"      description:"build release notes for a particular tag"`
-	Changelog    cmd.Changelog    `command:"changelog"    description:"build release notes for a pair of commits"`
-	Preview      cmd.Preview      `command:"preview"      description:"preview release notes with data read from file"`
-	Debug        bool             `long:"dbg" env:"DEBUG" description:"turn on debug mode"`
+var opts struct {
+	Changelog cmd.Changelog `command:"changelog"    description:"build release notes for a pair of commits"`
+	Preview   cmd.Preview   `command:"preview"      description:"preview release notes with data read from file"`
+	Debug     bool          `long:"dbg" env:"DEBUG" description:"turn on debug mode"`
 }
 
 var version = "unknown"
@@ -33,7 +31,6 @@ func getVersion() string {
 func main() {
 	fmt.Printf("releaseit, version: %s\n", getVersion())
 
-	var opts Opts
 	p := flags.NewParser(&opts, flags.Default)
 	p.CommandHandler = func(cmd flags.Commander, args []string) error {
 		setupLog(opts.Debug)
@@ -42,6 +39,7 @@ func main() {
 			log.Printf("[ERROR] failed to execute command: %+v", err)
 			os.Exit(1)
 		}
+
 		return nil
 	}
 
@@ -50,6 +48,7 @@ func main() {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		} else {
+			log.Printf("[ERROR] failed to parse flags: %+v", err)
 			os.Exit(1)
 		}
 	}

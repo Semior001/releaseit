@@ -3,9 +3,14 @@ package engine
 
 import (
 	"context"
+	"time"
 
 	"github.com/Semior001/releaseit/app/git"
 )
+
+const defaultPingTimeout = 1 * time.Minute
+
+//go:generate moq -out mock_interface.go . Interface
 
 // Interface defines methods to retrieve information about repository.
 type Interface interface {

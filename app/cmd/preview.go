@@ -38,13 +38,17 @@ func (p Preview) Execute(_ []string) error {
 		return fmt.Errorf("unmarshal data: %w", err)
 	}
 
-	builder, err := notes.NewBuilder(p.ConfLocation, lo.Assign(data.Extras, p.Extras))
+	rnbCfg, err := notes.ConfigFromFile(p.ConfLocation)
+	if err != nil {
+		return fmt.Errorf("read release notes builder config: %w", err)
+	}
+
+	rnb, err := notes.NewBuilder(rnbCfg, lo.Assign(data.Extras, p.Extras))
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}
 
-	rn, err := builder.Build(notes.BuildRequest{
-		Version:   data.Version,
+	rn, err := rnb.Build(notes.BuildRequest{
 		FromSHA:   data.FromSHA,
 		ToSHA:     data.ToSHA,
 		ClosedPRs: data.PullRequests,
