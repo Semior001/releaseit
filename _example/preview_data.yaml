@@ -1,9 +1,8 @@
-version: v3.0.0
-from_sha: 1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f
-to_sha: 3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3c4
+from: 1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f
+to: 3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3c4
 extras:
   PIPELINE_URL: https://example.com
-  PROJECT_NAME: customer-manager
+  PROJECT_NAME: Example
   PROJECT_URL: https://example.com
   PIPELINE_TRIGGERED_BY: "@semior001"
   PIPELINE_TRIGGERED_AT: "2023-01-26T06:38:25+00:00"
