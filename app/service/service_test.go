@@ -102,6 +102,51 @@ func TestService_Changelog(t *testing.T) {
 }
 
 func TestService_exprFuncs(t *testing.T) {
+	t.Run("test default values", func(t *testing.T) {
+		svc := &Service{
+			Engine: &engine.InterfaceMock{
+				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+					return []git.Tag{{Name: "v0.2.0"}, {Name: "v0.1.0"}}, nil
+				},
+			},
+		}
+
+		from, to, err := svc.evalCommitIDs(context.Background(), `{{ previous_tag .To }}`, `{{ last_tag }}`)
+		require.NoError(t, err)
+		assert.Equal(t, "v0.1.0", from)
+		assert.Equal(t, "v0.2.0", to)
+	})
+
+	t.Run("last_tag", func(t *testing.T) {
+		svc := &Service{
+			Engine: &engine.InterfaceMock{
+				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+					return []git.Tag{{Name: "v0.2.0"}, {Name: "v0.1.0"}}, nil
+				},
+			},
+		}
+
+		fn := svc.exprFuncs(context.Background())["last_tag"]
+
+		tags, err := fn.(func() (string, error))()
+		require.NoError(t, err)
+		assert.Equal(t, "v0.2.0", tags)
+	})
+
+	t.Run("tags", func(t *testing.T) {
+		svc := &Service{Engine: &engine.InterfaceMock{
+			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+				return []git.Tag{{Name: "v0.1.0"}, {Name: "v0.2.0"}}, nil
+			},
+		}}
+
+		fn := svc.exprFuncs(context.Background())["tags"]
+
+		tags, err := fn.(func() ([]string, error))()
+		require.NoError(t, err)
+		assert.Equal(t, []string{"v0.1.0", "v0.2.0"}, tags)
+	})
+
 	t.Run("last_commit", func(t *testing.T) {
 		svc := &Service{Engine: &engine.InterfaceMock{
 			GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {

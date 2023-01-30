@@ -126,6 +126,26 @@ func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
 
 			return "HEAD", nil
 		},
+		"last_tag": func() (string, error) {
+			tags, err := s.Engine.ListTags(ctx)
+			if err != nil {
+				return "", fmt.Errorf("list tags: %w", err)
+			}
+
+			if len(tags) == 0 {
+				return "HEAD", nil
+			}
+
+			return tags[0].Name, nil
+		},
+		"tags": func() ([]string, error) {
+			tags, err := s.Engine.ListTags(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("list tags: %w", err)
+			}
+
+			return lo.Map(tags, func(tag git.Tag, _ int) string { return tag.Name }), nil
+		},
 	}
 }
 

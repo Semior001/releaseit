@@ -21,8 +21,8 @@ Help Options:
           --conf_location= location to the config file [$CONF_LOCATION]
 
 [changelog command options]
-          --from=                              sha to start release notes from [$FROM]
-          --to=                                sha to end release notes to (default: {{ previous_tag .From }}) [$TO]
+          --from=                              sha to start release notes from (default: {{ previous_tag .To }}) [$FROM]
+          --to=                                sha to end release notes to (default: {{ last_tag }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
           --squash-commit-rx=                  regexp to match squash commits (default: ^squash:(.?)+$) [$SQUASH_COMMIT_RX]
           --conf_location=                     location to the config file [$CONF_LOCATION]
@@ -88,6 +88,8 @@ Example (from .env file): `TO='${{ last_commit "develop" }}'`
 Supported functions:
 - `last_commit(branch_name)`
 - `previous_tag(tag_name)`
+- `tags()` - returns list of tags in descending order
+- `last_tag()` - returns the last tag in repository (shortcut for `{{ index (tags) 0 }}`)
 
 ## Preview data file structure
 ```go

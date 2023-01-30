@@ -13,8 +13,8 @@ import (
 // Changelog builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type Changelog struct {
-	From           string            `long:"from" env:"FROM" description:"sha to start release notes from" required:"true"`
-	To             string            `long:"to" env:"TO" description:"sha to end release notes to" default:"{{ previous_tag .From }}"`
+	From           string            `long:"from" env:"FROM" description:"sha to start release notes from" default:"{{ previous_tag .To }}"`
+	To             string            `long:"to" env:"TO" description:"sha to end release notes to" default:"{{ last_tag }}"`
 	Timeout        time.Duration     `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`
 	SquashCommitRx string            `long:"squash-commit-rx" env:"SQUASH_COMMIT_RX" description:"regexp to match squash commits" default:"^squash:(.?)+$"`
 	Engine         EngineGroup       `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
