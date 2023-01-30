@@ -24,12 +24,13 @@ type Builder struct {
 	Config
 	Extras map[string]string
 
+	now  func() time.Time
 	tmpl *template.Template
 }
 
 // NewBuilder creates a new Builder.
 func NewBuilder(cfg Config, extras map[string]string) (*Builder, error) {
-	svc := &Builder{Extras: extras, Config: cfg}
+	svc := &Builder{Extras: extras, Config: cfg, now: time.Now}
 
 	if svc.Template == "" {
 		svc.Template = defaultTemplate
@@ -81,7 +82,7 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 	data := tmplData{
 		FromSHA: req.FromSHA,
 		ToSHA:   req.ToSHA,
-		Date:    time.Now(),
+		Date:    s.now(),
 		Extras:  s.Extras,
 	}
 
@@ -150,6 +151,7 @@ func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) cate
 			Author:   pr.Author.Username,
 			URL:      pr.URL,
 			ClosedAt: pr.ClosedAt,
+			Branch:   pr.Branch,
 		})
 	}
 
