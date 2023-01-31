@@ -159,4 +159,5 @@ order to provide common used template functions.
 | Name         | Description             | Example |
 |--------------|-------------------------|---------|
 | {{.TagName}} | Tag name of the release | v1.0.0  |
-Sprig functions are also available in here.
+
+[Sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) functions are also available.
