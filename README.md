@@ -84,7 +84,7 @@ Help Options:
 **Note**: `from` and `to` options of `changelog` command accept expressions, which must be written in gotemplate manner.
 `from` expression can relate on the value of `to`, `to` is evaluated first.
 
-Example (from .env file): `TO='${{ last_commit "develop" }}'`
+Example (from .env file): `TO='{{ last_commit "develop" }}'`
 
 Supported functions:
 - `last_commit(branch_name)`
