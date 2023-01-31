@@ -101,7 +101,7 @@ func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			Labels:   lo.Map(pr.Labels, func(l *gh.Label, _ int) string { return l.GetName() }),
 			SourceBranch: pr.GetBase().GetRef(),
 			TargetBranch: pr.GetHead().GetRef(),
-			URL:      pr.GetURL(),
+			URL:      pr.GetHTMLURL(),
 		}
 	}
 
