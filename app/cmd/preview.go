@@ -27,9 +27,8 @@ func (p Preview) Execute(_ []string) error {
 	}
 
 	var data struct {
-		Version      string            `yaml:"version"`
-		FromSHA      string            `yaml:"from_sha"`
-		ToSHA        string            `yaml:"to_sha"`
+		From         string            `yaml:"from"`
+		To           string            `yaml:"to"`
 		Extras       map[string]string `yaml:"extras"`
 		PullRequests []git.PullRequest `yaml:"pull_requests"`
 	}
@@ -49,8 +48,8 @@ func (p Preview) Execute(_ []string) error {
 	}
 
 	rn, err := rnb.Build(notes.BuildRequest{
-		FromSHA:   data.FromSHA,
-		ToSHA:     data.ToSHA,
+		From:      data.From,
+		To:        data.To,
 		ClosedPRs: data.PullRequests,
 	})
 	if err != nil {
@@ -62,7 +61,7 @@ func (p Preview) Execute(_ []string) error {
 		Name:   "stdout",
 	}
 
-	if err = (wr).Send(context.Background(), "", rn); err != nil {
+	if err = wr.Send(context.Background(), "", rn); err != nil {
 		return fmt.Errorf("print release notes: %w", err)
 	}
 

@@ -5,31 +5,19 @@ categories:
     branch: "^fix/"
   - title: "**🔧 Maintenance**"
     branch: "^chore/"
-  - title: "**🔄 Intermediate features/fixes (merged into other branches)**"
-    branch: "^ref/"
 unused_title: "**❓ Unlabeled**"
 ignore_labels: ["ignore"]
 sort_field: "+closed"
 template: |
-  {{ $msk := (time_LoadLocation "Europe/Moscow") }}### Release {{(.Date.In $msk).Format "Jan 02, 2006 15:04:05"}}
+  ## Release {{ .Date.Format "02.01.2006" }}
   Project: [{{ index .Extras "PROJECT_NAME" }}]({{ index .Extras "PROJECT_URL" }})
-  Development area: Backend
-  Version: {{.Version}}
-  Diff: [{{.FromSHA}}..{{.ToSHA}}](https://gitlab.com/.../compare/{{.FromSHA}}...{{.ToSHA}})
-  [Pipeline]({{ index .Extras "PIPELINE_URL" }})
-  {{if not .Categories}}- Changes were not endured into MRs{{end -}}
-  {{- range .Categories}}
-  {{.Title}} - {{ len .PRs }} MRs merged
-    {{ range .PRs }}
-      {{- $taskNum := "" -}}
-      {{- $taskTitle := .Title -}}
-      {{- $tokens := ((regexp_Compile "^\\[(\\w+-\\d+)\\]").FindStringSubmatch .Title) -}}
-      {{- if $tokens -}}
-        {{- $taskNum = (index $tokens 1) -}}
-        {{- $taskTitle = (strings_TrimPrefix .Title (printf "[%s] " $taskNum)) -}}
-      {{- end -}}
-      - {{ if (not (eq $taskNum "")) -}} [[{{$taskNum}}](https://jira.exampleorg.com/browse/{{$taskNum}})] {{ end -}}
-          {{$taskTitle}} ([!{{.Number}}]({{.URL}})) merged at {{(.ClosedAt.In $msk).Format "02.01.2006 15:04:05"}} by @{{.Author}}
-    {{end}}
+  Version: {{.From | substr 0 7}}...{{.To | substr 0 7}}
+  {{- if not .Categories}}- Changes were not endured into pull requests{{end}}
+  
+  {{ range .Categories -}}
+      {{- .Title }} - {{ len .PRs }} pull requests merged
+      {{- range .PRs }}
+        - {{ .Title }} ([!{{.Number}}]({{.URL}})) merged at {{.ClosedAt.Format "02.01.2006 15:04:05"}} by @{{.Author}}
+      {{- end }}
+  
   {{ end -}}
-

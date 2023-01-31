@@ -1,9 +1,8 @@
-version: v3.0.0
-from_sha: 1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f
-to_sha: 3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3c4
+from: 1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f
+to: 3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3c4
 extras:
   PIPELINE_URL: https://example.com
-  PROJECT_NAME: customer-manager
+  PROJECT_NAME: Example
   PROJECT_URL: https://example.com
   PIPELINE_TRIGGERED_BY: "@semior001"
   PIPELINE_TRIGGERED_AT: "2023-01-26T06:38:25+00:00"
@@ -21,7 +20,7 @@ pull_requests:
       - "feature"
     closed_at: "2021-01-01T01:00:00Z"
     branch: "feature/T-123"
-    url: "github.com/user/repo/pull/1"
+    url: "https://github.com/user/repo/pull/1"
   - number: 4
     title: "[T-124] Added new feature"
     body: |
@@ -35,7 +34,7 @@ pull_requests:
       - "feature"
     closed_at: "2021-01-01T06:00:00Z"
     branch: "feature/T-124"
-    url: "github.com/user/repo/pull/4"
+    url: "https://github.com/user/repo/pull/4"
   - number: 2
     title: "[FIX-125] Fixed bug"
     body: |
@@ -48,7 +47,7 @@ pull_requests:
     labels: []
     closed_at: "2021-01-03T01:00:00Z"
     branch: "fix/T-123"
-    url: "github.com/user/repo/pull/2"
+    url: "https://github.com/user/repo/pull/2"
   - number: 5
     title: "[FIX-126] Fixed bug"
     body: |
@@ -61,7 +60,7 @@ pull_requests:
     labels: [ ]
     closed_at: "2021-01-03T00:00:00Z"
     branch: "fix/T-126"
-    url: "github.com/user/repo/pull/5"
+    url: "https://github.com/user/repo/pull/5"
   - number: 3
     title: "[CHORE-123] Fixed bug"
     body: |
@@ -74,7 +73,7 @@ pull_requests:
     labels: []
     closed_at: "2021-01-04T01:00:00Z"
     branch: "chore/T-123"
-    url: "github.com/user/repo/pull/3"
+    url: "https://github.com/user/repo/pull/3"
   - number: 7
     title: "[CHORE-124] Fixed bug"
     body: |
@@ -87,4 +86,4 @@ pull_requests:
     labels: [ ]
     closed_at: "2021-01-04T13:00:00Z"
     branch: "chore/T-124"
-    url: "github.com/user/repo/pull/7"
+    url: "https://github.com/user/repo/pull/7"

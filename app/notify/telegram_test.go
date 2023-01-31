@@ -3,7 +3,6 @@ package notify
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,7 +32,6 @@ func TestTelegram_Send(t *testing.T) {
 	defer ts.Close()
 
 	svc := NewTelegram(TelegramParams{
-		Log:    log.Default(),
 		ChatID: "chat_id",
 		Client: http.Client{
 			Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {

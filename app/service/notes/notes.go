@@ -14,7 +14,7 @@ import (
 	"github.com/samber/lo"
 )
 
-const defaultTemplate = `Version {{.ToSHA}}
+const defaultTemplate = `Version {{.To}}
 {{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}}
 {{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}{{end}}
 {{end}}`
@@ -50,18 +50,18 @@ func NewBuilder(cfg Config, extras map[string]string) (*Builder, error) {
 
 // BuildRequest is a request for changelog building.
 type BuildRequest struct {
-	FromSHA   string
-	ToSHA     string
+	From      string
+	To        string
 	ClosedPRs []git.PullRequest
 }
 
 // Build builds the changelog for the tag.
 func (s *Builder) Build(req BuildRequest) (string, error) {
 	data := tmplData{
-		FromSHA: req.FromSHA,
-		ToSHA:   req.ToSHA,
-		Date:    s.now(),
-		Extras:  s.Extras,
+		From:   req.From,
+		To:     req.To,
+		Date:   s.now(),
+		Extras: s.Extras,
 	}
 
 	usedPRs := make([]bool, len(req.ClosedPRs))
@@ -172,8 +172,8 @@ func (s *Builder) sortPRs(prs []prTmplData) {
 }
 
 type tmplData struct {
-	FromSHA    string
-	ToSHA      string
+	From       string
+	To         string
 	Categories []categoryTmplData
 	Date       time.Time // always set to the time when the changelog is generated
 	Extras     map[string]string

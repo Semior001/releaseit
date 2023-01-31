@@ -4,6 +4,11 @@ Utility for generating and publishing changelogs to different destinations.
 
 Inspired by [mikepenz/release-changelog-builder-action](https://github.com/mikepenz/release-changelog-builder-action)
 
+## Installation
+ReleaseIt is distributed as a docker image. You can pull it from [ghcr package](https://github.com/Semior001/releaseit/pkgs/container/releaseit).
+
+Env vars configuration example is available [here](_example/.env).
+
 ## All application options
 <details>
 <summary>Click to expand</summary>
@@ -21,8 +26,8 @@ Help Options:
           --conf_location= location to the config file [$CONF_LOCATION]
 
 [changelog command options]
-          --from=                              sha to start release notes from [$FROM]
-          --to=                                sha to end release notes to (default: !!{{ previous_tag .From }}) [$TO]
+          --from=                              commit ref to start release notes from (default: {{ previous_tag .To }}) [$FROM]
+          --to=                                commit ref to end release notes to (default: {{ last_tag }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
           --squash-commit-rx=                  regexp to match squash commits (default: ^squash:(.?)+$) [$SQUASH_COMMIT_RX]
           --conf_location=                     location to the config file [$CONF_LOCATION]
@@ -81,106 +86,66 @@ Help Options:
 
 </details>
 
-**Note**: `from` and `to` options of `changelog` command accept expressions, which must be written in gotemplate manner,
-and the whole expressions should start from `!!` prefix.
+**Note**: `from` and `to` options of `changelog` command accept expressions, which must be written in gotemplate manner.
+`from` expression can relate on the value of `to`, `to` is evaluated first.
 
-Example (from .env file): `TO='${{ last_commit "develop" }}'`
+Example (from .env file): `TO='{{ last_commit "develop" }}'`
 
 Supported functions:
 - `last_commit(branch_name)`
 - `previous_tag(tag_name)`
+- `tags()` - returns list of tags in descending order
+- `last_tag()` - returns the last tag in repository (shortcut for `{{ index (tags) 0 }}`)
 
 ## Preview data file structure
-```go
-var data struct {
-    Version      string            `yaml:"version"`
-    FromSHA      string            `yaml:"from_sha"`
-    ToSHA        string            `yaml:"to_sha"`
-    Extras       map[string]string `yaml:"extras"`
-    PullRequests []git.PullRequest `yaml:"pull_requests"`
-}
-
-type PullRequest struct {
-    Number   int       `yaml:"number"`
-    Title    string    `yaml:"title"`
-    Body     string    `yaml:"body"`
-    Author   User      `yaml:"author"`
-    Labels   []string  `yaml:"labels"`
-    ClosedAt time.Time `yaml:"closed_at"`
-    Branch   string    `yaml:"branch"`
-    URL      string    `yaml:"url"`
-}
-
-type User struct {
-    Date     time.Time `yaml:"date"`
-    Username string    `yaml:"username"`
-    Email    string    `yaml:"email"`
-}
-```
+| Field                         | Description                            |
+|-------------------------------|----------------------------------------|
+| from                          | Commit ref to start release notes from |
+| to                            | Commit ref to end release notes at     |
+| extras                        | Extra variables to use in the template |
+| pull_requests.number          | Pull request number                    |
+| pull_requests.title           | Pull request title                     |
+| pull_requests.body            | Pull request body                      |
+| pull_requests.author.username | Pull request's author's username       |
+| pull_requests.author.email    | Pull request's author's email          |
+| pull_requests.author.date     | Date of the author's commit            |
+| pull_requests.labels          | List of pull request's labels          |
+| pull_requests.closed_at       | Date of the pull request's closing     |
+| pull_requests.branch          | Pull request's branch                  |
+| pull_requests.url             | Pull request's url                     |
 
 See [example](_example/preview_data.yaml) for details.
 
 ## Release notes builder configuration
-```go
-// Config describes the configuration of the changelog builder.
-type Config struct {
-	// categories to parse in pull requests
-	Categories []CategoryConfig `yaml:"categories"`
+| Name              | Description                                                                                                                                             |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| categories        | Categories of pull requests                                                                                                                             |
+| categories.title  | Title, which will be provided to the release notes template                                                                                             |
+| categories.labels | An array of labels, to match pull request labels against. If any PR label matches any category label, the pull request will show up under this category |
+| categories.branch | A regular expression to match branch name to the corresponding category.                                                                                |
+| sort_field        | Field, by which pull requests must be sorted, in format +&#124;-field currently supported fields: `number`, `author`, `title`, `closed`                 |
+| template          | Template for a changelog in golang's text template language                                                                                             |
+| unused_title      | If set, the unused category will be built under this title at the end of the changelog                                                                  |
+| ignore_labels     | An array of labels, to match pull request labels against. If PR contains any of the defined ignore labels - this PR won't be provided to the template   |
+| ignore_branch     | A regular expression to match pull request branches, that won't appear in the changelog                                                                 |
 
-	// field, by which pull requests must be sorted, in format +|-field
-	// currently supported fields: number, author, title, closed
-	SortField string `yaml:"sort_field"`
-	// template for a changelog.
-	Template string `yaml:"template"`
-
-	// if set, the unused category will be built under this title at the
-	// end of the changelog
-	UnusedTitle string `yaml:"unused_title"`
-	// labels for pull requests, which won't be in release notes
-	IgnoreLabels []string `yaml:"ignore_labels"`
-	// regexp for pull request branches, which won't be in release notes
-	IgnoreBranch string `yaml:"ignore_branch"`
-	// compiled regexp, used internally
-	IgnoreBranchRe *regexp.Regexp `yaml:"-"`
-}
-
-// CategoryConfig describes the category configuration.
-type CategoryConfig struct {
-	Title  string   `yaml:"title"`
-	Labels []string `yaml:"labels"`
-
-	// regexp to match branch name
-	Branch string `yaml:"branch"`
-
-	// compiled branch regexp, used internally
-	BranchRe *regexp.Regexp `yaml:"-"`
-}
-```
+See [example](_example/config.yaml) for details.
 
 ## Template variables for release notes builder
-```go
-type tmplData struct {
-	FromSHA    string
-	ToSHA      string
-	Categories []categoryTmplData
-	Date       time.Time // always set to the time when the changelog is generated
-	Extras     map[string]string
-}
 
-type categoryTmplData struct {
-	Title string
-	PRs   []prTmplData
-}
-
-type prTmplData struct {
-	Number   int
-	Title    string
-	Author   string
-	URL      string
-	Branch   string
-	ClosedAt time.Time
-}
-```
+| Name                         | Description                                                  | Example                                         |
+|------------------------------|--------------------------------------------------------------|-------------------------------------------------|
+| {{.From}}                    | From commit SHA / tag                                        | v0.1.0                                          |
+| {{.To}}                      | To commit SHA / tag                                          | v0.2.0                                          |
+| {{.Date}}                    | Date, when the changelog was built                           | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Extras}}                  | Map of extra variables, provided by the user in envs         | map[foo:bar]                                    |
+| {{.Categories.Title}}        | Title of the category from the config                        | Features                                        |
+| {{.Categories.PRs.Number}}   | Number of the pull request                                   | 642                                             |
+| {{.Categories.PRs.Title}}    | Title of the pull request                                    | Some awesome feature added                      |
+| {{.Categories.PRs.Author}}   | Username of the author of pull request                       | Semior001                                       |
+| {{.Categories.PRs.URL}}      | URL to the pull request                                      | `https://github.com/Semior001/releaseit/pull/6` |
+| {{.Categories.Branch}}       | Branch name, from which the pull request was created         | feature/awesome-feature                         |
+| {{.Categories.PRs.ClosedAt}} | Timestamp, when the pull request was closed (might be empty) | Jan 02, 2006 15:04:05 UTC                       |
 
 The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes. 
 It also imports functions from [sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) library in 
@@ -191,6 +156,4 @@ order to provide common used template functions.
 | Name         | Description             | Example |
 |--------------|-------------------------|---------|
 | {{.TagName}} | Tag name of the release | v1.0.0  |
-
-See [example](_example/config.yaml) for more details.
-Sprig functions are also available.
+Sprig functions are also available in here.

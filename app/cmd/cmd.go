@@ -98,7 +98,6 @@ type TelegramGroup struct {
 
 func (g TelegramGroup) build() (notify.Destination, error) {
 	return notify.NewTelegram(notify.TelegramParams{
-		Log:                   log.Default(),
 		ChatID:                g.ChatID,
 		Client:                http.Client{Timeout: g.Timeout},
 		Token:                 g.Token,
