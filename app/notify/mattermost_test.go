@@ -29,7 +29,12 @@ func TestMattermost_Send(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	svc := NewMattermost(*http.DefaultClient, ts.URL, "123")
+	svc := NewMattermost(*http.DefaultClient, ts.URL+"/hooks/123")
 	err := svc.Send(context.Background(), "tag", "release notes")
 	assert.NoError(t, err)
+}
+
+func TestMattermost_String(t *testing.T) {
+	svc := NewMattermost(*http.DefaultClient, "https://example.com/hooks/123")
+	assert.Equal(t, "mattermost hook at: https://example.com", svc.String())
 }

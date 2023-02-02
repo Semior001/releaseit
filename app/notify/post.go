@@ -16,7 +16,7 @@ type Post struct {
 
 // String returns the string representation of the notifier.
 func (p *Post) String() string {
-	return fmt.Sprintf("post to %s", p.URL)
+	return fmt.Sprintf("post to %s", extractBaseURL(p.URL))
 }
 
 // Send sends a POST request to the given URL with release notes.
