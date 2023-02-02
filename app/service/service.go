@@ -58,6 +58,11 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 	}
 
 	for _, commit := range commits.Commits {
+		// probably a duplicated merge commit
+		if commit.Additions == 0 && commit.Deletions == 0 {
+			continue
+		}
+
 		refCommitSHA, ok := s.isMergeCommit(commit)
 		if !ok {
 			continue

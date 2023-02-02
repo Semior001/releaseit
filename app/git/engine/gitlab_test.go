@@ -26,8 +26,18 @@ func TestGitlab_Compare(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 
 		err := json.NewEncoder(w).Encode(gl.Compare{Commits: []*gl.Commit{
-			{ID: "sha", Message: "message", ParentIDs: []string{"parent"}},
-			{ID: "sha2", Message: "message2", ParentIDs: []string{"parent2", "parent3"}},
+			{
+				ID:        "sha",
+				Message:   "message",
+				ParentIDs: []string{"parent"},
+				Stats:     &gl.CommitStats{Total: 1, Additions: 1, Deletions: 2},
+			},
+			{
+				ID:        "sha2",
+				Message:   "message2",
+				ParentIDs: []string{"parent2", "parent3"},
+				Stats:     &gl.CommitStats{Total: 1, Additions: 1, Deletions: 2},
+			},
 		}})
 		require.NoError(t, err)
 	})
@@ -38,8 +48,18 @@ func TestGitlab_Compare(t *testing.T) {
 	assert.Equal(t, git.CommitsComparison{
 		TotalCommits: 2,
 		Commits: []git.Commit{
-			{SHA: "sha", Message: "message", ParentSHAs: []string{"parent"}},
-			{SHA: "sha2", Message: "message2", ParentSHAs: []string{"parent2", "parent3"}},
+			{
+				SHA:         "sha",
+				Message:     "message",
+				ParentSHAs:  []string{"parent"},
+				CommitStats: git.CommitStats{Total: 1, Additions: 1, Deletions: 2},
+			},
+			{
+				SHA:         "sha2",
+				Message:     "message2",
+				ParentSHAs:  []string{"parent2", "parent3"},
+				CommitStats: git.CommitStats{Total: 1, Additions: 1, Deletions: 2},
+			},
 		},
 	}, cmp)
 }
@@ -106,6 +126,7 @@ func TestGitlab_ListTags(t *testing.T) {
 				ID:        "sha",
 				ParentIDs: []string{"parent"},
 				Message:   "message",
+				Stats:     &gl.CommitStats{Total: 1, Additions: 1, Deletions: 2},
 			},
 		}})
 		require.NoError(t, err)
@@ -116,9 +137,10 @@ func TestGitlab_ListTags(t *testing.T) {
 	assert.Equal(t, []git.Tag{{
 		Name: "v1.0.0",
 		Commit: git.Commit{
-			SHA:        "sha",
-			ParentSHAs: []string{"parent"},
-			Message:    "message",
+			SHA:         "sha",
+			ParentSHAs:  []string{"parent"},
+			Message:     "message",
+			CommitStats: git.CommitStats{Total: 1, Additions: 1, Deletions: 2},
 		},
 	}}, tags)
 }

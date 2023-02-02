@@ -172,6 +172,50 @@ func TestGithub_ListTags(t *testing.T) {
 	}, tags)
 }
 
+func TestGithub_commitToStore(t *testing.T) {
+	tests := []struct {
+		name   string
+		commit shaGetter
+		want   git.Commit
+	}{
+		{
+			name: "regular commit",
+			commit: &gh.Commit{
+				SHA:     gh.String("sha"),
+				Stats:   &gh.CommitStats{Total: gh.Int(1), Additions: gh.Int(2), Deletions: gh.Int(3)},
+				Parents: []*gh.Commit{{SHA: gh.String("parent1")}, {SHA: gh.String("parent2")}},
+				Message: gh.String("message"),
+			},
+			want: git.Commit{
+				SHA:         "sha",
+				CommitStats: git.CommitStats{Total: 1, Additions: 2, Deletions: 3},
+				ParentSHAs:  []string{"parent1", "parent2"},
+				Message:     "message",
+			},
+		},
+		{
+			name: "repository commit",
+			commit: &gh.RepositoryCommit{
+				SHA:     gh.String("sha"),
+				Stats:   &gh.CommitStats{Total: gh.Int(1), Additions: gh.Int(2), Deletions: gh.Int(3)},
+				Parents: []*gh.Commit{{SHA: gh.String("parent1")}, {SHA: gh.String("parent2")}},
+				Commit:  &gh.Commit{Message: gh.String("message")},
+			},
+			want: git.Commit{
+				SHA:         "sha",
+				CommitStats: git.CommitStats{Total: 1, Additions: 2, Deletions: 3},
+				ParentSHAs:  []string{"parent1", "parent2"},
+				Message:     "message",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, (*Github)(nil).commitToStore(tt.commit))
+		})
+	}
+}
+
 func newGithub(t *testing.T, h http.HandlerFunc) *Github {
 	t.Helper()
 

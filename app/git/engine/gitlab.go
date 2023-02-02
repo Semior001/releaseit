@@ -127,5 +127,10 @@ func (g *Gitlab) commitToStore(commit *gl.Commit) git.Commit {
 		SHA:        commit.ID,
 		ParentSHAs: commit.ParentIDs,
 		Message:    commit.Message,
+		CommitStats: git.CommitStats{
+			Total:     commit.Stats.Total,
+			Additions: commit.Stats.Additions,
+			Deletions: commit.Stats.Deletions,
+		},
 	}
 }
