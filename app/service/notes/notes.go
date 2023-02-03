@@ -15,7 +15,7 @@ import (
 )
 
 const defaultTemplate = `Version {{.To}}
-{{if not .Categories}}- No changes{{end}}{{range .Categories}}{{.Title}}
+{{if (eq .Total 0)}}- No changes{{end}}{{range .Categories}}{{.Title}}
 {{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}{{end}}
 {{end}}`
 
@@ -62,6 +62,7 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 		To:     req.To,
 		Date:   s.now(),
 		Extras: s.Extras,
+		Total:  len(req.ClosedPRs),
 	}
 
 	usedPRs := make([]bool, len(req.ClosedPRs))
@@ -82,10 +83,6 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 				usedPRs[i] = true
 				categoryData.PRs = append(categoryData.PRs, prToTmplData(pr))
 			}
-		}
-
-		if len(categoryData.PRs) == 0 {
-			continue
 		}
 
 		s.sortPRs(categoryData.PRs)
@@ -173,9 +170,10 @@ func (s *Builder) sortPRs(prs []prTmplData) {
 type tmplData struct {
 	From       string
 	To         string
-	Categories []categoryTmplData
 	Date       time.Time // always set to the time when the changelog is generated
 	Extras     map[string]string
+	Total      int // total number of PRs
+	Categories []categoryTmplData
 }
 
 type categoryTmplData struct {

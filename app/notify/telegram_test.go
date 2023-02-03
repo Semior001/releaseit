@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTelegram_String(t *testing.T) {
+	assert.Equal(t, "telegram to chatID chat_id", NewTelegram(TelegramParams{ChatID: "chat_id"}).String())
+}
+
 func TestTelegram_Send(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "POST", r.Method)

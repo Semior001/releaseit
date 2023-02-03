@@ -41,12 +41,13 @@ func (d Destinations) Send(ctx context.Context, tagName, text string) error {
 
 	errs := make(chan error, len(d))
 	for _, dest := range d {
-		go func(dest Destination) {
+		dest := dest
+		go func() {
 			defer wg.Done()
 			if err := dest.Send(ctx, tagName, text); err != nil {
 				errs <- fmt.Errorf("%s: %w", dest, err)
 			}
-		}(dest)
+		}()
 	}
 
 	wg.Wait()
