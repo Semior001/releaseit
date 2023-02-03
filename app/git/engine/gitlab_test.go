@@ -73,7 +73,7 @@ func TestGitlab_ListPRsOfCommit(t *testing.T) {
 			Description:  "description",
 			Author:       &gl.BasicUser{Username: "author"},
 			Labels:       []string{"label1", "label2"},
-			ClosedAt:     lo.ToPtr(now.UTC()),
+			MergedAt:     lo.ToPtr(now.UTC()),
 			SourceBranch: "source",
 			WebURL:       "url",
 		}})

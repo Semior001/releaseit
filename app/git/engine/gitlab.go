@@ -93,7 +93,9 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			Labels: lo.Flatten(lo.Map(mr.Labels, func(s string, _ int) []string {
 				return strings.Split(s, ",")
 			})),
-			ClosedAt: lo.FromPtr(mr.ClosedAt),
+			// closed at in MR points to time when MR was closed without merging,
+			// so we use merged at instead.
+			ClosedAt: lo.FromPtr(mr.MergedAt),
 			Branch:   mr.SourceBranch,
 			URL:      mr.WebURL,
 		}
