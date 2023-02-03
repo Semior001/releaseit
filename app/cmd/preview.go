@@ -16,7 +16,7 @@ import (
 type Preview struct {
 	DataFile     string            `long:"data-file" env:"DATA_FILE" description:"path to the file with release data" required:"true"`
 	Extras       map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template, will be merged (env primary) with ones in the config file"`
-	ConfLocation string            `long:"conf_location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
+	ConfLocation string            `long:"conf-location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
 }
 
 // Execute prints the release notes to stdout.
