@@ -12,7 +12,7 @@ import (
 
 const tmpl = `From: {{.From}}, To: {{.To}}, Date: {{.Date.Format "2006-01-02T15:04:05Z07:00"}}, Extras: {{.Extras}}
 {{range .Categories}}{{.Title}}
-{{ range .PRs }}- {{.Title}} ([#{{.Number}}]({{ .URL }}), branch {{ .Branch }}) by @{{.Author}} at {{ .ClosedAt }}{{end}}
+{{ range .PRs }}- {{.Title}} ([#{{.Number}}]({{ .URL }}), branch {{ .SourceBranch }}) by @{{.Author}} at {{ .ClosedAt }}{{end}}
 {{end}}`
 
 const example = `From: 123, To: 456, Date: 2020-01-01T00:00:00Z, Extras: map[foo:bar]
@@ -50,31 +50,31 @@ func TestBuilder_Build(t *testing.T) {
 		From: "123", To: "456",
 		ClosedPRs: []git.PullRequest{
 			{
-				Number:   1,
-				Title:    "Fix bug 1",
-				ClosedAt: tm,
-				Author:   git.User{Username: "user1"},
-				URL:      "url1",
-				Branch:   "fix/bug-1",
-				Labels:   []string{"bug"},
+				Number:       1,
+				Title:        "Fix bug 1",
+				ClosedAt:     tm,
+				Author:       git.User{Username: "user1"},
+				URL:          "url1",
+				SourceBranch: "fix/bug-1",
+				Labels:       []string{"bug"},
 			},
 			{
-				Number:   3,
-				Title:    "Add feature 1",
-				ClosedAt: tm,
-				Author:   git.User{Username: "user3"},
-				URL:      "url3",
-				Branch:   "feat/feature-1",
-				Labels:   []string{"feature"},
+				Number:       3,
+				Title:        "Add feature 1",
+				ClosedAt:     tm,
+				Author:       git.User{Username: "user3"},
+				URL:          "url3",
+				SourceBranch: "feat/feature-1",
+				Labels:       []string{"feature"},
 			},
 			{
-				Number:   5,
-				Title:    "Add feature 3",
-				ClosedAt: tm,
-				Author:   git.User{Username: "user5"},
-				URL:      "url5",
-				Branch:   "blah/feature-3",
-				Labels:   nil,
+				Number:       5,
+				Title:        "Add feature 3",
+				ClosedAt:     tm,
+				Author:       git.User{Username: "user5"},
+				URL:          "url5",
+				SourceBranch: "blah/feature-3",
+				Labels:       nil,
 			},
 		},
 	}

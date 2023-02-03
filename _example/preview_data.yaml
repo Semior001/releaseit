@@ -19,7 +19,8 @@ pull_requests:
     labels:
       - "feature"
     closed_at: "2021-01-01T01:00:00Z"
-    branch: "feature/T-123"
+    source_branch: "feature/T-123"
+    target_branch: "master"
     url: "https://github.com/user/repo/pull/1"
   - number: 4
     title: "[T-124] Added new feature"
@@ -33,7 +34,8 @@ pull_requests:
     labels:
       - "feature"
     closed_at: "2021-01-01T06:00:00Z"
-    branch: "feature/T-124"
+    source_branch: "feature/T-124"
+    target_branch: "master"
     url: "https://github.com/user/repo/pull/4"
   - number: 2
     title: "[FIX-125] Fixed bug"
@@ -46,7 +48,8 @@ pull_requests:
       email: "vasiliy@example.com"
     labels: []
     closed_at: "2021-01-03T01:00:00Z"
-    branch: "fix/T-123"
+    source_branch: "fix/T-123"
+    target_branch: "master"
     url: "https://github.com/user/repo/pull/2"
   - number: 5
     title: "[FIX-126] Fixed bug"
@@ -59,7 +62,8 @@ pull_requests:
       email: "vasiliy@example.com"
     labels: [ ]
     closed_at: "2021-01-03T00:00:00Z"
-    branch: "fix/T-126"
+    source_branch: "fix/T-126"
+    target_branch: "master"
     url: "https://github.com/user/repo/pull/5"
   - number: 3
     title: "[CHORE-123] Fixed bug"
@@ -72,7 +76,8 @@ pull_requests:
       email: "vasiliy@example.com"
     labels: []
     closed_at: "2021-01-04T01:00:00Z"
-    branch: "chore/T-123"
+    source_branch: "chore/T-123"
+    target_branch: "master"
     url: "https://github.com/user/repo/pull/3"
   - number: 7
     title: "[CHORE-124] Fixed bug"
@@ -85,5 +90,6 @@ pull_requests:
       email: "vasiliy@example.com"
     labels: [ ]
     closed_at: "2021-01-04T13:00:00Z"
-    branch: "chore/T-124"
+    source_branch: "chore/T-124"
+    target_branch: "master"
     url: "https://github.com/user/repo/pull/7"

@@ -71,7 +71,7 @@ func TestService_Changelog(t *testing.T) {
 					switch sha {
 					case "pr1":
 						return []git.PullRequest{
-							{Number: 1, Title: "Pull request #1", Branch: "feature/1", ClosedAt: now},
+							{Number: 1, Title: "Pull request #1", SourceBranch: "feature/1", ClosedAt: now},
 							{Number: 2, Title: "Pull request #2", Labels: []string{"bug"}, ClosedAt: now},
 							{Number: 3, Title: "Pull request #3"},
 						}, nil
