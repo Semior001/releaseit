@@ -75,8 +75,7 @@ Help Options:
           --notify.github.basic_auth.password= password for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
 
     mattermost-hook:
-          --notify.mattermost-hook.base_url=   base url of the mattermost server [$NOTIFY_MATTERMOST_HOOK_BASE_URL]
-          --notify.mattermost-hook.id=         id of the hook, where the release notes will be sent [$NOTIFY_MATTERMOST_HOOK_ID]
+          --notify.mattermost-hook.url=        url of the mattermost hook [$NOTIFY_MATTERMOST_HOOK_URL]
           --notify.mattermost-hook.timeout=    timeout for http requests (default: 5s) [$NOTIFY_MATTERMOST_HOOK_TIMEOUT]
 
     post:
