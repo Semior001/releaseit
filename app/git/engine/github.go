@@ -126,6 +126,16 @@ func (g *Github) ListTags(ctx context.Context) ([]git.Tag, error) {
 	return res, nil
 }
 
+// GetCommit returns commit by the given SHA.
+func (g *Github) GetCommit(ctx context.Context, sha string) (git.Commit, error) {
+	commit, _, err := g.cl.Repositories.GetCommit(ctx, g.owner, g.name, sha)
+	if err != nil {
+		return git.Commit{}, fmt.Errorf("get commit: %w", err)
+	}
+
+	return g.commitToStore(commit), nil
+}
+
 type shaGetter interface {
 	GetSHA() string
 }
@@ -136,9 +146,13 @@ func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
 	case *gh.Commit:
 		res.ParentSHAs = lo.Map(cmt.Parents, func(c *gh.Commit, _ int) string { return c.GetSHA() })
 		res.Message = cmt.GetMessage()
+		res.CommittedAt = cmt.GetCommitter().GetDate()
+		res.AuthoredAt = cmt.GetAuthor().GetDate()
 	case *gh.RepositoryCommit:
 		res.ParentSHAs = lo.Map(cmt.Parents, func(c *gh.Commit, _ int) string { return c.GetSHA() })
 		res.Message = cmt.GetCommit().GetMessage()
+		res.CommittedAt = cmt.GetCommit().GetCommitter().GetDate()
+		res.AuthoredAt = cmt.GetCommit().GetAuthor().GetDate()
 	}
 	return res
 }

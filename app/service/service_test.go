@@ -23,6 +23,9 @@ func TestService_Changelog(t *testing.T) {
 		compareCalledErr := errors.New("compare called")
 		svc := &Service{
 			Engine: &engine.InterfaceMock{
+				GetCommitFunc: func(ctx context.Context, sha string) (git.Commit, error) {
+					return git.Commit{SHA: "sha"}, nil
+				},
 				GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
 					assert.Equal(t, "master", branch)
 					return "sha", nil
@@ -49,6 +52,9 @@ func TestService_Changelog(t *testing.T) {
 		svc := &Service{
 			SquashCommitMessageRx: regexp.MustCompile(`^squash: (.*)$`),
 			Engine: &engine.InterfaceMock{
+				GetCommitFunc: func(ctx context.Context, sha string) (git.Commit, error) {
+					return git.Commit{SHA: "from", ParentSHAs: []string{"parent", "pr1"}, Message: "Pull request #1"}, nil
+				},
 				CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
 					return git.CommitsComparison{
 						Commits: []git.Commit{

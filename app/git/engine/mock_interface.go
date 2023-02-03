@@ -22,6 +22,9 @@ var _ Interface = &InterfaceMock{}
 // 			CompareFunc: func(ctx context.Context, fromSHA string, toSHA string) (git.CommitsComparison, error) {
 // 				panic("mock out the Compare method")
 // 			},
+// 			GetCommitFunc: func(ctx context.Context, sha string) (git.Commit, error) {
+// 				panic("mock out the GetCommit method")
+// 			},
 // 			GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
 // 				panic("mock out the GetLastCommitOfBranch method")
 // 			},
@@ -40,6 +43,9 @@ var _ Interface = &InterfaceMock{}
 type InterfaceMock struct {
 	// CompareFunc mocks the Compare method.
 	CompareFunc func(ctx context.Context, fromSHA string, toSHA string) (git.CommitsComparison, error)
+
+	// GetCommitFunc mocks the GetCommit method.
+	GetCommitFunc func(ctx context.Context, sha string) (git.Commit, error)
 
 	// GetLastCommitOfBranchFunc mocks the GetLastCommitOfBranch method.
 	GetLastCommitOfBranchFunc func(ctx context.Context, branch string) (string, error)
@@ -60,6 +66,13 @@ type InterfaceMock struct {
 			FromSHA string
 			// ToSHA is the toSHA argument value.
 			ToSHA string
+		}
+		// GetCommit holds details about calls to the GetCommit method.
+		GetCommit []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Sha is the sha argument value.
+			Sha string
 		}
 		// GetLastCommitOfBranch holds details about calls to the GetLastCommitOfBranch method.
 		GetLastCommitOfBranch []struct {
@@ -82,6 +95,7 @@ type InterfaceMock struct {
 		}
 	}
 	lockCompare               sync.RWMutex
+	lockGetCommit             sync.RWMutex
 	lockGetLastCommitOfBranch sync.RWMutex
 	lockListPRsOfCommit       sync.RWMutex
 	lockListTags              sync.RWMutex
@@ -123,6 +137,41 @@ func (mock *InterfaceMock) CompareCalls() []struct {
 	mock.lockCompare.RLock()
 	calls = mock.calls.Compare
 	mock.lockCompare.RUnlock()
+	return calls
+}
+
+// GetCommit calls GetCommitFunc.
+func (mock *InterfaceMock) GetCommit(ctx context.Context, sha string) (git.Commit, error) {
+	if mock.GetCommitFunc == nil {
+		panic("InterfaceMock.GetCommitFunc: method is nil but Interface.GetCommit was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Sha string
+	}{
+		Ctx: ctx,
+		Sha: sha,
+	}
+	mock.lockGetCommit.Lock()
+	mock.calls.GetCommit = append(mock.calls.GetCommit, callInfo)
+	mock.lockGetCommit.Unlock()
+	return mock.GetCommitFunc(ctx, sha)
+}
+
+// GetCommitCalls gets all the calls that were made to GetCommit.
+// Check the length with:
+//     len(mockedInterface.GetCommitCalls())
+func (mock *InterfaceMock) GetCommitCalls() []struct {
+	Ctx context.Context
+	Sha string
+} {
+	var calls []struct {
+		Ctx context.Context
+		Sha string
+	}
+	mock.lockGetCommit.RLock()
+	calls = mock.calls.GetCommit
+	mock.lockGetCommit.RUnlock()
 	return calls
 }
 

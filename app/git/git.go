@@ -31,9 +31,11 @@ type User struct {
 
 // Commit represents a repository commit.
 type Commit struct {
-	SHA        string
-	ParentSHAs []string
-	Message    string
+	SHA         string
+	ParentSHAs  []string
+	Message     string
+	CommittedAt time.Time
+	AuthoredAt  time.Time
 }
 
 // CommitsComparison is the result of comparing two commits.

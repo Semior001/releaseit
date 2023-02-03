@@ -123,6 +123,29 @@ func TestGitlab_ListTags(t *testing.T) {
 	}}, tags)
 }
 
+func TestGitlab_GetCommit(t *testing.T) {
+	svc := newGitlab(t, func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/api/v4/projects/projectID/repository/commits/sha", r.URL.Path)
+
+		w.WriteHeader(http.StatusOK)
+
+		err := json.NewEncoder(w).Encode(gl.Commit{
+			ID:        "sha",
+			ParentIDs: []string{"parent"},
+			Message:   "message",
+		})
+		require.NoError(t, err)
+	})
+
+	commit, err := svc.GetCommit(context.Background(), "sha")
+	require.NoError(t, err)
+	assert.Equal(t, git.Commit{
+		SHA:        "sha",
+		ParentSHAs: []string{"parent"},
+		Message:    "message",
+	}, commit)
+}
+
 func newGitlab(t *testing.T, h http.HandlerFunc) *Gitlab {
 	t.Helper()
 

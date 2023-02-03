@@ -124,10 +124,22 @@ func (g *Gitlab) ListTags(ctx context.Context) ([]git.Tag, error) {
 	return res, nil
 }
 
+// GetCommit returns a commit by its SHA.
+func (g *Gitlab) GetCommit(ctx context.Context, sha string) (git.Commit, error) {
+	commit, _, err := g.cl.Commits.GetCommit(g.projectID, sha, gl.WithContext(ctx))
+	if err != nil {
+		return git.Commit{}, fmt.Errorf("do request: %w", err)
+	}
+
+	return g.commitToStore(commit), nil
+}
+
 func (g *Gitlab) commitToStore(commit *gl.Commit) git.Commit {
 	return git.Commit{
-		SHA:        commit.ID,
-		ParentSHAs: commit.ParentIDs,
-		Message:    commit.Message,
+		SHA:         commit.ID,
+		ParentSHAs:  commit.ParentIDs,
+		Message:     commit.Message,
+		CommittedAt: lo.FromPtr(commit.CommittedDate),
+		AuthoredAt:  lo.FromPtr(commit.AuthoredDate),
 	}
 }

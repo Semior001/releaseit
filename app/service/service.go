@@ -50,6 +50,11 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 }
 
 func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string) ([]git.PullRequest, error) {
+	fromCommit, err := s.Engine.GetCommit(ctx, fromSHA)
+	if err != nil {
+		return nil, fmt.Errorf("get commit %s: %w", fromSHA, err)
+	}
+
 	var res []git.PullRequest
 
 	commits, err := s.Engine.Compare(ctx, fromSHA, toSHA)
@@ -60,6 +65,10 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 	for _, commit := range commits.Commits {
 		refCommitSHA, ok := s.isMergeCommit(commit)
 		if !ok {
+			continue
+		}
+
+		if commit.CommittedAt.Before(fromCommit.CommittedAt) {
 			continue
 		}
 

@@ -125,12 +125,13 @@ func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) cate
 		}
 
 		category.PRs = append(category.PRs, prTmplData{
-			Number:   pr.Number,
-			Title:    pr.Title,
-			Author:   pr.Author.Username,
-			URL:      pr.URL,
-			ClosedAt: pr.ClosedAt,
-			Branch:   pr.Branch,
+			Number:         pr.Number,
+			Title:          pr.Title,
+			Author:         pr.Author.Username,
+			URL:            pr.URL,
+			ClosedAt:       pr.ClosedAt,
+			Branch:         pr.Branch,
+			ReceivedBySHAs: pr.ReceivedBySHAs,
 		})
 	}
 

@@ -10,6 +10,7 @@ import (
 
 const defaultPingTimeout = 1 * time.Minute
 
+//go:generate rm -f mock_interface.go
 //go:generate moq -out mock_interface.go . Interface
 
 // Interface defines methods to retrieve information about repository.
@@ -24,4 +25,6 @@ type Interface interface {
 	ListTags(ctx context.Context) ([]git.Tag, error)
 	// GetLastCommitOfBranch returns the SHA or alias of the last commit in the branch.
 	GetLastCommitOfBranch(ctx context.Context, branch string) (string, error)
+	// GetCommit returns commit by its SHA.
+	GetCommit(ctx context.Context, sha string) (git.Commit, error)
 }
