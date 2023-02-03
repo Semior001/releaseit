@@ -109,8 +109,8 @@ Supported functions:
 | pull_requests.author.email     | Pull request's author's email                                                    |
 | pull_requests.labels           | List of pull request's labels                                                    |
 | pull_requests.closed_at        | Date of the pull request's closing                                               |
-| pull_requests.source_branch   | Pull request's source branch           |
-| pull_requests.target_branch          | Pull request's target branch           |
+| pull_requests.source_branch    | Pull request's source branch                                                     |
+| pull_requests.target_branch    | Pull request's target branch                                                     |
 | pull_requests.url              | Pull request's url                                                               |
 | pull_requests.received_by_shas | List of commit SHAs by which pull request was retrieved (for debugging purposes) |
 
@@ -145,8 +145,8 @@ See [example](_example/config.yaml) for details.
 | {{.Categories.PRs.Title}}          | Title of the pull request                                      | Some awesome feature added                      |
 | {{.Categories.PRs.Author}}         | Username of the author of pull request                         | Semior001                                       |
 | {{.Categories.PRs.URL}}            | URL to the pull request                                        | `https://github.com/Semior001/releaseit/pull/6` |
-| {{.Categories.PRs.SourceBranch}} | Source branch name, from which the pull request was created  | feature/awesome-feature                         |
-| {{.Categories.PRs.TargetBranch}} | Target branch name, to which the pull request was created    | develop                                         |
+| {{.Categories.PRs.SourceBranch}}   | Source branch name, from which the pull request was created    | feature/awesome-feature                         |
+| {{.Categories.PRs.TargetBranch}}   | Target branch name, to which the pull request was created      | develop                                         |
 | {{.Categories.PRs.ClosedAt}}       | Timestamp, when the pull request was closed (might be empty)   | Jan 02, 2006 15:04:05 UTC                       |
 | {{.Categories.PRs.ReceivedBySHAs}} | List of commit SHAs, by which releaseit received pull requests | [a1b2c3d4e5f6, 1a2b3c4d5e6f]                    |
 
