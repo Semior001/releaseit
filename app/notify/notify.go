@@ -61,3 +61,12 @@ func (d Destinations) Send(ctx context.Context, tagName, text string) error {
 
 	return merr.ErrorOrNil()
 }
+
+func extractBaseURL(url string) string {
+	proto := strings.Split(url, "://")
+	if len(proto) != 2 {
+		return url
+	}
+
+	return proto[0] + "://" + strings.Split(proto[1], "/")[0]
+}

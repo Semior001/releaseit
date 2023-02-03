@@ -107,17 +107,12 @@ func (g TelegramGroup) build() (notify.Destination, error) {
 
 // MattermostGroup defines parameters for mattermost hook notifier.
 type MattermostGroup struct {
-	BaseURL string        `long:"base_url" env:"BASE_URL" description:"base url of the mattermost server"`
-	ID      string        `long:"id" env:"ID" description:"id of the hook, where the release notes will be sent"`
+	URL     string        `long:"url" env:"URL" description:"url of the mattermost hook"`
 	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
 func (g MattermostGroup) build() (notify.Destination, error) {
-	return notify.NewMattermost(
-		http.Client{Timeout: g.Timeout},
-		g.BaseURL,
-		g.ID,
-	), nil
+	return notify.NewMattermost(http.Client{Timeout: g.Timeout}, g.URL), nil
 }
 
 // PostGroup defines parameters for post notifier.
@@ -166,7 +161,7 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 }
 
 func (g PostGroup) empty() bool       { return g.URL == "" }
-func (g MattermostGroup) empty() bool { return g.BaseURL == "" || g.ID == "" }
+func (g MattermostGroup) empty() bool { return g.URL == "" }
 func (g TelegramGroup) empty() bool   { return g.ChatID == "" || g.Token == "" }
 func (g GithubNotifierGroup) empty() bool {
 	return g.ReleaseNameTemplate == "" || g.Repo.Owner == "" || g.Repo.Name == ""
