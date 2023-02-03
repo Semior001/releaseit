@@ -15,6 +15,7 @@ template: |
   {{if not .Categories}}- Changes were not endured into pull requests{{end}}
   
   {{ range .Categories -}}
+      {{- if (eq (len .PRs) 0) }}{{ continue }}{{ end }}
       {{- .Title }} - {{ len .PRs }} pull requests merged
       {{- range .PRs }}
         - {{ .Title }} ([!{{.Number}}]({{.URL}})) merged at {{.ClosedAt.Format "02.01.2006 15:04:05"}} by @{{.Author}}

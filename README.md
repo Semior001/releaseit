@@ -75,8 +75,7 @@ Help Options:
           --notify.github.basic_auth.password= password for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
 
     mattermost-hook:
-          --notify.mattermost-hook.base_url=   base url of the mattermost server [$NOTIFY_MATTERMOST_HOOK_BASE_URL]
-          --notify.mattermost-hook.id=         id of the hook, where the release notes will be sent [$NOTIFY_MATTERMOST_HOOK_ID]
+          --notify.mattermost-hook.url=        url of the mattermost hook [$NOTIFY_MATTERMOST_HOOK_URL]
           --notify.mattermost-hook.timeout=    timeout for http requests (default: 5s) [$NOTIFY_MATTERMOST_HOOK_TIMEOUT]
 
     post:
@@ -98,22 +97,22 @@ Supported functions:
 - `last_tag()` - returns the last tag in repository (shortcut for `{{ index (tags) 0 }}`)
 
 ## Preview data file structure
-| Field                         | Description                            |
-|-------------------------------|----------------------------------------|
-| from                          | Commit ref to start release notes from |
-| to                            | Commit ref to end release notes at     |
-| extras                        | Extra variables to use in the template |
-| pull_requests.number          | Pull request number                    |
-| pull_requests.title           | Pull request title                     |
-| pull_requests.body            | Pull request body                      |
-| pull_requests.author.username | Pull request's author's username       |
-| pull_requests.author.email    | Pull request's author's email          |
-| pull_requests.author.date     | Date of the author's commit            |
-| pull_requests.labels          | List of pull request's labels          |
-| pull_requests.closed_at       | Date of the pull request's closing     |
-| pull_requests.source_branch   | Pull request's source branch           |
-| pull_requests.branch          | Pull request's target branch           |
-| pull_requests.url             | Pull request's url                     |
+| Field                          | Description                                                                      |
+|--------------------------------|----------------------------------------------------------------------------------|
+| from                           | Commit ref to start release notes from                                           |
+| to                             | Commit ref to end release notes at                                               |
+| extras                         | Extra variables to use in the template                                           |
+| pull_requests.number           | Pull request number                                                              |
+| pull_requests.title            | Pull request title                                                               |
+| pull_requests.body             | Pull request body                                                                |
+| pull_requests.author.username  | Pull request's author's username                                                 |
+| pull_requests.author.email     | Pull request's author's email                                                    |
+| pull_requests.labels           | List of pull request's labels                                                    |
+| pull_requests.closed_at        | Date of the pull request's closing                                               |
+| pull_requests.source_branch    | Pull request's source branch                                                     |
+| pull_requests.target_branch    | Pull request's target branch                                                     |
+| pull_requests.url              | Pull request's url                                                               |
+| pull_requests.received_by_shas | List of commit SHAs by which pull request was retrieved (for debugging purposes) |
 
 See [example](_example/preview_data.yaml) for details.
 
@@ -134,20 +133,22 @@ See [example](_example/config.yaml) for details.
 
 ## Template variables for release notes builder
 
-| Name                             | Description                                                  | Example                                         |
-|----------------------------------|--------------------------------------------------------------|-------------------------------------------------|
-| {{.From}}                        | From commit SHA / tag                                        | v0.1.0                                          |
-| {{.To}}                          | To commit SHA / tag                                          | v0.2.0                                          |
-| {{.Date}}                        | Date, when the changelog was built                           | Jan 02, 2006 15:04:05 UTC                       |
-| {{.Extras}}                      | Map of extra variables, provided by the user in envs         | map[foo:bar]                                    |
-| {{.Categories.Title}}            | Title of the category from the config                        | Features                                        |
-| {{.Categories.PRs.Number}}       | Number of the pull request                                   | 642                                             |
-| {{.Categories.PRs.Title}}        | Title of the pull request                                    | Some awesome feature added                      |
-| {{.Categories.PRs.Author}}       | Username of the author of pull request                       | Semior001                                       |
-| {{.Categories.PRs.URL}}          | URL to the pull request                                      | `https://github.com/Semior001/releaseit/pull/6` |
-| {{.Categories.PRs.SourceBranch}} | Source branch name, from which the pull request was created  | feature/awesome-feature                         |
-| {{.Categories.PRs.TargetBranch}} | Target branch name, to which the pull request was created    | develop                                         |
-| {{.Categories.PRs.ClosedAt}}     | Timestamp, when the pull request was closed (might be empty) | Jan 02, 2006 15:04:05 UTC                       |
+| Name                               | Description                                                    | Example                                         |
+|------------------------------------|----------------------------------------------------------------|-------------------------------------------------|
+| {{.From}}                          | From commit SHA / tag                                          | v0.1.0                                          |
+| {{.To}}                            | To commit SHA / tag                                            | v0.2.0                                          |
+| {{.Date}}                          | Date, when the changelog was built                             | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Extras}}                        | Map of extra variables, provided by the user in envs           | map[foo:bar]                                    |
+| {{.Total}}                         | Total number of pull requests                                  | 10                                              |
+| {{.Categories.Title}}              | Title of the category from the config                          | Features                                        |
+| {{.Categories.PRs.Number}}         | Number of the pull request                                     | 642                                             |
+| {{.Categories.PRs.Title}}          | Title of the pull request                                      | Some awesome feature added                      |
+| {{.Categories.PRs.Author}}         | Username of the author of pull request                         | Semior001                                       |
+| {{.Categories.PRs.URL}}            | URL to the pull request                                        | `https://github.com/Semior001/releaseit/pull/6` |
+| {{.Categories.PRs.SourceBranch}}   | Source branch name, from which the pull request was created    | feature/awesome-feature                         |
+| {{.Categories.PRs.TargetBranch}}   | Target branch name, to which the pull request was created      | develop                                         |
+| {{.Categories.PRs.ClosedAt}}       | Timestamp, when the pull request was closed (might be empty)   | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Categories.PRs.ReceivedBySHAs}} | List of commit SHAs, by which releaseit received pull requests | [a1b2c3d4e5f6, 1a2b3c4d5e6f]                    |
 
 The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes. 
 It also imports functions from [sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) library in 

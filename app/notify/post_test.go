@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPost_String(t *testing.T) {
+	assert.Equal(t, "post to https://example.com", (&Post{URL: "https://example.com"}).String())
+}
+
 func TestPost_Send(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
