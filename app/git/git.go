@@ -12,14 +12,15 @@ type Changelog struct {
 // PullRequest represents a pull/merge request from the
 // remote repository.
 type PullRequest struct {
-	Number   int       `yaml:"number"`
-	Title    string    `yaml:"title"`
-	Body     string    `yaml:"body"`
-	Author   User      `yaml:"author"`
-	Labels   []string  `yaml:"labels"`
-	ClosedAt time.Time `yaml:"closed_at"`
-	Branch   string    `yaml:"branch"`
-	URL      string    `yaml:"url"`
+	Number         int       `yaml:"number"`
+	Title          string    `yaml:"title"`
+	Body           string    `yaml:"body"`
+	Author         User      `yaml:"author"`
+	Labels         []string  `yaml:"labels"`
+	ClosedAt       time.Time `yaml:"closed_at"`
+	Branch         string    `yaml:"branch"`
+	URL            string    `yaml:"url"`
+	ReceivedBySHAs []string  `yaml:"received_by_shas"`
 }
 
 // User holds user data.
