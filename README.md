@@ -161,24 +161,3 @@ order to provide common used template functions.
 | {{.TagName}} | Tag name of the release | v1.0.0  |
 
 [Sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) functions are also available.
-
-
-## Preview data file structure
-| Field                         | Description                            |
-|-------------------------------|----------------------------------------|
-| from                          | Commit ref to start release notes from |
-| to                            | Commit ref to end release notes at     |
-| extras                        | Extra variables to use in the template |
-| pull_requests.number          | Pull request number                    |
-| pull_requests.title           | Pull request title                     |
-| pull_requests.body            | Pull request body                      |
-| pull_requests.author.username | Pull request's author's username       |
-| pull_requests.author.email    | Pull request's author's email          |
-| pull_requests.author.date     | Date of the author's commit            |
-| pull_requests.labels          | List of pull request's labels          |
-| pull_requests.closed_at       | Date of the pull request's closing     |
-| pull_requests.branch          | Pull request's branch                  |
-| pull_requests.url             | Pull request's url                     |
-
-See [example](_example/preview_data.yaml) for details.
-

@@ -93,15 +93,15 @@ func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 
 	for i, pr := range prs {
 		res[i] = git.PullRequest{
-			Number:   pr.GetNumber(),
-			Title:    pr.GetTitle(),
-			Body:     pr.GetBody(),
-			ClosedAt: pr.GetClosedAt(),
-			Author:   git.User{Username: pr.GetUser().GetLogin(), Email: pr.GetUser().GetEmail()},
-			Labels:   lo.Map(pr.Labels, func(l *gh.Label, _ int) string { return l.GetName() }),
+			Number:       pr.GetNumber(),
+			Title:        pr.GetTitle(),
+			Body:         pr.GetBody(),
+			ClosedAt:     pr.GetClosedAt(),
+			Author:       git.User{Username: pr.GetUser().GetLogin(), Email: pr.GetUser().GetEmail()},
+			Labels:       lo.Map(pr.Labels, func(l *gh.Label, _ int) string { return l.GetName() }),
 			SourceBranch: pr.GetBase().GetRef(),
 			TargetBranch: pr.GetHead().GetRef(),
-			URL:      pr.GetHTMLURL(),
+			URL:          pr.GetHTMLURL(),
 		}
 	}
 
