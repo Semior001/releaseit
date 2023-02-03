@@ -78,6 +78,7 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 				User:     &gh.User{Login: gh.String("username 1"), Email: gh.String("email 1")},
 				Labels:   []*gh.Label{{Name: gh.String("label 1")}},
 				Base:     &gh.PullRequestBranch{Ref: gh.String("branch 1")},
+				Head:     &gh.PullRequestBranch{Ref: gh.String("master")},
 				URL:      gh.String("url 1"),
 			},
 			{
@@ -88,6 +89,7 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 				User:     &gh.User{Login: gh.String("username 2"), Email: gh.String("email 2")},
 				Labels:   []*gh.Label{{Name: gh.String("label 2")}, {Name: gh.String("label 3")}},
 				Base:     &gh.PullRequestBranch{Ref: gh.String("branch 2")},
+				Head:     &gh.PullRequestBranch{Ref: gh.String("develop")},
 				URL:      gh.String("url 2"),
 			},
 		})
@@ -99,24 +101,26 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []git.PullRequest{
 		{
-			Number:   1,
-			Title:    "title 1",
-			Body:     "body 1",
-			Author:   git.User{Username: "username 1", Email: "email 1"},
-			Labels:   []string{"label 1"},
-			ClosedAt: now.UTC(),
-			Branch:   "branch 1",
-			URL:      "url 1",
+			Number:       1,
+			Title:        "title 1",
+			Body:         "body 1",
+			Author:       git.User{Username: "username 1", Email: "email 1"},
+			Labels:       []string{"label 1"},
+			ClosedAt:     now.UTC(),
+			SourceBranch: "branch 1",
+			TargetBranch: "master",
+			URL:          "url 1",
 		},
 		{
-			Number:   2,
-			Title:    "title 2",
-			Body:     "body 2",
-			Author:   git.User{Username: "username 2", Email: "email 2"},
-			Labels:   []string{"label 2", "label 3"},
-			ClosedAt: now.Add(time.Hour).UTC(),
-			Branch:   "branch 2",
-			URL:      "url 2",
+			Number:       2,
+			Title:        "title 2",
+			Body:         "body 2",
+			Author:       git.User{Username: "username 2", Email: "email 2"},
+			Labels:       []string{"label 2", "label 3"},
+			ClosedAt:     now.Add(time.Hour).UTC(),
+			SourceBranch: "branch 2",
+			TargetBranch: "develop",
+			URL:          "url 2",
 		},
 	}, prs)
 }

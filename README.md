@@ -111,7 +111,8 @@ Supported functions:
 | pull_requests.author.date     | Date of the author's commit            |
 | pull_requests.labels          | List of pull request's labels          |
 | pull_requests.closed_at       | Date of the pull request's closing     |
-| pull_requests.branch          | Pull request's branch                  |
+| pull_requests.source_branch   | Pull request's source branch           |
+| pull_requests.branch          | Pull request's target branch           |
 | pull_requests.url             | Pull request's url                     |
 
 See [example](_example/preview_data.yaml) for details.
@@ -122,7 +123,7 @@ See [example](_example/preview_data.yaml) for details.
 | categories        | Categories of pull requests                                                                                                                             |
 | categories.title  | Title, which will be provided to the release notes template                                                                                             |
 | categories.labels | An array of labels, to match pull request labels against. If any PR label matches any category label, the pull request will show up under this category |
-| categories.branch | A regular expression to match branch name to the corresponding category.                                                                                |
+| categories.branch | A regular expression to match source branch name to the corresponding category.                                                                         |
 | sort_field        | Field, by which pull requests must be sorted, in format +&#124;-field currently supported fields: `number`, `author`, `title`, `closed`                 |
 | template          | Template for a changelog in golang's text template language                                                                                             |
 | unused_title      | If set, the unused category will be built under this title at the end of the changelog                                                                  |
@@ -133,19 +134,20 @@ See [example](_example/config.yaml) for details.
 
 ## Template variables for release notes builder
 
-| Name                         | Description                                                  | Example                                         |
-|------------------------------|--------------------------------------------------------------|-------------------------------------------------|
-| {{.From}}                    | From commit SHA / tag                                        | v0.1.0                                          |
-| {{.To}}                      | To commit SHA / tag                                          | v0.2.0                                          |
-| {{.Date}}                    | Date, when the changelog was built                           | Jan 02, 2006 15:04:05 UTC                       |
-| {{.Extras}}                  | Map of extra variables, provided by the user in envs         | map[foo:bar]                                    |
-| {{.Categories.Title}}        | Title of the category from the config                        | Features                                        |
-| {{.Categories.PRs.Number}}   | Number of the pull request                                   | 642                                             |
-| {{.Categories.PRs.Title}}    | Title of the pull request                                    | Some awesome feature added                      |
-| {{.Categories.PRs.Author}}   | Username of the author of pull request                       | Semior001                                       |
-| {{.Categories.PRs.URL}}      | URL to the pull request                                      | `https://github.com/Semior001/releaseit/pull/6` |
-| {{.Categories.Branch}}       | Branch name, from which the pull request was created         | feature/awesome-feature                         |
-| {{.Categories.PRs.ClosedAt}} | Timestamp, when the pull request was closed (might be empty) | Jan 02, 2006 15:04:05 UTC                       |
+| Name                             | Description                                                  | Example                                         |
+|----------------------------------|--------------------------------------------------------------|-------------------------------------------------|
+| {{.From}}                        | From commit SHA / tag                                        | v0.1.0                                          |
+| {{.To}}                          | To commit SHA / tag                                          | v0.2.0                                          |
+| {{.Date}}                        | Date, when the changelog was built                           | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Extras}}                      | Map of extra variables, provided by the user in envs         | map[foo:bar]                                    |
+| {{.Categories.Title}}            | Title of the category from the config                        | Features                                        |
+| {{.Categories.PRs.Number}}       | Number of the pull request                                   | 642                                             |
+| {{.Categories.PRs.Title}}        | Title of the pull request                                    | Some awesome feature added                      |
+| {{.Categories.PRs.Author}}       | Username of the author of pull request                       | Semior001                                       |
+| {{.Categories.PRs.URL}}          | URL to the pull request                                      | `https://github.com/Semior001/releaseit/pull/6` |
+| {{.Categories.PRs.SourceBranch}} | Source branch name, from which the pull request was created  | feature/awesome-feature                         |
+| {{.Categories.PRs.TargetBranch}} | Target branch name, to which the pull request was created    | develop                                         |
+| {{.Categories.PRs.ClosedAt}}     | Timestamp, when the pull request was closed (might be empty) | Jan 02, 2006 15:04:05 UTC                       |
 
 The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes. 
 It also imports functions from [sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) library in 

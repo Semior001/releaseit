@@ -18,7 +18,8 @@ type PullRequest struct {
 	Author         User      `yaml:"author"`
 	Labels         []string  `yaml:"labels"`
 	ClosedAt       time.Time `yaml:"closed_at"`
-	Branch         string    `yaml:"branch"`
+	SourceBranch   string    `yaml:"source_branch"`
+	TargetBranch   string    `yaml:"target_branch"`
 	URL            string    `yaml:"url"`
 	ReceivedBySHAs []string  `yaml:"received_by_shas"`
 }

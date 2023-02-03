@@ -75,20 +75,12 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 				continue
 			}
 
-			hasBranchPrefix := category.BranchRe != nil && category.BranchRe.MatchString(pr.Branch)
+			hasBranchPrefix := category.BranchRe != nil && category.BranchRe.MatchString(pr.SourceBranch)
 			hasAnyOfLabels := len(lo.Intersect(pr.Labels, category.Labels)) > 0
 
 			if hasAnyOfLabels || hasBranchPrefix {
 				usedPRs[i] = true
-				categoryData.PRs = append(categoryData.PRs, prTmplData{
-					Number:         pr.Number,
-					Title:          pr.Title,
-					Author:         pr.Author.Username,
-					ClosedAt:       pr.ClosedAt,
-					URL:            pr.URL,
-					Branch:         pr.Branch,
-					ReceivedBySHAs: pr.ReceivedBySHAs,
-				})
+				categoryData.PRs = append(categoryData.PRs, prToTmplData(pr))
 			}
 		}
 
@@ -124,18 +116,23 @@ func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) cate
 			continue
 		}
 
-		category.PRs = append(category.PRs, prTmplData{
-			Number:         pr.Number,
-			Title:          pr.Title,
-			Author:         pr.Author.Username,
-			URL:            pr.URL,
-			ClosedAt:       pr.ClosedAt,
-			Branch:         pr.Branch,
-			ReceivedBySHAs: pr.ReceivedBySHAs,
-		})
+		category.PRs = append(category.PRs, prToTmplData(pr))
 	}
 
 	return category
+}
+
+func prToTmplData(pr git.PullRequest) prTmplData {
+	return prTmplData{
+		Number:         pr.Number,
+		Title:          pr.Title,
+		Author:         pr.Author.Username,
+		URL:            pr.URL,
+		ClosedAt:       pr.ClosedAt,
+		SourceBranch:   pr.SourceBranch,
+		TargetBranch:   pr.TargetBranch,
+		ReceivedBySHAs: pr.ReceivedBySHAs,
+	}
 }
 
 func (s *Builder) sortPRs(prs []prTmplData) {
@@ -191,7 +188,8 @@ type prTmplData struct {
 	Title          string
 	Author         string
 	URL            string
-	Branch         string
+	SourceBranch   string
+	TargetBranch   string
 	ClosedAt       time.Time
 	ReceivedBySHAs []string
 }

@@ -75,6 +75,7 @@ func TestGitlab_ListPRsOfCommit(t *testing.T) {
 			Labels:       []string{"label1", "label2"},
 			MergedAt:     lo.ToPtr(now.UTC()),
 			SourceBranch: "source",
+			TargetBranch: "target",
 			WebURL:       "url",
 		}})
 		require.NoError(t, err)
@@ -83,14 +84,15 @@ func TestGitlab_ListPRsOfCommit(t *testing.T) {
 	prs, err := svc.ListPRsOfCommit(context.Background(), "sha")
 	require.NoError(t, err)
 	assert.Equal(t, []git.PullRequest{{
-		Number:   1,
-		Title:    "title",
-		Body:     "description",
-		Author:   git.User{Username: "author"},
-		Labels:   []string{"label1", "label2"},
-		ClosedAt: now.UTC(),
-		Branch:   "source",
-		URL:      "url",
+		Number:       1,
+		Title:        "title",
+		Body:         "description",
+		Author:       git.User{Username: "author"},
+		Labels:       []string{"label1", "label2"},
+		ClosedAt:     now.UTC(),
+		SourceBranch: "source",
+		TargetBranch: "target",
+		URL:          "url",
 	}}, prs)
 }
 

@@ -37,7 +37,7 @@ type CategoryConfig struct {
 	Title  string   `yaml:"title"`
 	Labels []string `yaml:"labels"`
 
-	// regexp to match branch name
+	// regexp to match source branch name
 	Branch string `yaml:"branch"`
 
 	// compiled branch regexp, used internally

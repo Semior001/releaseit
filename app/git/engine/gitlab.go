@@ -95,9 +95,10 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			})),
 			// closed at in MR points to time when MR was closed without merging,
 			// so we use merged at instead.
-			ClosedAt: lo.FromPtr(mr.MergedAt),
-			Branch:   mr.SourceBranch,
-			URL:      mr.WebURL,
+			ClosedAt:     lo.FromPtr(mr.MergedAt),
+			SourceBranch: mr.SourceBranch,
+			TargetBranch: mr.TargetBranch,
+			URL:          mr.WebURL,
 		}
 	}
 
