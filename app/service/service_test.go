@@ -52,30 +52,11 @@ func TestService_Changelog(t *testing.T) {
 				CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
 					return git.CommitsComparison{
 						Commits: []git.Commit{
-							{
-								SHA:         "from",
-								ParentSHAs:  []string{"parent", "pr1"},
-								Message:     "Pull request #1",
-								CommitStats: git.CommitStats{Additions: 1, Deletions: 1},
-							},
-							// this won't be picked up, because of the zero diff
-							{
-								SHA:        "intermediate",
-								ParentSHAs: []string{"from", "to"},
-								Message:    "intermediate commit message",
-							},
-							{
-								SHA:         "intermediate_squashed",
-								ParentSHAs:  []string{"intermediate"},
-								Message:     "squash: Pull request #4",
-								CommitStats: git.CommitStats{Additions: 1, Deletions: 1},
-							},
-							{
-								SHA:         "to",
-								ParentSHAs:  []string{"intermediate", "pr2"},
-								Message:     "Pull request #2",
-								CommitStats: git.CommitStats{Additions: 1, Deletions: 1},
-							},
+							{SHA: "from", ParentSHAs: []string{"parent", "pr1"}, Message: "Pull request #1"},
+							// this won't be picked up
+							{SHA: "intermediate", ParentSHAs: []string{"from"}, Message: "intermediate commit message"},
+							{SHA: "intermediate_squashed", ParentSHAs: []string{"intermediate"}, Message: "squash: Pull request #4"},
+							{SHA: "to", ParentSHAs: []string{"intermediate", "pr2"}, Message: "Pull request #2"},
 						},
 						TotalCommits: 4,
 					}, nil

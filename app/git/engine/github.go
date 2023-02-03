@@ -128,18 +128,10 @@ func (g *Github) ListTags(ctx context.Context) ([]git.Tag, error) {
 
 type shaGetter interface {
 	GetSHA() string
-	GetStats() *gh.CommitStats
 }
 
 func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
-	res := git.Commit{
-		SHA: commitInterface.GetSHA(),
-		CommitStats: git.CommitStats{
-			Total:     commitInterface.GetStats().GetTotal(),
-			Additions: commitInterface.GetStats().GetAdditions(),
-			Deletions: commitInterface.GetStats().GetDeletions(),
-		},
-	}
+	res := git.Commit{SHA: commitInterface.GetSHA()}
 	switch cmt := commitInterface.(type) {
 	case *gh.Commit:
 		res.ParentSHAs = lo.Map(cmt.Parents, func(c *gh.Commit, _ int) string { return c.GetSHA() })

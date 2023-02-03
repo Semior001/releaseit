@@ -33,15 +33,6 @@ type Commit struct {
 	SHA        string
 	ParentSHAs []string
 	Message    string
-
-	CommitStats
-}
-
-// CommitStats represents a commit stats.
-type CommitStats struct {
-	Total     int
-	Additions int
-	Deletions int
 }
 
 // CommitsComparison is the result of comparing two commits.
