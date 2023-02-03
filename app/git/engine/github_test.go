@@ -172,6 +172,28 @@ func TestGithub_ListTags(t *testing.T) {
 	}, tags)
 }
 
+func TestGithub_GetCommit(t *testing.T) {
+	svc := newGithub(t, func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/repos/owner/name/commits/sha", r.URL.Path, "path is not set")
+
+		err := json.NewEncoder(w).Encode(&gh.RepositoryCommit{
+			SHA:     gh.String("sha 1"),
+			Parents: []*gh.Commit{{SHA: gh.String("parent 1")}},
+			Commit:  &gh.Commit{Message: gh.String("message 1")},
+		})
+		require.NoError(t, err)
+		w.WriteHeader(http.StatusOK)
+	})
+
+	commit, err := svc.GetCommit(context.Background(), "sha")
+	require.NoError(t, err)
+	assert.Equal(t, git.Commit{
+		SHA:        "sha 1",
+		ParentSHAs: []string{"parent 1"},
+		Message:    "message 1",
+	}, commit)
+}
+
 func newGithub(t *testing.T, h http.HandlerFunc) *Github {
 	t.Helper()
 

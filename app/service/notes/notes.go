@@ -81,12 +81,13 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 			if hasAnyOfLabels || hasBranchPrefix {
 				usedPRs[i] = true
 				categoryData.PRs = append(categoryData.PRs, prTmplData{
-					Number:   pr.Number,
-					Title:    pr.Title,
-					Author:   pr.Author.Username,
-					ClosedAt: pr.ClosedAt,
-					URL:      pr.URL,
-					Branch:   pr.Branch,
+					Number:         pr.Number,
+					Title:          pr.Title,
+					Author:         pr.Author.Username,
+					ClosedAt:       pr.ClosedAt,
+					URL:            pr.URL,
+					Branch:         pr.Branch,
+					ReceivedBySHAs: pr.ReceivedBySHAs,
 				})
 			}
 		}
@@ -124,12 +125,13 @@ func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) cate
 		}
 
 		category.PRs = append(category.PRs, prTmplData{
-			Number:   pr.Number,
-			Title:    pr.Title,
-			Author:   pr.Author.Username,
-			URL:      pr.URL,
-			ClosedAt: pr.ClosedAt,
-			Branch:   pr.Branch,
+			Number:         pr.Number,
+			Title:          pr.Title,
+			Author:         pr.Author.Username,
+			URL:            pr.URL,
+			ClosedAt:       pr.ClosedAt,
+			Branch:         pr.Branch,
+			ReceivedBySHAs: pr.ReceivedBySHAs,
 		})
 	}
 
@@ -185,10 +187,11 @@ type categoryTmplData struct {
 }
 
 type prTmplData struct {
-	Number   int
-	Title    string
-	Author   string
-	URL      string
-	Branch   string
-	ClosedAt time.Time
+	Number         int
+	Title          string
+	Author         string
+	URL            string
+	Branch         string
+	ClosedAt       time.Time
+	ReceivedBySHAs []string
 }

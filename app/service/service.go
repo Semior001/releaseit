@@ -50,6 +50,11 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 }
 
 func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string) ([]git.PullRequest, error) {
+	fromCommit, err := s.Engine.GetCommit(ctx, fromSHA)
+	if err != nil {
+		return nil, fmt.Errorf("get commit %s: %w", fromSHA, err)
+	}
+
 	var res []git.PullRequest
 
 	commits, err := s.Engine.Compare(ctx, fromSHA, toSHA)
@@ -63,6 +68,10 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 			continue
 		}
 
+		if commit.CommittedAt.Before(fromCommit.CommittedAt) {
+			continue
+		}
+
 		prs, err := s.Engine.ListPRsOfCommit(ctx, refCommitSHA)
 		if err != nil {
 			return nil, fmt.Errorf("list pull requests of commit %s: %w", refCommitSHA, err)
@@ -70,12 +79,23 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 
 		for _, pr := range prs {
 			if !pr.ClosedAt.IsZero() {
+				pr.ReceivedBySHAs = append(pr.ReceivedBySHAs, refCommitSHA)
 				res = append(res, pr)
 			}
 		}
 	}
 
-	return lo.UniqBy(res, func(item git.PullRequest) int { return item.Number }), nil
+	// merge "received by sha" between PRs
+	uniqPRs := map[int]git.PullRequest{}
+	for _, pr := range res {
+		if prev, ok := uniqPRs[pr.Number]; ok {
+			pr.ReceivedBySHAs = append(pr.ReceivedBySHAs, prev.ReceivedBySHAs...)
+		}
+
+		uniqPRs[pr.Number] = pr
+	}
+
+	return lo.Values(uniqPRs), nil
 }
 
 func (s *Service) isMergeCommit(commit git.Commit) (prAttachedSHA string, ok bool) {
