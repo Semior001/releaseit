@@ -40,6 +40,7 @@ Help Options:
           --engine.github.timeout=             timeout for http requests (default: 5s) [$ENGINE_GITHUB_TIMEOUT]
 
     repo:
+          --engine.github.repo.full-name=      full name of the repository (owner/name) [$ENGINE_GITHUB_REPO_FULL_NAME]
           --engine.github.repo.owner=          owner of the repository [$ENGINE_GITHUB_REPO_OWNER]
           --engine.github.repo.name=           name of the repository [$ENGINE_GITHUB_REPO_NAME]
 
@@ -67,6 +68,7 @@ Help Options:
           --notify.github.release-name-tmpl=   template for release name [$NOTIFY_GITHUB_RELEASE_NAME_TMPL]
 
     repo:
+          --notify.github.repo.full-name=      full name of the repository (owner/name) [$NOTIFY_GITHUB_REPO_FULL_NAME]
           --notify.github.repo.owner=          owner of the repository [$NOTIFY_GITHUB_REPO_OWNER]
           --notify.github.repo.name=           name of the repository [$NOTIFY_GITHUB_REPO_NAME]
 
