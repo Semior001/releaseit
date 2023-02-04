@@ -50,15 +50,15 @@ type GithubGroup struct {
 	BasicAuth struct {
 		Username string `long:"username" env:"USERNAME" description:"username for basic auth"`
 		Password string `long:"password" env:"PASSWORD" description:"password for basic auth"`
-	} `group:"basic_auth" namespace:"basic_auth" env-namespace:"BASIC_AUTH"`
+	} `group:"basic-auth" namespace:"basic-auth" env-namespace:"BASIC_AUTH"`
 	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
 // GitlabGroup defines parameters to connect to the gitlab repository.
 type GitlabGroup struct {
 	Token     string        `long:"token" env:"TOKEN" description:"token to connect to the gitlab repository"`
-	BaseURL   string        `long:"base_url" env:"BASE_URL" description:"base url of the gitlab instance"`
-	ProjectID string        `long:"project_id" env:"PROJECT_ID" description:"project id of the repository"`
+	BaseURL   string        `long:"base-url" env:"BASE_URL" description:"base url of the gitlab instance"`
+	ProjectID string        `long:"project-id" env:"PROJECT_ID" description:"project id of the repository"`
 	Timeout   time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
@@ -74,7 +74,7 @@ type NotifyGroup struct {
 // GithubNotifierGroup defines parameters to make release in the github.
 type GithubNotifierGroup struct {
 	GithubGroup
-	ReleaseNameTemplate string `long:"release_name_tmpl" env:"RELEASE_NAME_TMPL" description:"template for release name"`
+	ReleaseNameTemplate string `long:"release-name-tmpl" env:"RELEASE_NAME_TMPL" description:"template for release name"`
 }
 
 func (g GithubNotifierGroup) build() (notify.Destination, error) {
@@ -90,9 +90,9 @@ func (g GithubNotifierGroup) build() (notify.Destination, error) {
 
 // TelegramGroup defines parameters for telegram notifier.
 type TelegramGroup struct {
-	ChatID         string        `long:"chat_id" env:"CHAT_ID" description:"id of the chat, where the release notes will be sent"`
+	ChatID         string        `long:"chat-id" env:"CHAT_ID" description:"id of the chat, where the release notes will be sent"`
 	Token          string        `long:"token" env:"TOKEN" description:"bot token"`
-	WebPagePreview bool          `long:"web_page_preview" env:"WEB_PAGE_PREVIEW" description:"request telegram to preview for web links"`
+	WebPagePreview bool          `long:"web-page-preview" env:"WEB_PAGE_PREVIEW" description:"request telegram to preview for web links"`
 	Timeout        time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 

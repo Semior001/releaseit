@@ -79,7 +79,7 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 				Labels:   []*gh.Label{{Name: gh.String("label 1")}},
 				Base:     &gh.PullRequestBranch{Ref: gh.String("branch 1")},
 				Head:     &gh.PullRequestBranch{Ref: gh.String("master")},
-				URL:      gh.String("url 1"),
+				HTMLURL:  gh.String("url 1"),
 			},
 			{
 				Number:   gh.Int(2),
@@ -90,7 +90,7 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 				Labels:   []*gh.Label{{Name: gh.String("label 2")}, {Name: gh.String("label 3")}},
 				Base:     &gh.PullRequestBranch{Ref: gh.String("branch 2")},
 				Head:     &gh.PullRequestBranch{Ref: gh.String("develop")},
-				URL:      gh.String("url 2"),
+				HTMLURL:  gh.String("url 2"),
 			},
 		})
 		require.NoError(t, err)

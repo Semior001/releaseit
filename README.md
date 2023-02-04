@@ -23,14 +23,14 @@ Help Options:
 [preview command options]
           --data-file=     path to the file with release data [$DATA_FILE]
           --extras=        extra variables to use in the template, will be merged (env primary) with ones in the config file [$EXTRAS]
-          --conf_location= location to the config file [$CONF_LOCATION]
+          --conf-location= location to the config file [$CONF_LOCATION]
 
 [changelog command options]
           --from=                              commit ref to start release notes from (default: {{ previous_tag .To }}) [$FROM]
           --to=                                commit ref to end release notes to (default: {{ last_tag }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
           --squash-commit-rx=                  regexp to match squash commits (default: ^squash:(.?)+$) [$SQUASH_COMMIT_RX]
-          --conf_location=                     location to the config file [$CONF_LOCATION]
+          --conf-location=                     location to the config file [$CONF_LOCATION]
           --extras=                            extra variables to use in the template [$EXTRAS]
 
     engine:
@@ -43,36 +43,36 @@ Help Options:
           --engine.github.repo.owner=          owner of the repository [$ENGINE_GITHUB_REPO_OWNER]
           --engine.github.repo.name=           name of the repository [$ENGINE_GITHUB_REPO_NAME]
 
-    basic_auth:
-          --engine.github.basic_auth.username= username for basic auth [$ENGINE_GITHUB_BASIC_AUTH_USERNAME]
-          --engine.github.basic_auth.password= password for basic auth [$ENGINE_GITHUB_BASIC_AUTH_PASSWORD]
+    basic-auth:
+          --engine.github.basic-auth.username= username for basic auth [$ENGINE_GITHUB_BASIC_AUTH_USERNAME]
+          --engine.github.basic-auth.password= password for basic auth [$ENGINE_GITHUB_BASIC_AUTH_PASSWORD]
 
     gitlab:
           --engine.gitlab.token=               token to connect to the gitlab repository [$ENGINE_GITLAB_TOKEN]
-          --engine.gitlab.base_url=            base url of the gitlab instance [$ENGINE_GITLAB_BASE_URL]
-          --engine.gitlab.project_id=          project id of the repository [$ENGINE_GITLAB_PROJECT_ID]
+          --engine.gitlab.base-url=            base url of the gitlab instance [$ENGINE_GITLAB_BASE_URL]
+          --engine.gitlab.project-id=          project id of the repository [$ENGINE_GITLAB_PROJECT_ID]
           --engine.gitlab.timeout=             timeout for http requests (default: 5s) [$ENGINE_GITLAB_TIMEOUT]
 
     notify:
           --notify.stdout                      print release notes to stdout [$NOTIFY_STDOUT]
 
     telegram:
-          --notify.telegram.chat_id=           id of the chat, where the release notes will be sent [$NOTIFY_TELEGRAM_CHAT_ID]
+          --notify.telegram.chat-id=           id of the chat, where the release notes will be sent [$NOTIFY_TELEGRAM_CHAT_ID]
           --notify.telegram.token=             bot token [$NOTIFY_TELEGRAM_TOKEN]
-          --notify.telegram.web_page_preview   request telegram to preview for web links [$NOTIFY_TELEGRAM_WEB_PAGE_PREVIEW]
+          --notify.telegram.web-page-preview   request telegram to preview for web links [$NOTIFY_TELEGRAM_WEB_PAGE_PREVIEW]
           --notify.telegram.timeout=           timeout for http requests (default: 5s) [$NOTIFY_TELEGRAM_TIMEOUT]
 
     github:
           --notify.github.timeout=             timeout for http requests (default: 5s) [$NOTIFY_GITHUB_TIMEOUT]
-          --notify.github.release_name_tmpl=   template for release name [$NOTIFY_GITHUB_RELEASE_NAME_TMPL]
+          --notify.github.release-name-tmpl=   template for release name [$NOTIFY_GITHUB_RELEASE_NAME_TMPL]
 
     repo:
           --notify.github.repo.owner=          owner of the repository [$NOTIFY_GITHUB_REPO_OWNER]
           --notify.github.repo.name=           name of the repository [$NOTIFY_GITHUB_REPO_NAME]
 
-    basic_auth:
-          --notify.github.basic_auth.username= username for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_USERNAME]
-          --notify.github.basic_auth.password= password for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
+    basic-auth:
+          --notify.github.basic-auth.username= username for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_USERNAME]
+          --notify.github.basic-auth.password= password for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
 
     mattermost-hook:
           --notify.mattermost-hook.url=        url of the mattermost hook [$NOTIFY_MATTERMOST_HOOK_URL]
@@ -159,4 +159,5 @@ order to provide common used template functions.
 | Name         | Description             | Example |
 |--------------|-------------------------|---------|
 | {{.TagName}} | Tag name of the release | v1.0.0  |
-Sprig functions are also available in here.
+
+[Sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) functions are also available.
