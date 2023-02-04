@@ -88,6 +88,7 @@ type NotifyGroup struct {
 	Mattermost MattermostGroup     `group:"mattermost-hook" namespace:"mattermost-hook" env-namespace:"MATTERMOST_HOOK"`
 	Post       PostGroup           `group:"post" namespace:"post" env-namespace:"POST"`
 	Stdout     bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
+	Stderr     bool                `long:"stderr" env:"STDERR" description:"print release notes to stderr"`
 }
 
 // GithubNotifierGroup defines parameters to make release in the github.
@@ -155,6 +156,9 @@ func (g PostGroup) build() (notify.Destination, error) {
 func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 	if r.Stdout {
 		destinations = append(destinations, &notify.WriterNotifier{Writer: os.Stdout, Name: "stdout"})
+	}
+	if r.Stderr {
+		destinations = append(destinations, &notify.WriterNotifier{Writer: os.Stderr, Name: "stderr"})
 	}
 
 	for _, d := range []struct {

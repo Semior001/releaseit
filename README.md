@@ -56,6 +56,7 @@ Help Options:
 
     notify:
           --notify.stdout                      print release notes to stdout [$NOTIFY_STDOUT]
+          --notify.stderr                      print release notes to stderr [$NOTIFY_STDERR]
 
     telegram:
           --notify.telegram.chat-id=           id of the chat, where the release notes will be sent [$NOTIFY_TELEGRAM_CHAT_ID]
