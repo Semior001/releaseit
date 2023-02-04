@@ -174,5 +174,5 @@ func (g PostGroup) empty() bool       { return g.URL == "" }
 func (g MattermostGroup) empty() bool { return g.URL == "" }
 func (g TelegramGroup) empty() bool   { return g.ChatID == "" || g.Token == "" }
 func (g GithubNotifierGroup) empty() bool {
-	return g.ReleaseNameTemplate == "" || g.Repo.Owner == "" || g.Repo.Name == ""
+	return g.ReleaseNameTemplate == "" || (g.Repo.FullName == "" && (g.Repo.Owner == "" || g.Repo.Name == ""))
 }
