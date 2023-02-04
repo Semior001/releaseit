@@ -37,12 +37,15 @@ jobs:
           version: v1.50.1
           skip-go-installation: true
 
-      - uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: $GITHUB_WORKSPACE/profile.cov
-          fail_ci_if_error: true
-          verbose: true
+      - name: submit coverage to codecov
+        run: |
+          cat $GITHUB_WORKSPACE/profile.cov > $GITHUB_WORKSPACE/coverage.txt
+          cd $GITHUB_WORKSPACE
+          bash <(curl -s https://codecov.io/bash)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          GOFLAGS: "-mod=mod"
+          CGO_ENABLED: 0
 
       - name: set up QEMU
         uses: docker/setup-qemu-action@v1
