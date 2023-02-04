@@ -16,7 +16,7 @@ type Changelog struct {
 	From           string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previous_tag .To }}"`
 	To             string            `long:"to" env:"TO" description:"commit ref to end release notes to" default:"{{ last_tag }}"`
 	Timeout        time.Duration     `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`
-	SquashCommitRx string            `long:"squash-commit-rx" env:"SQUASH_COMMIT_RX" description:"regexp to match squash commits" default:"^Merge pull request #\\d+ from .+"`
+	SquashCommitRx string            `long:"squash-commit-rx" env:"SQUASH_COMMIT_RX" description:"regexp to match squash commits" default:"^.*#\\d+.*$"`
 	ConfLocation   string            `long:"conf-location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
 	Extras         map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
 
