@@ -24,6 +24,10 @@ type EngineGroup struct {
 func (r EngineGroup) Build() (engine.Interface, error) {
 	switch r.Type {
 	case "github":
+		if err := r.Github.fill(); err != nil {
+			return nil, err
+		}
+
 		return engine.NewGithub(engine.GithubParams{
 			Owner:             r.Github.Repo.Owner,
 			Name:              r.Github.Repo.Name,
@@ -56,6 +60,19 @@ type GithubGroup struct {
 	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
+func (g *GithubGroup) fill() error {
+	if g.Repo.FullName == "" || (g.Repo.Owner != "" && g.Repo.Name != "") {
+		return nil
+	}
+
+	tokens := strings.Split(g.Repo.FullName, "/")
+	if len(tokens) != 2 {
+		return fmt.Errorf("invalid repository name %s", g.Repo.FullName)
+	}
+	g.Repo.Owner, g.Repo.Name = tokens[0], tokens[1]
+	return nil
+}
+
 // GitlabGroup defines parameters to connect to the gitlab repository.
 type GitlabGroup struct {
 	Token     string        `long:"token" env:"TOKEN" description:"token to connect to the gitlab repository"`
@@ -80,12 +97,8 @@ type GithubNotifierGroup struct {
 }
 
 func (g GithubNotifierGroup) build() (notify.Destination, error) {
-	if g.Repo.FullName != "" && g.Repo.Owner == "" && g.Repo.Name == "" {
-		tokens := strings.Split(g.Repo.FullName, "/")
-		if len(tokens) != 2 {
-			return nil, fmt.Errorf("invalid repository name %s", g.Repo.FullName)
-		}
-		g.Repo.Owner, g.Repo.Name = tokens[0], tokens[1]
+	if err := g.GithubGroup.fill(); err != nil {
+		return nil, err
 	}
 
 	return notify.NewGithub(notify.GithubParams{
