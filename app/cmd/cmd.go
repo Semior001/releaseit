@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Semior001/releaseit/app/git/engine"
@@ -44,8 +45,9 @@ func (r EngineGroup) Build() (engine.Interface, error) {
 // GithubGroup defines parameters to connect to the github repository.
 type GithubGroup struct {
 	Repo struct {
-		Owner string `long:"owner" env:"OWNER" description:"owner of the repository"`
-		Name  string `long:"name" env:"NAME" description:"name of the repository"`
+		FullName string `long:"full-name" env:"FULL_NAME" description:"full name of the repository (owner/name)"`
+		Owner    string `long:"owner" env:"OWNER" description:"owner of the repository"`
+		Name     string `long:"name" env:"NAME" description:"name of the repository"`
 	} `group:"repo" namespace:"repo" env-namespace:"REPO"`
 	BasicAuth struct {
 		Username string `long:"username" env:"USERNAME" description:"username for basic auth"`
@@ -78,6 +80,14 @@ type GithubNotifierGroup struct {
 }
 
 func (g GithubNotifierGroup) build() (notify.Destination, error) {
+	if g.Repo.FullName != "" && g.Repo.Owner == "" && g.Repo.Name == "" {
+		tokens := strings.Split(g.Repo.FullName, "/")
+		if len(tokens) != 2 {
+			return nil, fmt.Errorf("invalid repository name %s", g.Repo.FullName)
+		}
+		g.Repo.Owner, g.Repo.Name = tokens[0], tokens[1]
+	}
+
 	return notify.NewGithub(notify.GithubParams{
 		Owner:               g.Repo.Owner,
 		Name:                g.Repo.Name,
