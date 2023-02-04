@@ -29,7 +29,7 @@ Help Options:
           --from=                              commit ref to start release notes from (default: {{ previous_tag .To }}) [$FROM]
           --to=                                commit ref to end release notes to (default: {{ last_tag }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
-          --squash-commit-rx=                  regexp to match squash commits (default: ^squash:(.?)+$) [$SQUASH_COMMIT_RX]
+          --squash-commit-rx=                  regexp to match squash commits (default: ^Merge pull request #\d+ from .+) [$SQUASH_COMMIT_RX]
           --conf-location=                     location to the config file [$CONF_LOCATION]
           --extras=                            extra variables to use in the template [$EXTRAS]
 
