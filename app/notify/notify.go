@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+//go:generate rm -f mock_destination.go
 //go:generate moq -out mock_destination.go . Destination
 
 // Destination defines interface for a given destination service,
@@ -17,9 +18,7 @@ import (
 type Destination interface {
 	fmt.Stringer
 	// Send the release notes to the destination.
-	// tagName is the name of the tag the release notes are for,
-	// might be empty and will be ignored by some destinations.
-	Send(ctx context.Context, tagName, text string) error
+	Send(ctx context.Context, text string) error
 }
 
 // Destinations is an aggregation of notifiers.
@@ -35,7 +34,7 @@ func (d Destinations) String() string {
 }
 
 // Send sends the message to all destinations.
-func (d Destinations) Send(ctx context.Context, tagName, text string) error {
+func (d Destinations) Send(ctx context.Context, text string) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(len(d))
 
@@ -44,7 +43,7 @@ func (d Destinations) Send(ctx context.Context, tagName, text string) error {
 		dest := dest
 		go func() {
 			defer wg.Done()
-			if err := dest.Send(ctx, tagName, text); err != nil {
+			if err := dest.Send(ctx, text); err != nil {
 				errs <- fmt.Errorf("%s: %w", dest, err)
 			}
 		}()

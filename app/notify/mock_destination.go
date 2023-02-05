@@ -18,7 +18,7 @@ var _ Destination = &DestinationMock{}
 //
 // 		// make and configure a mocked Destination
 // 		mockedDestination := &DestinationMock{
-// 			SendFunc: func(ctx context.Context, tagName string, text string) error {
+// 			SendFunc: func(ctx context.Context, text string) error {
 // 				panic("mock out the Send method")
 // 			},
 // 			StringFunc: func() string {
@@ -32,7 +32,7 @@ var _ Destination = &DestinationMock{}
 // 	}
 type DestinationMock struct {
 	// SendFunc mocks the Send method.
-	SendFunc func(ctx context.Context, tagName string, text string) error
+	SendFunc func(ctx context.Context, text string) error
 
 	// StringFunc mocks the String method.
 	StringFunc func() string
@@ -43,8 +43,6 @@ type DestinationMock struct {
 		Send []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// TagName is the tagName argument value.
-			TagName string
 			// Text is the text argument value.
 			Text string
 		}
@@ -57,37 +55,33 @@ type DestinationMock struct {
 }
 
 // Send calls SendFunc.
-func (mock *DestinationMock) Send(ctx context.Context, tagName string, text string) error {
+func (mock *DestinationMock) Send(ctx context.Context, text string) error {
 	if mock.SendFunc == nil {
 		panic("DestinationMock.SendFunc: method is nil but Destination.Send was just called")
 	}
 	callInfo := struct {
-		Ctx     context.Context
-		TagName string
-		Text    string
+		Ctx  context.Context
+		Text string
 	}{
-		Ctx:     ctx,
-		TagName: tagName,
-		Text:    text,
+		Ctx:  ctx,
+		Text: text,
 	}
 	mock.lockSend.Lock()
 	mock.calls.Send = append(mock.calls.Send, callInfo)
 	mock.lockSend.Unlock()
-	return mock.SendFunc(ctx, tagName, text)
+	return mock.SendFunc(ctx, text)
 }
 
 // SendCalls gets all the calls that were made to Send.
 // Check the length with:
 //     len(mockedDestination.SendCalls())
 func (mock *DestinationMock) SendCalls() []struct {
-	Ctx     context.Context
-	TagName string
-	Text    string
+	Ctx  context.Context
+	Text string
 } {
 	var calls []struct {
-		Ctx     context.Context
-		TagName string
-		Text    string
+		Ctx  context.Context
+		Text string
 	}
 	mock.lockSend.RLock()
 	calls = mock.calls.Send

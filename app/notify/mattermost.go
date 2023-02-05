@@ -25,7 +25,7 @@ func (m *Mattermost) String() string {
 }
 
 // Send sends a message to Mattermost.
-func (m *Mattermost) Send(ctx context.Context, _, text string) error {
+func (m *Mattermost) Send(ctx context.Context, text string) error {
 	b, err := json.Marshal(map[string]string{"text": text})
 	if err != nil {
 		return fmt.Errorf("marshal body: %w", err)

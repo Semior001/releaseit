@@ -159,8 +159,17 @@ order to provide common used template functions.
 
 ## (Github) Template variables for release title
 
-| Name         | Description             | Example |
-|--------------|-------------------------|---------|
-| {{.TagName}} | Tag name of the release | v1.0.0  |
+| Name                       | Description                     | Example             |
+|----------------------------|---------------------------------|---------------------|
+| {{.Tag.Name}}              | Tag name                        | v1.0.0              |
+| {{.Tag.Message}}           | Tag message                     | Version v1.0.0      |
+| {{.Tag.Author}}            | Tag author                      | Semior001           |
+| {{.Tag.Date}}              | Tag date                        | Jan 02, 2006 15:04  |
+| {{.Commit.SHA}}            | Commit SHA                      | a1b2c3d4e5f6        |
+| {{.Commit.Message}}        | Commit message                  | some feature merged |
+| {{.Commit.Author.Name}}    | Commit author name              | Semior001           |
+| {{.Commit.Author.Date}}    | Date, when commit was authored  | Jan 02, 2006 15:04  |
+| {{.Commit.Committer.Name}} | Commit committer name           | Semior001           |
+| {{.Commit.Committer.Date}} | Date, when commit was committed | Jan 02, 2006 15:04  |
 
 [Sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) functions are also available.

@@ -30,7 +30,7 @@ func TestMattermost_Send(t *testing.T) {
 	defer ts.Close()
 
 	svc := NewMattermost(*http.DefaultClient, ts.URL+"/hooks/123")
-	err := svc.Send(context.Background(), "tag", "release notes")
+	err := svc.Send(context.Background(), "release notes")
 	assert.NoError(t, err)
 }
 

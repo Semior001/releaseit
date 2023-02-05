@@ -94,7 +94,9 @@ type NotifyGroup struct {
 // GithubNotifierGroup defines parameters to make release in the github.
 type GithubNotifierGroup struct {
 	GithubGroup
-	ReleaseNameTemplate string `long:"release-name-tmpl" env:"RELEASE_NAME_TMPL" description:"template for release name"`
+	ReleaseNameTemplate string            `long:"release-name-tmpl" env:"RELEASE_NAME_TMPL" description:"template for release name"`
+	Tag                 string            `long:"tag" env:"TAG" description:"tag to specify release"`
+	Extras              map[string]string `long:"extra" env:"EXTRA" description:"extra parameters to pass to the notifier"`
 }
 
 func (g GithubNotifierGroup) build() (notify.Destination, error) {
@@ -109,6 +111,8 @@ func (g GithubNotifierGroup) build() (notify.Destination, error) {
 		BasicAuthPassword:   g.BasicAuth.Password,
 		HTTPClient:          http.Client{Timeout: g.Timeout},
 		ReleaseNameTmplText: g.ReleaseNameTemplate,
+		Tag:                 g.Tag,
+		Extras:              g.Extras,
 	})
 }
 

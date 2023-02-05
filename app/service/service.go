@@ -42,7 +42,7 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 		return fmt.Errorf("build release notes: %w", err)
 	}
 
-	if err = s.Notifier.Send(ctx, to, text); err != nil {
+	if err = s.Notifier.Send(ctx, text); err != nil {
 		return fmt.Errorf("notify: %w", err)
 	}
 

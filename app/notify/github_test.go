@@ -6,11 +6,23 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	gh "github.com/google/go-github/v37/github"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const ghReleaseNameTmplText = `{{ .Tag.Name }} {{ .Tag.Message }} {{ .Tag.Author }} {{ .Tag.Date }}
+{{ .Commit.SHA }} {{ .Commit.Message }} 
+{{ .Commit.Author.Name }} {{ .Commit.Author.Date }} 
+{{ .Commit.Committer.Name }} {{ .Commit.Committer.Date }}`
+
+const ghExpectedReleaseName = `v1.0.0 message name 2020-01-01 00:00:00 +0000 UTC
+sha commit message 
+author-name 2020-01-01 00:00:00 +0000 UTC 
+committer-name 2020-01-01 00:00:00 +0000 UTC`
 
 func TestGithub_Send(t *testing.T) {
 	t.Run("tag name is filled", func(t *testing.T) {
@@ -25,6 +37,42 @@ func TestGithub_Send(t *testing.T) {
 				return
 			}
 
+			if r.URL.Path == "/repos/owner/name/git/tags/v1.0.0" {
+				w.WriteHeader(http.StatusOK)
+				err := json.NewEncoder(w).Encode(&gh.Tag{
+					Tag:     gh.String("v1.0.0"),
+					Message: gh.String("message"),
+					Tagger: &gh.CommitAuthor{
+						Name: gh.String("name"),
+						Date: lo.ToPtr(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
+					},
+					Object: &gh.GitObject{
+						SHA:  gh.String("sha"),
+						Type: gh.String("commit"),
+					},
+				})
+				require.NoError(t, err)
+				return
+			}
+
+			if r.URL.Path == "/repos/owner/name/git/commits/sha" {
+				w.WriteHeader(http.StatusOK)
+				err := json.NewEncoder(w).Encode(&gh.Commit{
+					SHA:     gh.String("sha"),
+					Message: gh.String("commit message"),
+					Author: &gh.CommitAuthor{
+						Name: gh.String("author-name"),
+						Date: lo.ToPtr(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
+					},
+					Committer: &gh.CommitAuthor{
+						Name: gh.String("committer-name"),
+						Date: lo.ToPtr(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
+					},
+				})
+				require.NoError(t, err)
+				return
+			}
+
 			assert.Equal(t, "/repos/owner/name/releases", r.URL.Path)
 			assert.Equal(t, "POST", r.Method)
 			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
@@ -34,8 +82,8 @@ func TestGithub_Send(t *testing.T) {
 			err := json.NewDecoder(r.Body).Decode(&body)
 			require.NoError(t, err)
 
-			assert.Equal(t, "tag", *body.TagName)
-			assert.Equal(t, "release name", *body.Name)
+			assert.Equal(t, "v1.0.0", *body.TagName)
+			assert.Equal(t, ghExpectedReleaseName, *body.Name)
 			assert.Equal(t, "body", *body.Body)
 
 			w.WriteHeader(http.StatusCreated)
@@ -55,17 +103,15 @@ func TestGithub_Send(t *testing.T) {
 					return http.DefaultTransport.RoundTrip(req)
 				}),
 			},
-			ReleaseNameTmplText: "release name",
+			Tag:                 "v1.0.0",
+			ReleaseNameTmplText: ghReleaseNameTmplText,
 		})
 		require.NoError(t, err)
 
-		err = svc.Send(context.Background(), "tag", "body")
+		err = svc.Send(context.Background(), "body")
 		require.NoError(t, err)
 	})
 
-	t.Run("tag name is empty", func(t *testing.T) {
-		assert.ErrorContains(t, (&Github{}).Send(context.Background(), "", "body"), "tag name is empty")
-	})
 }
 
 func TestGithub_String(t *testing.T) {
