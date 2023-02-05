@@ -67,6 +67,8 @@ Help Options:
     github:
           --notify.github.timeout=             timeout for http requests (default: 5s) [$NOTIFY_GITHUB_TIMEOUT]
           --notify.github.release-name-tmpl=   template for release name [$NOTIFY_GITHUB_RELEASE_NAME_TMPL]
+          --notify.github.tag=                 tag to specify release [$NOTIFY_GITHUB_TAG]
+          --notify.github.extra=               extra parameters to pass to the notifier [$NOTIFY_GITHUB_EXTRA]
 
     repo:
           --notify.github.repo.full-name=      full name of the repository (owner/name) [$NOTIFY_GITHUB_REPO_FULL_NAME]
@@ -171,5 +173,6 @@ order to provide common used template functions.
 | {{.Commit.Author.Date}}    | Date, when commit was authored  | Jan 02, 2006 15:04  |
 | {{.Commit.Committer.Name}} | Commit committer name           | Semior001           |
 | {{.Commit.Committer.Date}} | Date, when commit was committed | Jan 02, 2006 15:04  |
+| {{.Extras}}                | Map of extra variables          | map[foo:bar]        |
 
 [Sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) functions are also available.
