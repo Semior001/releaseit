@@ -20,7 +20,7 @@ func (w *WriterNotifier) String() string {
 }
 
 // Send writes changelog to writer.
-func (w *WriterNotifier) Send(_ context.Context, _, text string) error {
+func (w *WriterNotifier) Send(_ context.Context, text string) error {
 	if _, err := io.WriteString(w.Writer, text); err != nil {
 		return fmt.Errorf("write release notes: %w", err)
 	}

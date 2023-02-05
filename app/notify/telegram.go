@@ -37,7 +37,7 @@ func (t *Telegram) String() string {
 }
 
 // Send changelog via Telegram.
-func (t *Telegram) Send(ctx context.Context, _, text string) error {
+func (t *Telegram) Send(ctx context.Context, text string) error {
 	msg, err := json.Marshal(tgMsg{Text: text, ParseMode: "MarkdownV2"})
 	if err != nil {
 		return fmt.Errorf("marshal tg message: %w", err)

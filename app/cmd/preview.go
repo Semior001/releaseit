@@ -61,7 +61,7 @@ func (p Preview) Execute(_ []string) error {
 		Name:   "stdout",
 	}
 
-	if err = wr.Send(context.Background(), "", rn); err != nil {
+	if err = wr.Send(context.Background(), rn); err != nil {
 		return fmt.Errorf("print release notes: %w", err)
 	}
 

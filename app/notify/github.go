@@ -2,11 +2,11 @@ package notify
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/Masterminds/sprig"
 	"github.com/go-pkgz/requester"
@@ -31,6 +31,8 @@ type GithubParams struct {
 	BasicAuthPassword   string
 	HTTPClient          http.Client
 	ReleaseNameTmplText string
+	Tag                 string
+	Extras              map[string]string
 }
 
 // NewGithub makes new instance of Github.
@@ -66,24 +68,63 @@ func (g *Github) String() string {
 }
 
 type releaseNameTmplData struct {
-	TagName string
+	Extras map[string]string
+	Tag    struct {
+		Name    string
+		Message string
+		Author  string
+		Date    time.Time
+	}
+	Commit struct {
+		SHA     string
+		Message string
+		Author  struct {
+			Name string
+			Date time.Time
+		}
+		Committer struct {
+			Name string
+			Date time.Time
+		}
+	}
 }
 
 // Send makes new release on github repository.
-func (g *Github) Send(ctx context.Context, tagName, text string) error {
-	if tagName == "" {
-		return errors.New("tag name is empty")
+func (g *Github) Send(ctx context.Context, text string) error {
+	// get tag message
+	tag, _, err := g.cl.Git.GetTag(ctx, g.Owner, g.Name, g.Tag)
+	if err != nil {
+		return fmt.Errorf("get tag %s: %w", g.Tag, err)
+	}
+
+	data := releaseNameTmplData{}
+	data.Tag.Name = g.Tag
+	data.Tag.Message = tag.GetMessage()
+	data.Tag.Author = tag.GetTagger().GetName()
+	data.Tag.Date = tag.GetTagger().GetDate()
+	data.Commit.SHA = tag.GetObject().GetSHA()
+	data.Extras = g.Extras
+
+	if tag.GetObject().GetType() == "commit" {
+		cmt, _, err := g.cl.Git.GetCommit(ctx, g.Owner, g.Name, tag.GetObject().GetSHA())
+		if err != nil {
+			return fmt.Errorf("get commit %s: %w", tag.GetObject().GetSHA(), err)
+		}
+
+		data.Commit.Message = cmt.GetMessage()
+		data.Commit.Author.Name = cmt.GetAuthor().GetName()
+		data.Commit.Author.Date = cmt.GetAuthor().GetDate()
+		data.Commit.Committer.Name = cmt.GetCommitter().GetName()
+		data.Commit.Committer.Date = cmt.GetCommitter().GetDate()
 	}
 
 	buf := &strings.Builder{}
-
-	err := g.releaseNameTmpl.Execute(buf, releaseNameTmplData{TagName: tagName})
-	if err != nil {
+	if err = g.releaseNameTmpl.Execute(buf, data); err != nil {
 		return fmt.Errorf("build release name: %w", err)
 	}
 
 	release := &gh.RepositoryRelease{
-		TagName: &tagName,
+		TagName: tag.Tag,
 		Name:    lo.ToPtr(buf.String()),
 		Body:    &text,
 	}

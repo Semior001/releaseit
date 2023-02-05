@@ -11,6 +11,7 @@ import (
 // Post sends a POST request to the given URL with release notes.
 type Post struct {
 	URL    string
+	Extras map[string]string
 	Client *http.Client
 }
 
@@ -20,10 +21,10 @@ func (p *Post) String() string {
 }
 
 // Send sends a POST request to the given URL with release notes.
-func (p *Post) Send(ctx context.Context, tagName, text string) error {
-	body, err := json.Marshal(map[string]string{
-		"tag_name": tagName,
-		"text":     text,
+func (p *Post) Send(ctx context.Context, text string) error {
+	body, err := json.Marshal(map[string]interface{}{
+		"extras": p.Extras,
+		"text":   text,
 	})
 	if err != nil {
 		return fmt.Errorf("marshal body: %w", err)

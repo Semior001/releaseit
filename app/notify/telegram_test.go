@@ -49,6 +49,6 @@ func TestTelegram_Send(t *testing.T) {
 		DisableWebPagePreview: true,
 	})
 
-	err := svc.Send(context.Background(), "tag", "text")
+	err := svc.Send(context.Background(), "text")
 	require.NoError(t, err)
 }
