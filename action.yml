@@ -3,9 +3,6 @@ description: "generates release notes for an application and publishes it to dif
 author: "Semior001"
 inputs:
   # general changelog params
-  version:
-    description: "version of releaseit to use in form of v1.2 or v1.2.3 or `latest` to use the latest version"
-    required: false
   from:
     description: "commit reference to start generating release notes from"
     default: "{{ previous_tag .To }}"
@@ -37,6 +34,7 @@ inputs:
     required: false
   engine-github-basic-auth-username:
     description: "username for github's basic authentication"
+    default: "${{ github.actor }}"
     required: false
   engine-github-basic-auth-password:
     description: "password for github's basic authentication"
@@ -75,6 +73,7 @@ inputs:
     required: false
   notify-github-basic-auth-username:
     description: "username for github's basic authentication"
+    default: "${{ github.actor }}"
     required: false
   notify-github-basic-auth-password:
     description: "password for github's basic authentication"
