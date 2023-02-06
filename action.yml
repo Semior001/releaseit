@@ -5,19 +5,15 @@ inputs:
   # general changelog params
   from:
     description: "commit reference to start generating release notes from"
-    default: "{{ previous_tag .To }}"
     required: false
   to:
     description: "commit reference to stop generating release notes at"
-    default: "{{ last_tag }}"
     required: false
   timeout:
     description: "timeout for the generating release notes"
-    default: "5m"
     required: false
   squash-commit-rx:
     description: "regular expression to match squash commits"
-    default: "^.*#\d+.*$"
     required: false
   conf-location:
     description: "location of the releaseit configuration file"
@@ -30,7 +26,6 @@ inputs:
   # github engine params
   engine-github-timeout:
     description: "timeout for github requests"
-    default: "5m"
     required: false
   engine-github-basic-auth-username:
     description: "username for github's basic authentication"
@@ -55,17 +50,14 @@ inputs:
     required: false
   notify-telegram-web-page-preview:
     description: "whether to enable web page preview for telegram messages"
-    default: "false"
     required: false
   notify-telegram-timeout:
     description: "timeout for telegram requests"
-    default: "5m"
     required: false
 
   # github release notifier params
   notify-github-timeout:
     description: "timeout for github requests"
-    default: "5m"
     required: false
   notify-github-release-name-tmpl:
     description: "template for github release name"
@@ -85,7 +77,6 @@ inputs:
     required: false
   notify-mattermost-hook-timeout:
     description: "timeout for mattermost hook requests"
-    default: "5m"
     required: false
 
   # post request notifier params
@@ -94,7 +85,6 @@ inputs:
     required: false
   notify-post-timeout:
     description: "timeout for post requests"
-    default: "5m"
     required: false
 
 runs:
