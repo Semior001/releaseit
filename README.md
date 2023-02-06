@@ -9,6 +9,17 @@ ReleaseIt is distributed as a docker image. You can pull it from [ghcr package](
 
 Env vars configuration example is available [here](_example/.env).
 
+## How it works.
+It looks for the closed pull requests attached to merge or squash commits between the references provided in arguments,
+and splits them into categories, which are defined in the configuration file.
+
+A commit with two or more parents is considered a merge commit. Squash commits are matched by the regexp
+provided in arguments (default is `^.*#\d+.*$` - any commit message with `#` and a number in it).
+
+To avoid repeats of pull requests among the releases (e.g., in case a developer resolved conflicts by merging the main
+branch into the feature branch, so the merge commit will be repeated in the commit history); it checks that the
+merge/squash commit is after the commit provided within the `FROM` argument.
+
 ## All application options
 <details>
 <summary>Click to expand</summary>
