@@ -1,0 +1,133 @@
+name: "run releaseit"
+description: "generates release notes for an application and publishes it to different destinations"
+author: "Semior001"
+inputs:
+  # general changelog params
+  version:
+    description: "version of releaseit to use in form of v1.2 or v1.2.3 or `latest` to use the latest version"
+    required: false
+  from:
+    description: "commit reference to start generating release notes from"
+    default: "{{ previous_tag .To }}"
+    required: false
+  to:
+    description: "commit reference to stop generating release notes at"
+    default: "{{ last_tag }}"
+    required: false
+  timeout:
+    description: "timeout for the generating release notes"
+    default: "5m"
+    required: false
+  squash-commit-rx:
+    description: "regular expression to match squash commits"
+    default: "^.*#\d+.*$"
+    required: false
+  conf-location:
+    description: "location of the releaseit configuration file"
+    default: ".releaseit.yml"
+    required: false
+  extras:
+    description: "extra variables to pass to the template, in format of `key:value,key2:value2`"
+    required: false
+
+  # github engine params
+  engine-github-timeout:
+    description: "timeout for github requests"
+    default: "5m"
+    required: false
+  engine-github-basic-auth-username:
+    description: "username for github's basic authentication"
+    required: false
+  engine-github-basic-auth-password:
+    description: "password for github's basic authentication"
+    required: false
+
+  # notifier params
+  notify-stdout:
+    description: "whether to print release notes to stdout"
+    default: "true"
+    required: false
+
+  # telegram notifier params
+  notify-telegram-chat-id:
+    description: "telegram chat id to send release notes to"
+    required: false
+  notify-telegram-token:
+    description: "telegram bot token to send release notes with"
+    required: false
+  notify-telegram-web-page-preview:
+    description: "whether to enable web page preview for telegram messages"
+    default: "false"
+    required: false
+  notify-telegram-timeout:
+    description: "timeout for telegram requests"
+    default: "5m"
+    required: false
+
+  # github release notifier params
+  notify-github-timeout:
+    description: "timeout for github requests"
+    default: "5m"
+    required: false
+  notify-github-release-name-tmpl:
+    description: "template for github release name"
+    default: "Release {{ .Tag.Name }}"
+    required: false
+  notify-github-basic-auth-username:
+    description: "username for github's basic authentication"
+    required: false
+  notify-github-basic-auth-password:
+    description: "password for github's basic authentication"
+    required: false
+
+  # mattermost hook notifier params
+  notify-mattermost-hook-url:
+    description: "mattermost hook url to send release notes to"
+    required: false
+  notify-mattermost-hook-timeout:
+    description: "timeout for mattermost hook requests"
+    default: "5m"
+    required: false
+
+  # post request notifier params
+  notify-post-url:
+    description: "url to send release notes to"
+    required: false
+  notify-post-timeout:
+    description: "timeout for post requests"
+    default: "5m"
+    required: false
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  env:
+    FROM: ${{ inputs.from }}
+    TO: ${{ inputs.to }}
+    TIMEOUT: ${{ inputs.timeout }}
+    SQUASH_COMMIT_RX: ${{ inputs.squash-commit-rx }}
+    CONF_LOCATION: ${{ inputs.conf-location }}
+    EXTRAS: ${{ inputs.extras }}
+    ENGINE_TYPE: "github"
+    ENGINE_GITHUB_TIMEOUT: ${{ inputs.engine-github-timeout }}
+    ENGINE_GITHUB_REPO_FULL_NAME: ${{ github.repository }}
+    ENGINE_GITHUB_BASIC_AUTH_USERNAME: ${{ inputs.engine-github-basic-auth-username }}
+    ENGINE_GITHUB_BASIC_AUTH_PASSWORD: ${{ inputs.engine-github-basic-auth-password }}
+    NOTIFY_STDOUT: ${{ inputs.notify-stdout }}
+    NOTIFY_TELEGRAM_CHAT_ID: ${{ inputs.notify-telegram-chat-id }}
+    NOTIFY_TELEGRAM_TOKEN: ${{ inputs.notify-telegram-token }}
+    NOTIFY_TELEGRAM_WEB_PAGE_PREVIEW: ${{ inputs.notify-telegram-web-page-preview }}
+    NOTIFY_TELEGRAM_TIMEOUT: ${{ inputs.notify-telegram-timeout }}
+    NOTIFY_GITHUB_TIMEOUT: ${{ inputs.notify-github-timeout }}
+    NOTIFY_GITHUB_RELEASE_NAME_TMPL: ${{ inputs.notify-github-release-name-tmpl }}
+    NOTIFY_GITHUB_REPO_FULL_NAME: ${{ github.repository }}
+    NOTIFY_GITHUB_BASIC_AUTH_USERNAME: ${{ inputs.notify-github-basic-auth-username }}
+    NOTIFY_GITHUB_BASIC_AUTH_PASSWORD: ${{ inputs.notify-github-basic-auth-password }}
+    NOTIFY_MATTERMOST_HOOK_URL: ${{ inputs.notify-mattermost-hook-url }}
+    NOTIFY_MATTERMOST_HOOK_TIMEOUT: ${{ inputs.notify-mattermost-hook-timeout }}
+    NOTIFY_POST_URL: ${{ inputs.notify-post-url }}
+    NOTIFY_POST_TIMEOUT: ${{ inputs.notify-post-timeout }}
+
+branding:
+  icon: "shield"
+  color: "yellow"
