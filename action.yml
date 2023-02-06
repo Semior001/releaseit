@@ -29,7 +29,7 @@ inputs:
     required: false
   engine-github-basic-auth-username:
     description: "username for github's basic authentication"
-    default: "${{ github.actor }}"
+    default: ${{ github.actor }}
     required: false
   engine-github-basic-auth-password:
     description: "password for github's basic authentication"
@@ -65,7 +65,7 @@ inputs:
     required: false
   notify-github-basic-auth-username:
     description: "username for github's basic authentication"
-    default: "${{ github.actor }}"
+    default: ${{ github.actor }}
     required: false
   notify-github-basic-auth-password:
     description: "password for github's basic authentication"
@@ -87,6 +87,16 @@ inputs:
     description: "timeout for post requests"
     required: false
 
+  # repository parameters, usually shouldn't be changed
+  engine-github-repo-full-name:
+    description: "full name of the repository to generate release notes for"
+    default: ${{ github.repository }}
+    required: false
+  notify-github-repo-full-name:
+    description: "full name of the repository to send release notes to"
+    default: ${{ github.repository }}
+    required: false
+
 runs:
   using: "docker"
   image: "Dockerfile"
@@ -99,7 +109,7 @@ runs:
     EXTRAS: ${{ inputs.extras }}
     ENGINE_TYPE: "github"
     ENGINE_GITHUB_TIMEOUT: ${{ inputs.engine-github-timeout }}
-    ENGINE_GITHUB_REPO_FULL_NAME: ${{ github.repository }}
+    ENGINE_GITHUB_REPO_FULL_NAME: ${{ inputs.engine-github-repo-full-name }}
     ENGINE_GITHUB_BASIC_AUTH_USERNAME: ${{ inputs.engine-github-basic-auth-username }}
     ENGINE_GITHUB_BASIC_AUTH_PASSWORD: ${{ inputs.engine-github-basic-auth-password }}
     NOTIFY_STDOUT: ${{ inputs.notify-stdout }}
@@ -109,7 +119,7 @@ runs:
     NOTIFY_TELEGRAM_TIMEOUT: ${{ inputs.notify-telegram-timeout }}
     NOTIFY_GITHUB_TIMEOUT: ${{ inputs.notify-github-timeout }}
     NOTIFY_GITHUB_RELEASE_NAME_TMPL: ${{ inputs.notify-github-release-name-tmpl }}
-    NOTIFY_GITHUB_REPO_FULL_NAME: ${{ github.repository }}
+    NOTIFY_GITHUB_REPO_FULL_NAME: ${{ inputs.notify-github-repo-full-name }}
     NOTIFY_GITHUB_BASIC_AUTH_USERNAME: ${{ inputs.notify-github-basic-auth-username }}
     NOTIFY_GITHUB_BASIC_AUTH_PASSWORD: ${{ inputs.notify-github-basic-auth-password }}
     NOTIFY_MATTERMOST_HOOK_URL: ${{ inputs.notify-mattermost-hook-url }}
