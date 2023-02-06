@@ -107,8 +107,8 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 			Author:       git.User{Username: "username 1", Email: "email 1"},
 			Labels:       []string{"label 1"},
 			ClosedAt:     now.UTC(),
-			SourceBranch: "branch 1",
-			TargetBranch: "master",
+			TargetBranch: "branch 1",
+			SourceBranch: "master",
 			URL:          "url 1",
 		},
 		{
@@ -118,8 +118,8 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 			Author:       git.User{Username: "username 2", Email: "email 2"},
 			Labels:       []string{"label 2", "label 3"},
 			ClosedAt:     now.Add(time.Hour).UTC(),
-			SourceBranch: "branch 2",
-			TargetBranch: "develop",
+			TargetBranch: "branch 2",
+			SourceBranch: "develop",
 			URL:          "url 2",
 		},
 	}, prs)
