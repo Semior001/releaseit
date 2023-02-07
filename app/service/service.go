@@ -50,11 +50,6 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 }
 
 func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string) ([]git.PullRequest, error) {
-	fromCommit, err := s.Engine.GetCommit(ctx, fromSHA)
-	if err != nil {
-		return nil, fmt.Errorf("get commit %s: %w", fromSHA, err)
-	}
-
 	var res []git.PullRequest
 
 	commits, err := s.Engine.Compare(ctx, fromSHA, toSHA)
@@ -63,23 +58,18 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 	}
 
 	for _, commit := range commits.Commits {
-		refCommitSHA, ok := s.isMergeCommit(commit)
-		if !ok {
+		if ok := s.isMergeCommit(commit); !ok {
 			continue
 		}
 
-		if commit.CommittedAt.Before(fromCommit.CommittedAt) {
-			continue
-		}
-
-		prs, err := s.Engine.ListPRsOfCommit(ctx, refCommitSHA)
+		prs, err := s.Engine.ListPRsOfCommit(ctx, commit.SHA)
 		if err != nil {
-			return nil, fmt.Errorf("list pull requests of commit %s: %w", refCommitSHA, err)
+			return nil, fmt.Errorf("list pull requests of commit %s: %w", commit.SHA, err)
 		}
 
 		for _, pr := range prs {
 			if !pr.ClosedAt.IsZero() {
-				pr.ReceivedBySHAs = append(pr.ReceivedBySHAs, refCommitSHA)
+				pr.ReceivedBySHAs = append(pr.ReceivedBySHAs, commit.SHA)
 				res = append(res, pr)
 			}
 		}
@@ -98,16 +88,8 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string
 	return lo.Values(uniqPRs), nil
 }
 
-func (s *Service) isMergeCommit(commit git.Commit) (prAttachedSHA string, ok bool) {
-	if len(commit.ParentSHAs) > 1 {
-		return commit.ParentSHAs[1], true
-	}
-
-	if s.SquashCommitMessageRx.MatchString(commit.Message) {
-		return commit.SHA, true
-	}
-
-	return "", false
+func (s *Service) isMergeCommit(commit git.Commit) bool {
+	return len(commit.ParentSHAs) > 1 || s.SquashCommitMessageRx.MatchString(commit.Message)
 }
 
 func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {

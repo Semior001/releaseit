@@ -3,12 +3,6 @@ package git
 
 import "time"
 
-// Changelog represents a basic changelog.
-type Changelog struct {
-	TagName   string
-	ClosedPRs []PullRequest
-}
-
 // PullRequest represents a pull/merge request from the
 // remote repository.
 type PullRequest struct {
