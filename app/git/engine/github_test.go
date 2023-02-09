@@ -71,15 +71,16 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 
 		err := json.NewEncoder(w).Encode([]*gh.PullRequest{
 			{
-				Number:   gh.Int(1),
-				Title:    gh.String("title 1"),
-				Body:     gh.String("body 1"),
-				ClosedAt: lo.ToPtr(now.UTC()),
-				User:     &gh.User{Login: gh.String("username 1"), Email: gh.String("email 1")},
-				Labels:   []*gh.Label{{Name: gh.String("label 1")}},
-				Base:     &gh.PullRequestBranch{Ref: gh.String("branch 1")},
-				Head:     &gh.PullRequestBranch{Ref: gh.String("master")},
-				HTMLURL:  gh.String("url 1"),
+				Number:    gh.Int(1),
+				Title:     gh.String("title 1"),
+				Body:      gh.String("body 1"),
+				ClosedAt:  lo.ToPtr(now.UTC()),
+				User:      &gh.User{Login: gh.String("username 1"), Email: gh.String("email 1")},
+				Labels:    []*gh.Label{{Name: gh.String("label 1")}},
+				Base:      &gh.PullRequestBranch{Ref: gh.String("branch 1")},
+				Head:      &gh.PullRequestBranch{Ref: gh.String("master")},
+				HTMLURL:   gh.String("url 1"),
+				Assignees: []*gh.User{{Login: gh.String("assignee1"), Email: gh.String("user@example.com")}},
 			},
 			{
 				Number:   gh.Int(2),
@@ -110,6 +111,7 @@ func TestGithub_ListPRsOfCommit(t *testing.T) {
 			TargetBranch: "branch 1",
 			SourceBranch: "master",
 			URL:          "url 1",
+			Assignees:    []git.User{{Username: "assignee1", Email: "user@example.com"}},
 		},
 		{
 			Number:       2,
