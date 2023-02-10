@@ -16,6 +16,7 @@ type PullRequest struct {
 	TargetBranch   string    `yaml:"target_branch"`
 	URL            string    `yaml:"url"`
 	ReceivedBySHAs []string  `yaml:"received_by_shas"`
+	Assignees      []User    `yaml:"assignees"`
 }
 
 // User holds user data.

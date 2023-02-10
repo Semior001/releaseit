@@ -77,6 +77,7 @@ func TestGitlab_ListPRsOfCommit(t *testing.T) {
 			SourceBranch: "source",
 			TargetBranch: "target",
 			WebURL:       "url",
+			Assignees:    []*gl.BasicUser{{Username: "assignee1"}},
 		}})
 		require.NoError(t, err)
 	})
@@ -93,6 +94,7 @@ func TestGitlab_ListPRsOfCommit(t *testing.T) {
 		SourceBranch: "source",
 		TargetBranch: "target",
 		URL:          "url",
+		Assignees:    []git.User{{Username: "assignee1"}},
 	}}, prs)
 }
 

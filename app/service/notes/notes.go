@@ -129,6 +129,7 @@ func prToTmplData(pr git.PullRequest) prTmplData {
 		SourceBranch:   pr.SourceBranch,
 		TargetBranch:   pr.TargetBranch,
 		ReceivedBySHAs: pr.ReceivedBySHAs,
+		Assignees:      lo.Map(pr.Assignees, func(u git.User, _ int) string { return u.Username }),
 	}
 }
 
@@ -190,4 +191,5 @@ type prTmplData struct {
 	TargetBranch   string
 	ClosedAt       time.Time
 	ReceivedBySHAs []string
+	Assignees      []string
 }

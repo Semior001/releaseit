@@ -103,6 +103,13 @@ func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			TargetBranch: pr.GetBase().GetRef(),
 			URL:          pr.GetHTMLURL(),
 		}
+
+		for _, assignee := range pr.Assignees {
+			res[i].Assignees = append(res[i].Assignees, git.User{
+				Username: assignee.GetLogin(),
+				Email:    assignee.GetEmail(),
+			})
+		}
 	}
 
 	return res, nil

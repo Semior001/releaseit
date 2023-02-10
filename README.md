@@ -113,22 +113,24 @@ Supported functions:
 - `last_tag()` - returns the last tag in repository (shortcut for `{{ index (tags) 0 }}`)
 
 ## Preview data file structure
-| Field                          | Description                                                                      |
-|--------------------------------|----------------------------------------------------------------------------------|
-| from                           | Commit ref to start release notes from                                           |
-| to                             | Commit ref to end release notes at                                               |
-| extras                         | Extra variables to use in the template                                           |
-| pull_requests.number           | Pull request number                                                              |
-| pull_requests.title            | Pull request title                                                               |
-| pull_requests.body             | Pull request body                                                                |
-| pull_requests.author.username  | Pull request's author's username                                                 |
-| pull_requests.author.email     | Pull request's author's email                                                    |
-| pull_requests.labels           | List of pull request's labels                                                    |
-| pull_requests.closed_at        | Date of the pull request's closing                                               |
-| pull_requests.source_branch    | Pull request's source branch                                                     |
-| pull_requests.target_branch    | Pull request's target branch                                                     |
-| pull_requests.url              | Pull request's url                                                               |
-| pull_requests.received_by_shas | List of commit SHAs by which pull request was retrieved (for debugging purposes) |
+| Field                            | Description                                                                      |
+|----------------------------------|----------------------------------------------------------------------------------|
+| from                             | Commit ref to start release notes from                                           |
+| to                               | Commit ref to end release notes at                                               |
+| extras                           | Extra variables to use in the template                                           |
+| pull_requests.number             | Pull request number                                                              |
+| pull_requests.title              | Pull request title                                                               |
+| pull_requests.body               | Pull request body                                                                |
+| pull_requests.author.username    | Pull request's author's username                                                 |
+| pull_requests.author.email       | Pull request's author's email                                                    |
+| pull_requests.labels             | List of pull request's labels                                                    |
+| pull_requests.closed_at          | Date of the pull request's closing                                               |
+| pull_requests.source_branch      | Pull request's source branch                                                     |
+| pull_requests.target_branch      | Pull request's target branch                                                     |
+| pull_requests.url                | Pull request's url                                                               |
+| pull_requests.received_by_shas   | List of commit SHAs by which pull request was retrieved (for debugging purposes) |
+| pull_requests.assignees.username | Assignee's username                                                              |
+| pull_requests.assignees.email    | Assignee's email                                                                 |
 
 See [example](_example/preview_data.yaml) for details.
 
@@ -165,6 +167,7 @@ See [example](_example/config.yaml) for details.
 | {{.Categories.PRs.TargetBranch}}   | Target branch name, to which the pull request was created      | develop                                         |
 | {{.Categories.PRs.ClosedAt}}       | Timestamp, when the pull request was closed (might be empty)   | Jan 02, 2006 15:04:05 UTC                       |
 | {{.Categories.PRs.ReceivedBySHAs}} | List of commit SHAs, by which releaseit received pull requests | [a1b2c3d4e5f6, 1a2b3c4d5e6f]                    |
+| {{.Categories.PRs.Assignees}}      | List of assignees of the pull request                          | [Semior001, Semior002]                          |
 
 The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes. 
 It also imports functions from [sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) library in 

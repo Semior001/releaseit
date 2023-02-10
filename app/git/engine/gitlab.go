@@ -100,6 +100,10 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 			TargetBranch: mr.TargetBranch,
 			URL:          mr.WebURL,
 		}
+
+		for _, assignee := range mr.Assignees {
+			res[i].Assignees = append(res[i].Assignees, git.User{Username: assignee.Username})
+		}
 	}
 
 	return res, nil
