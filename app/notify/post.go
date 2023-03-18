@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
 // Post sends a POST request to the given URL with release notes.
 type Post struct {
+	Log    *log.Logger
 	URL    string
-	Extras map[string]string
 	Client *http.Client
 }
 
@@ -22,10 +23,7 @@ func (p *Post) String() string {
 
 // Send sends a POST request to the given URL with release notes.
 func (p *Post) Send(ctx context.Context, text string) error {
-	body, err := json.Marshal(map[string]interface{}{
-		"extras": p.Extras,
-		"text":   text,
-	})
+	body, err := json.Marshal(map[string]interface{}{"text": text})
 	if err != nil {
 		return fmt.Errorf("marshal body: %w", err)
 	}
@@ -39,6 +37,11 @@ func (p *Post) Send(ctx context.Context, text string) error {
 	if err != nil {
 		return fmt.Errorf("do request: %w", err)
 	}
+	defer func() {
+		if err = resp.Body.Close(); err != nil {
+			p.Log.Printf("[WARN] can't close request body, %s", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
