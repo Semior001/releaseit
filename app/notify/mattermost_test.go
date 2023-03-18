@@ -65,10 +65,10 @@ func TestNewMattermostBot(t *testing.T) {
 func TestMattermostBot_String(t *testing.T) {
 	svc := &MattermostBot{
 		baseURL:   "https://example.com",
-		userID:    "123",
+		userID:    "1234567",
 		channelID: "channelID",
 	}
-	assert.Equal(t, "mattermost bot 123 at: https://example.com, channel: channelID", svc.String())
+	assert.Equal(t, "mattermost bot 1234... channel: chan... at: https://example.com", svc.String())
 }
 
 func TestMattermostBot_Send(t *testing.T) {

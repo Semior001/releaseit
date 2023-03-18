@@ -120,7 +120,8 @@ func (b *MattermostBot) me(ctx context.Context) (userID string, err error) {
 
 // String returns the name of the notifier.
 func (b *MattermostBot) String() string {
-	return fmt.Sprintf("mattermost bot %.4s... at: %s channel: %.4s... ", b.userID, extractBaseURL(b.baseURL), b.channelID)
+	return fmt.Sprintf("mattermost bot %.4s... channel: %.4s... at: %s",
+		b.userID, b.channelID, extractBaseURL(b.baseURL))
 }
 
 // Send sends a message to Mattermost.
