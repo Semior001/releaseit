@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 )
 
 // Post sends a POST request to the given URL with release notes.
@@ -15,8 +14,6 @@ type Post struct {
 	Log    *log.Logger
 	URL    string
 	Client *http.Client
-
-	once sync.Once
 }
 
 // String returns the string representation of the notifier.
