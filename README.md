@@ -94,6 +94,12 @@ Help Options:
           --notify.mattermost-hook.url=        url of the mattermost hook [$NOTIFY_MATTERMOST_HOOK_URL]
           --notify.mattermost-hook.timeout=    timeout for http requests (default: 5s) [$NOTIFY_MATTERMOST_HOOK_TIMEOUT]
 
+    mattermost-bot:
+          --notify.mattermost-bot.base-url=    base url for mattermost API [$NOTIFY_MATTERMOST_BOT_BASE_URL]
+          --notify.mattermost-bot.token=       token of the mattermost bot [$NOTIFY_MATTERMOST_BOT_TOKEN]
+          --notify.mattermost-bot.channel-id=  channel id of the mattermost bot [$NOTIFY_MATTERMOST_BOT_CHANNEL_ID]
+          --notify.mattermost-bot.timeout=     timeout for http requests (default: 5s) [$NOTIFY_MATTERMOST_BOT_TIMEOUT]
+
     post:
           --notify.post.url=                   url to send the release notes [$NOTIFY_POST_URL]
           --notify.post.timeout=               timeout for http requests (default: 5s) [$NOTIFY_POST_TIMEOUT]
