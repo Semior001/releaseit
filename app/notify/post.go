@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -39,6 +40,11 @@ func (p *Post) Send(ctx context.Context, text string) error {
 	if err != nil {
 		return fmt.Errorf("do request: %w", err)
 	}
+	defer func() {
+		if err = resp.Body.Close(); err != nil {
+			log.Printf("[WARN] can't close request body, %s", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)

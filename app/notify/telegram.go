@@ -57,19 +57,19 @@ func (t *Telegram) sendMessage(ctx context.Context, msg []byte, chatID string) e
 
 	u := fmt.Sprintf("%s%s/sendMessage?chat_id=%s&parse_mode=Markdown&disable_web_page_preview=%t",
 		telegramAPIBaseURL, t.Token, chatID, t.DisableWebPagePreview)
-	r, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(msg))
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(msg))
 	if err != nil {
 		return fmt.Errorf("make telegram request: %w", err)
 	}
 	r.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	resp, err := t.Client.Do(r.WithContext(ctx))
+	resp, err := t.Client.Do(r)
 	if err != nil {
 		return fmt.Errorf("get telegram response: %w", err)
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			log.Printf("[WARN] can't close request body, %s", err)
+			log.Printf("[WARN] can't close response body, %s", err)
 		}
 	}()
 
