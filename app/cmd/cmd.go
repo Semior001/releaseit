@@ -85,7 +85,7 @@ type GitlabGroup struct {
 type NotifyGroup struct {
 	Telegram      TelegramGroup       `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
 	Github        GithubNotifierGroup `group:"github" namespace:"github" env-namespace:"GITHUB"`
-	Mattermost    MattermostGroup     `group:"mattermost-hook" namespace:"mattermost-hook" env-namespace:"MATTERMOST_HOOK"`
+	Mattermost    MattermostHookGroup `group:"mattermost-hook" namespace:"mattermost-hook" env-namespace:"MATTERMOST_HOOK"`
 	MattermostBot MattermostBotGroup  `group:"mattermost-bot" namespace:"mattermost-bot" env-namespace:"MATTERMOST_BOT"`
 	Post          PostGroup           `group:"post" namespace:"post" env-namespace:"POST"`
 	Stdout        bool                `long:"stdout" env:"STDOUT" description:"print release notes to stdout"`
@@ -126,34 +126,44 @@ type TelegramGroup struct {
 }
 
 func (g TelegramGroup) build() (notify.Destination, error) {
+	lg := cloneLogger(log.Default())
+	lg.SetPrefix("[TG] " + lg.Prefix())
+
 	return notify.NewTelegram(notify.TelegramParams{
 		ChatID:                g.ChatID,
 		Client:                http.Client{Timeout: g.Timeout},
 		Token:                 g.Token,
 		DisableWebPagePreview: !g.WebPagePreview,
+		Log:                   lg,
 	}), nil
 }
 
-// MattermostGroup defines parameters for mattermost hook notifier.
-type MattermostGroup struct {
+// MattermostHookGroup defines parameters for mattermost hook notifier.
+type MattermostHookGroup struct {
 	URL     string        `long:"url" env:"URL" description:"url of the mattermost hook"`
 	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
-func (g MattermostGroup) build() (notify.Destination, error) {
-	return notify.NewMattermost(http.Client{Timeout: g.Timeout}, g.URL), nil
+func (g MattermostHookGroup) build() (notify.Destination, error) {
+	lg := cloneLogger(log.Default())
+	lg.SetPrefix("[MM_HOOK] " + lg.Prefix())
+
+	return notify.NewMattermost(lg, http.Client{Timeout: g.Timeout}, g.URL), nil
 }
 
 // MattermostBotGroup defines parameters for mattermost bot notifier.
 type MattermostBotGroup struct {
-	URL       string        `long:"url" env:"URL" description:"url of the mattermost hook"`
+	BaseURL   string        `long:"base-url" env:"BASE_URL" description:"base url for mattermost API"`
 	Token     string        `long:"token" env:"TOKEN" description:"token of the mattermost bot"`
 	ChannelID string        `long:"channel-id" env:"CHANNEL_ID" description:"channel id of the mattermost bot"`
 	Timeout   time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 }
 
 func (g MattermostBotGroup) build() (notify.Destination, error) {
-	return notify.NewMattermostBot(http.Client{Timeout: g.Timeout}, g.URL, g.Token, g.ChannelID)
+	lg := cloneLogger(log.Default())
+	lg.SetPrefix("[MM_BOT] " + lg.Prefix())
+
+	return notify.NewMattermostBot(lg, http.Client{Timeout: g.Timeout}, g.BaseURL, g.Token, g.ChannelID)
 }
 
 // PostGroup defines parameters for post notifier.
@@ -163,7 +173,11 @@ type PostGroup struct {
 }
 
 func (g PostGroup) build() (notify.Destination, error) {
+	lg := cloneLogger(log.Default())
+	lg.SetPrefix("[POST] " + lg.Prefix())
+
 	return &notify.Post{
+		Log:    lg,
 		URL:    g.URL,
 		Client: &http.Client{Timeout: g.Timeout},
 	}, nil
@@ -205,10 +219,14 @@ func (r *NotifyGroup) Build() (destinations notify.Destinations, err error) {
 	return destinations, nil
 }
 
-func (g MattermostBotGroup) empty() bool { return g.URL == "" || g.Token == "" || g.ChannelID == "" }
-func (g PostGroup) empty() bool          { return g.URL == "" }
-func (g MattermostGroup) empty() bool    { return g.URL == "" }
-func (g TelegramGroup) empty() bool      { return g.ChatID == "" || g.Token == "" }
+func cloneLogger(lg *log.Logger) *log.Logger {
+	return log.New(lg.Writer(), lg.Prefix(), lg.Flags())
+}
+
+func (g MattermostBotGroup) empty() bool  { return g.BaseURL == "" || g.Token == "" || g.ChannelID == "" }
+func (g PostGroup) empty() bool           { return g.URL == "" }
+func (g MattermostHookGroup) empty() bool { return g.URL == "" }
+func (g TelegramGroup) empty() bool       { return g.ChatID == "" || g.Token == "" }
 func (g GithubNotifierGroup) empty() bool {
 	return g.ReleaseNameTemplate == "" || (g.Repo.FullName == "" && (g.Repo.Owner == "" || g.Repo.Name == ""))
 }

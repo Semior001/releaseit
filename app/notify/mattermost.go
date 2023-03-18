@@ -15,13 +15,14 @@ import (
 
 // Mattermost sends messages to Mattermost via webhook.
 type Mattermost struct {
+	log *log.Logger
 	cl  *http.Client
 	url string
 }
 
 // NewMattermost makes a new Mattermost notifier.
-func NewMattermost(cl http.Client, url string) *Mattermost {
-	return &Mattermost{cl: &cl, url: url}
+func NewMattermost(lg *log.Logger, cl http.Client, url string) *Mattermost {
+	return &Mattermost{cl: &cl, url: url, log: lg}
 }
 
 // String returns the name of the notifier.
@@ -47,7 +48,7 @@ func (m *Mattermost) Send(ctx context.Context, text string) error {
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			log.Printf("[WARN] can't close request body, %s", err)
+			m.log.Printf("[WARN] can't close request body, %s", err)
 		}
 	}()
 
@@ -61,20 +62,22 @@ func (m *Mattermost) Send(ctx context.Context, text string) error {
 // MattermostBot sends messages to Mattermost via webhook.
 type MattermostBot struct {
 	cl        *http.Client
-	url       string
+	log       *log.Logger
+	baseURL   string
 	userID    string
 	channelID string
 }
 
 // NewMattermostBot makes a new Mattermost notifier.
-func NewMattermostBot(cl http.Client, url, token, channelID string) (bot *MattermostBot, err error) {
+func NewMattermostBot(lg *log.Logger, cl http.Client, baseURL, token, channelID string) (bot *MattermostBot, err error) {
 	bot = &MattermostBot{
 		cl: requester.New(cl,
 			middleware.Header("Authorization", "Bearer "+token),
 		).Client(),
 
-		url:       strings.TrimSuffix(url, "/"), // remove trailing slash
+		baseURL:   strings.TrimSuffix(baseURL, "/"), // remove trailing slash
 		channelID: channelID,
+		log:       lg,
 	}
 
 	if bot.userID, err = bot.me(context.Background()); err != nil {
@@ -85,7 +88,7 @@ func NewMattermostBot(cl http.Client, url, token, channelID string) (bot *Matter
 }
 
 func (b *MattermostBot) me(ctx context.Context) (userID string, err error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.url+"/api/v4/users/me", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.baseURL+"/api/v4/users/me", nil)
 	if err != nil {
 		return "", fmt.Errorf("build request: %w", err)
 	}
@@ -96,7 +99,7 @@ func (b *MattermostBot) me(ctx context.Context) (userID string, err error) {
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			log.Printf("[WARN] can't close request body, %s", err)
+			b.log.Printf("[WARN] can't close request body, %s", err)
 		}
 	}()
 
@@ -117,7 +120,7 @@ func (b *MattermostBot) me(ctx context.Context) (userID string, err error) {
 
 // String returns the name of the notifier.
 func (b *MattermostBot) String() string {
-	return fmt.Sprintf("mattermost bot %s at: %s, channel: %s", b.userID, extractBaseURL(b.url), b.channelID)
+	return fmt.Sprintf("mattermost bot %.4s... at: %s channel: %.4s... ", b.userID, extractBaseURL(b.baseURL), b.channelID)
 }
 
 // Send sends a message to Mattermost.
@@ -130,7 +133,7 @@ func (b *MattermostBot) Send(ctx context.Context, text string) error {
 		return fmt.Errorf("marshal body: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, b.url+"/api/v4/posts", bytes.NewReader(bts))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, b.baseURL+"/api/v4/posts", bytes.NewReader(bts))
 	if err != nil {
 		return fmt.Errorf("build request: %w", err)
 	}
@@ -141,7 +144,7 @@ func (b *MattermostBot) Send(ctx context.Context, text string) error {
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			log.Printf("[WARN] can't close request body, %s", err)
+			b.log.Printf("[WARN] can't close request body, %s", err)
 		}
 	}()
 
@@ -157,7 +160,7 @@ func (b *MattermostBot) Send(ctx context.Context, text string) error {
 		return fmt.Errorf("decode response: %w", err)
 	}
 
-	log.Printf("[INFO] sent message %s to channel %s", m.ID, b.channelID)
+	b.log.Printf("[INFO] sent message %s to channel %s", m.ID, b.channelID)
 
 	return nil
 }

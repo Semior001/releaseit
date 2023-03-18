@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -29,13 +30,13 @@ func TestMattermost_Send(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	svc := NewMattermost(*http.DefaultClient, ts.URL+"/hooks/123")
+	svc := NewMattermost(log.Default(), *http.DefaultClient, ts.URL+"/hooks/123")
 	err := svc.Send(context.Background(), "release notes")
 	assert.NoError(t, err)
 }
 
 func TestMattermost_String(t *testing.T) {
-	svc := NewMattermost(*http.DefaultClient, "https://example.com/hooks/123")
+	svc := NewMattermost(log.Default(), *http.DefaultClient, "https://example.com/hooks/123")
 	assert.Equal(t, "mattermost hook at: https://example.com", svc.String())
 }
 
@@ -54,16 +55,16 @@ func TestNewMattermostBot(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	svc, err := NewMattermostBot(*http.DefaultClient, ts.URL, "token", "channelID")
+	svc, err := NewMattermostBot(log.Default(), *http.DefaultClient, ts.URL, "token", "channelID")
 	require.NoError(t, err)
-	assert.Equal(t, ts.URL, svc.url)
+	assert.Equal(t, ts.URL, svc.baseURL)
 	assert.Equal(t, "123", svc.userID)
 	assert.Equal(t, "channelID", svc.channelID)
 }
 
 func TestMattermostBot_String(t *testing.T) {
 	svc := &MattermostBot{
-		url:       "https://example.com",
+		baseURL:   "https://example.com",
 		userID:    "123",
 		channelID: "channelID",
 	}
@@ -94,9 +95,10 @@ func TestMattermostBot_Send(t *testing.T) {
 
 	svc := &MattermostBot{
 		cl:        http.DefaultClient,
-		url:       ts.URL,
+		baseURL:   ts.URL,
 		userID:    "",
 		channelID: "channelID",
+		log:       log.Default(),
 	}
 
 	err := svc.Send(context.Background(), "release notes")

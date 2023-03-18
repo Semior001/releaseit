@@ -18,6 +18,7 @@ type Telegram struct {
 
 // TelegramParams defines parameters needed to initialize Telegram notifier.
 type TelegramParams struct {
+	Log                   *log.Logger
 	ChatID                string
 	Client                http.Client
 	Token                 string
@@ -69,7 +70,7 @@ func (t *Telegram) sendMessage(ctx context.Context, msg []byte, chatID string) e
 	}
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			log.Printf("[WARN] can't close response body, %s", err)
+			t.Log.Printf("[WARN] can't close response body, %s", err)
 		}
 	}()
 
