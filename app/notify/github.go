@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
-	"text/template"
 	"time"
 
-	"github.com/Masterminds/sprig"
+	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	gh "github.com/google/go-github/v37/github"
@@ -19,12 +17,12 @@ import (
 type Github struct {
 	GithubParams
 
-	cl              *gh.Client
-	releaseNameTmpl *template.Template
+	cl *gh.Client
 }
 
 // GithubParams describes parameters to initialize github releaser.
 type GithubParams struct {
+	Evaluator           *eval.Evaluator
 	Owner               string
 	Name                string
 	BasicAuthUsername   string
@@ -50,13 +48,6 @@ func NewGithub(params GithubParams) (*Github, error) {
 	_, _, err := svc.cl.Repositories.Get(context.Background(), svc.Owner, svc.Name)
 	if err != nil {
 		return nil, fmt.Errorf("check connection to github: %w", err)
-	}
-
-	svc.releaseNameTmpl, err = template.New("github_notify").
-		Funcs(lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"})).
-		Parse(svc.ReleaseNameTmplText)
-	if err != nil {
-		return nil, fmt.Errorf("parse release name template: %w", err)
 	}
 
 	return svc, nil
@@ -118,14 +109,13 @@ func (g *Github) Send(ctx context.Context, text string) error {
 		data.Commit.Committer.Date = cmt.GetCommitter().GetDate()
 	}
 
-	buf := &strings.Builder{}
-	if err = g.releaseNameTmpl.Execute(buf, data); err != nil {
+	name, err := g.Evaluator.Evaluate(ctx, g.ReleaseNameTmplText, data)
+	if err != nil {
 		return fmt.Errorf("build release name: %w", err)
 	}
-
 	release := &gh.RepositoryRelease{
 		TagName: tag.Tag,
-		Name:    lo.ToPtr(buf.String()),
+		Name:    lo.ToPtr(name),
 		Body:    &text,
 	}
 

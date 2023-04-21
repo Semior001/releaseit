@@ -47,10 +47,11 @@ func main() {
 	if _, err := p.Parse(); err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
-		} else {
-			log.Printf("[ERROR] failed to parse flags: %+v", err)
-			os.Exit(1)
+			return
 		}
+
+		log.Printf("[ERROR] failed to parse flags: %+v", err)
+		os.Exit(1)
 	}
 }
 

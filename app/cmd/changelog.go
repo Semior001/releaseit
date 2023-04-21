@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Semior001/releaseit/app/service"
+	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/Semior001/releaseit/app/service/notes"
 )
 
@@ -44,7 +45,9 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
-	rnb, err := notes.NewBuilder(rnbCfg, r.Extras)
+	eval := &eval.Evaluator{Engine: eng}
+
+	rnb, err := notes.NewBuilder(rnbCfg, eval, r.Extras)
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}
@@ -55,6 +58,7 @@ func (r Changelog) Execute(_ []string) error {
 	}
 
 	svc := &service.Service{
+		Evaluator:             eval,
 		Engine:                eng,
 		ReleaseNotesBuilder:   rnb,
 		Notifier:              notif,

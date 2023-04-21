@@ -5,12 +5,11 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
-	"text/template"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/notify"
+	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/Semior001/releaseit/app/service/notes"
 	"github.com/samber/lo"
 )
@@ -18,6 +17,7 @@ import (
 // Service wraps repository storage and services
 type Service struct {
 	Engine                engine.Interface
+	Evaluator             *eval.Evaluator
 	ReleaseNotesBuilder   *notes.Builder
 	Notifier              notify.Destination
 	SquashCommitMessageRx *regexp.Regexp
@@ -37,7 +37,7 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 
 	req := notes.BuildRequest{From: from, To: to, ClosedPRs: prs}
 
-	text, err := s.ReleaseNotesBuilder.Build(req)
+	text, err := s.ReleaseNotesBuilder.Build(ctx, req)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)
 	}
@@ -92,85 +92,12 @@ func (s *Service) isMergeCommit(commit git.Commit) bool {
 	return len(commit.ParentSHAs) > 1 || s.SquashCommitMessageRx.MatchString(commit.Message)
 }
 
-func (s *Service) exprFuncs(ctx context.Context) template.FuncMap {
-	return template.FuncMap{
-		"last_commit": func(branch string) (string, error) {
-			return s.Engine.GetLastCommitOfBranch(ctx, branch)
-		},
-		"previous_tag": func(alias string) (string, error) {
-			tags, err := s.Engine.ListTags(ctx)
-			if err != nil {
-				return "", fmt.Errorf("list tags: %w", err)
-			}
-
-			// if by any chance alias is a tag itself
-			for idx, tag := range tags {
-				if tag.Name == alias || tag.Commit.SHA == alias {
-					if idx+1 == len(tags) {
-						return "HEAD", nil
-					}
-
-					return tags[idx+1].Name, nil
-				}
-			}
-
-			// otherwise, we find the closest tag
-			for _, tag := range tags {
-				comp, err := s.Engine.Compare(ctx, tag.Name, alias)
-				if err != nil {
-					return "", fmt.Errorf("compare tag %s with commit %s: %w", tag.Commit.SHA, alias, err)
-				}
-
-				if len(comp.Commits) > 0 {
-					return tag.Name, nil
-				}
-			}
-
-			return "HEAD", nil
-		},
-		"last_tag": func() (string, error) {
-			tags, err := s.Engine.ListTags(ctx)
-			if err != nil {
-				return "", fmt.Errorf("list tags: %w", err)
-			}
-
-			if len(tags) == 0 {
-				return "HEAD", nil
-			}
-
-			return tags[0].Name, nil
-		},
-		"tags": func() ([]string, error) {
-			tags, err := s.Engine.ListTags(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("list tags: %w", err)
-			}
-
-			return lo.Map(tags, func(tag git.Tag, _ int) string { return tag.Name }), nil
-		},
-	}
-}
-
 func (s *Service) evalCommitIDs(ctx context.Context, fromExpr, toExpr string) (from string, to string, err error) {
-	evalID := func(expr string, data any) (string, error) {
-		tmpl, err := template.New("").Funcs(s.exprFuncs(ctx)).Parse(expr)
-		if err != nil {
-			return "", fmt.Errorf("parse template: %w", err)
-		}
-
-		res := &strings.Builder{}
-		if err = tmpl.Execute(res, data); err != nil {
-			return "", fmt.Errorf("execute template: %w", err)
-		}
-
-		return res.String(), nil
-	}
-
-	if to, err = evalID(toExpr, nil); err != nil {
+	if to, err = s.Evaluator.Evaluate(ctx, toExpr, nil); err != nil {
 		return "", "", fmt.Errorf("evaluate 'to' expression: %w", err)
 	}
 
-	if from, err = evalID(fromExpr, struct{ To string }{To: to}); err != nil {
+	if from, err = s.Evaluator.Evaluate(ctx, fromExpr, struct{ To string }{To: to}); err != nil {
 		return "", "", fmt.Errorf("evaluate 'from' expression: %w", err)
 	}
 

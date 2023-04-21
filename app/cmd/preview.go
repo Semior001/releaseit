@@ -7,6 +7,7 @@ import (
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/notify"
+	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/Semior001/releaseit/app/service/notes"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
@@ -42,12 +43,12 @@ func (p Preview) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
-	rnb, err := notes.NewBuilder(rnbCfg, lo.Assign(data.Extras, p.Extras))
+	rnb, err := notes.NewBuilder(rnbCfg, &eval.Evaluator{}, lo.Assign(data.Extras, p.Extras))
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}
 
-	rn, err := rnb.Build(notes.BuildRequest{
+	rn, err := rnb.Build(context.Background(), notes.BuildRequest{
 		From:      data.From,
 		To:        data.To,
 		ClosedPRs: data.PullRequests,
