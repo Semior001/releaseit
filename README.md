@@ -37,8 +37,8 @@ Help Options:
           --conf-location= location to the config file [$CONF_LOCATION]
 
 [changelog command options]
-          --from=                              commit ref to start release notes from (default: {{ previous_tag .To }}) [$FROM]
-          --to=                                commit ref to end release notes to (default: {{ last_tag }}) [$TO]
+          --from=                              commit ref to start release notes from (default: {{ previous .To (filter semver tags) }}) [$FROM]
+          --to=                                commit ref to end release notes to (default: {{ last (filter semver tags) }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
           --squash-commit-rx=                  regexp to match squash commits (default: ^.*#\d+.*$) [$SQUASH_COMMIT_RX]
           --conf-location=                     location to the config file [$CONF_LOCATION]
@@ -112,12 +112,6 @@ Help Options:
 
 Example (from .env file): `TO='{{ last_commit "develop" }}'`
 
-Supported functions:
-- `last_commit(branch_name)`
-- `previous_tag(tag_name)`
-- `tags()` - returns list of tags in descending order
-- `last_tag()` - returns the last tag in repository (shortcut for `{{ index (tags) 0 }}`)
-
 ## Preview data file structure
 | Field                            | Description                                                                      |
 |----------------------------------|----------------------------------------------------------------------------------|
@@ -139,6 +133,24 @@ Supported functions:
 | pull_requests.assignees.email    | Assignee's email                                                                 |
 
 See [example](_example/preview_data.yaml) for details.
+
+## Evaluator functions
+
+The list of available to use functions consists of [sprig's](http://masterminds.github.io/sprig/)
+(excluding `env` and `expandenv`) functions list, and a several custom functions, including:
+
+| Function name                                  | Description                                                    |
+|------------------------------------------------|----------------------------------------------------------------|
+| `last_commit(branch string) (sha string)`      | returns last commit of the provided branch                     |
+| `previous_tag(ref string) (tagName string)`    | returns previous tag of the provided commit reference          |
+| `last_tag() (tagName string)`                  | returns last tag                                               |
+| `tags() []string`                              | returns list of tags                                           |
+| `next(elem string, elems []string) string`     | returns next element in the list                               |
+| `previous(elem string, elems []string) string` | returns previous element in the list                           |
+| `filter(rx string, elems []string) []string`   | filters list of strings by regular expression                  |
+| `strings([]interface{}) []string`              | casts list of `any` to list of strings                         |
+| **Constants**                                  |                                                                |
+| `semver() string`                              | returns semver regular expression  (`^v?(\d+)\.(\d+)\.(\d+)$`) |
 
 ## Release notes builder configuration
 | Name              | Description                                                                                                                                             |
@@ -175,9 +187,7 @@ See [example](_example/config.yaml) for details.
 | {{.Categories.PRs.ReceivedBySHAs}} | List of commit SHAs, by which releaseit received pull requests | [a1b2c3d4e5f6, 1a2b3c4d5e6f]                    |
 | {{.Categories.PRs.Assignees}}      | List of assignees of the pull request                          | [Semior001, Semior002]                          |
 
-The golang's [text/template package](https://pkg.go.dev/text/template) is used for executing template for release notes. 
-It also imports functions from [sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) library in 
-order to provide common used template functions.
+For functions available to use see the [list of evaluator functions](#evaluator-functions).
 
 ## (Github) Template variables for release title
 
@@ -195,4 +205,4 @@ order to provide common used template functions.
 | {{.Commit.Committer.Date}} | Date, when commit was committed | Jan 02, 2006 15:04  |
 | {{.Extras}}                | Map of extra variables          | map[foo:bar]        |
 
-[Sprig](http://masterminds.github.io/sprig/) (excluding `env` and `expandenv`) functions are also available.
+For functions available to use see the [list of evaluator functions](#evaluator-functions).

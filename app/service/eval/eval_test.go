@@ -12,6 +12,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestEvaluator_Evaluate(t *testing.T) {
+	t.Run("evaluate previous tag over a list of mixed tags", func(t *testing.T) {
+		svc := &Evaluator{
+			Engine: &engine.InterfaceMock{
+				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+					return []git.Tag{
+						{Name: "npm1.2.0"},
+						{Name: "v1.2.0"},
+						{Name: "v1.1.0"},
+						{Name: "npm1.1.0"},
+						{Name: "v1.0.0"},
+						{Name: "npm1.0.0"},
+					}, nil
+				},
+			},
+		}
+
+		res, err := svc.Evaluate(context.Background(), `{{ last (filter_semver tags) }}`, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "v1.2.0", res)
+
+		res, err = svc.Evaluate(context.Background(), `{{ previous .To (filter_semver tags) }}`, struct{ To string }{To: res})
+		require.NoError(t, err)
+		assert.Equal(t, "v1.1.0", res)
+	})
+}
+
 func TestEvaluator_EvaluateLastTag(t *testing.T) {
 	svc := &Evaluator{
 		Engine: &engine.InterfaceMock{
@@ -48,7 +75,7 @@ func TestEvaluator_EvaluateTags(t *testing.T) {
 
 	res, err := svc.Evaluate(context.Background(), "{{ tags }}", nil)
 	require.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%v", []string{"v0.1.0", "v0.2.0"}), res)
+	assert.Equal(t, fmt.Sprintf("%v", []string{"v0.2.0", "v0.1.0"}), res)
 }
 
 func TestEvaluator_EvaluatePreviousTag(t *testing.T) {

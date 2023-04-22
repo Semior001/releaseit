@@ -40,16 +40,23 @@ func (s *Evaluator) Evaluate(ctx context.Context, expr string, data any) (string
 }
 
 func (s *Evaluator) funcs(ctx context.Context) template.FuncMap {
-	fns := template.FuncMap{}
-	fns["last_commit"] = s.lastCommit(ctx)
-	fns["previous_tag"] = s.previousTag(ctx)
-	fns["last_tag"] = s.lastTag(ctx)
-	fns["tags"] = s.tags(ctx)
-	fns = lo.Assign(fns,
+	return lo.Assign(
 		lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"}),
+		template.FuncMap{
+			"last_commit":  s.lastCommit(ctx),
+			"previous_tag": s.previousTag(ctx),
+			"last_tag":     s.lastTag(ctx),
+			"tags":         s.tags(ctx),
+			"next":         next,
+			"previous":     previous,
+			"filter":       filter,
+			"strings":      strings,
+
+			// constants
+			"semver": func() string { return `^v?(\d+)\.(\d+)\.(\d+)$` },
+		},
 		s.Funcs,
 	)
-	return fns
 }
 
 func (s *Evaluator) lastCommit(ctx context.Context) func(branch string) (string, error) {
@@ -115,10 +122,17 @@ func (s *Evaluator) tags(ctx context.Context) func() ([]string, error) {
 			return nil, fmt.Errorf("list tags: %w", err)
 		}
 
+		// revert the order of tags
+		for i, j := 0, len(tags)-1; i < j; i, j = i+1, j-1 {
+			tags[i], tags[j] = tags[j], tags[i]
+		}
+
 		return lo.Map(tags, func(tag git.Tag, _ int) string { return tag.Name }), nil
 	}
 }
 
 type parseError struct{ err error }
 
-func (e parseError) Error() string { return fmt.Sprintf("parse expression: %v", e.err) }
+func (e parseError) Error() string {
+	return fmt.Sprintf("parse expression: %v", e.err)
+}
