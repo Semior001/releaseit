@@ -14,11 +14,6 @@ import (
 // Changelog builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type Changelog struct {
-	// Note: if default values of .From and .To are changed, then the
-	//       default values of the corresponding fields in the
-	//       service.TestService_Changelog->"default values" test case
-	//	     should be changed as well.
-
 	From           string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previous .To (filter semver tags) }}"`
 	To             string            `long:"to" env:"TO" description:"commit ref to end release notes to" default:"{{ last (filter semver tags) }}"`
 	Timeout        time.Duration     `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`

@@ -29,11 +29,11 @@ func TestEvaluator_Evaluate(t *testing.T) {
 			},
 		}
 
-		res, err := svc.Evaluate(context.Background(), `{{ last (filter_semver tags) }}`, nil)
+		res, err := svc.Evaluate(context.Background(), `{{ last (filter semver tags) }}`, nil)
 		require.NoError(t, err)
 		assert.Equal(t, "v1.2.0", res)
 
-		res, err = svc.Evaluate(context.Background(), `{{ previous .To (filter_semver tags) }}`, struct{ To string }{To: res})
+		res, err = svc.Evaluate(context.Background(), `{{ previous .To (filter semver tags) }}`, struct{ To string }{To: res})
 		require.NoError(t, err)
 		assert.Equal(t, "v1.1.0", res)
 	})

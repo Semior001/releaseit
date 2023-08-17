@@ -101,7 +101,7 @@ func TestEvaluator_FilterSemver(t *testing.T) {
 	svc := &Evaluator{}
 
 	res, err := svc.Evaluate(context.Background(),
-		`{{ filter_semver .List }}`,
+		`{{ filter semver .List }}`,
 		struct{ List []string }{
 			List: []string{"1", "3", "v1.2.3", "2", "v1.2.4", "v1.2.5", "4"},
 		},
