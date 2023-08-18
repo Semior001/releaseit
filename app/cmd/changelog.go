@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/Semior001/releaseit/app/git"
 	"regexp"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 // Changelog builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type Changelog struct {
-	From           string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previous_tag .To (headed (filter semver tags)) }}"`
+	From           string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previousTag .To (headed (filter semver tags)) }}"`
 	To             string            `long:"to" env:"TO" description:"commit ref to end release notes to" default:"{{ last (filter semver tags) }}"`
 	Timeout        time.Duration     `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`
 	SquashCommitRx string            `long:"squash-commit-rx" env:"SQUASH_COMMIT_RX" description:"regexp to match squash commits" default:"(#\\d+)"`
@@ -45,7 +46,11 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
-	evaler := &eval.Evaluator{} // TODO: add git and task addons
+	evaler := &eval.Evaluator{
+		Addon: eval.MultiAddon{
+			&git.TemplateFuncs{Repository: eng},
+		},
+	}
 
 	rnb, err := notes.NewBuilder(rnbCfg, evaler, r.Extras)
 	if err != nil {

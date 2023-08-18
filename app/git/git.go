@@ -1,7 +1,27 @@
 // Package git contains types and engines to work with git repositories.
 package git
 
-import "time"
+import (
+	"context"
+	"time"
+)
+
+//go:generate rm -f mock_repository.go
+//go:generate moq -out mock_repository.go . Repository
+
+// Repository defines methods to retrieve information about repository.
+type Repository interface {
+	// Compare returns comparison between two commits,
+	// given by their SHA.
+	Compare(ctx context.Context, fromSHA, toSHA string) (CommitsComparison, error)
+	// ListPRsOfCommit returns pull/merge requests
+	// associated with the commit, given by its SHA.
+	ListPRsOfCommit(ctx context.Context, sha string) ([]PullRequest, error)
+	// ListTags returns tags of the repository in descending order of creation.
+	ListTags(ctx context.Context) ([]Tag, error)
+	// GetLastCommitOfBranch returns the SHA or alias of the last commit in the branch.
+	GetLastCommitOfBranch(ctx context.Context, branch string) (string, error)
+}
 
 // PullRequest represents a pull/merge request from the
 // remote repository.

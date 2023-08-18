@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/Semior001/releaseit/app/git"
 	"log"
 	"net/http"
 	"os"
@@ -21,7 +22,7 @@ type EngineGroup struct {
 }
 
 // Build builds the engine.
-func (r EngineGroup) Build() (engine.Interface, error) {
+func (r EngineGroup) Build() (git.Repository, error) {
 	switch r.Type {
 	case "github":
 		if err := r.Github.fill(); err != nil {
@@ -223,7 +224,9 @@ func cloneLogger(lg *log.Logger) *log.Logger {
 	return log.New(lg.Writer(), lg.Prefix(), lg.Flags())
 }
 
-func (g MattermostBotGroup) empty() bool  { return g.BaseURL == "" || g.Token == "" || g.ChannelID == "" }
+func (g MattermostBotGroup) empty() bool {
+	return g.BaseURL == "" || g.Token == "" || g.ChannelID == ""
+}
 func (g PostGroup) empty() bool           { return g.URL == "" }
 func (g MattermostHookGroup) empty() bool { return g.URL == "" }
 func (g TelegramGroup) empty() bool       { return g.ChatID == "" || g.Token == "" }

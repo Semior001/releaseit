@@ -3,16 +3,15 @@ package engine
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"strings"
-
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
 	"github.com/samber/lo"
 	gl "github.com/xanzy/go-gitlab"
+	"net/http"
+	"strings"
 )
 
-// Gitlab implements Interface with gitlab API below it.
+// Gitlab implements Repository with gitlab API below it.
 type Gitlab struct {
 	cl        *gl.Client
 	projectID string

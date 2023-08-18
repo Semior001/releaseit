@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/Semior001/releaseit/app/git"
-	"github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/notify"
 	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/Semior001/releaseit/app/service/notes"
@@ -23,7 +22,7 @@ func TestService_Changelog(t *testing.T) {
 	t.Run("expressions on commits", func(t *testing.T) {
 		compareCalledErr := errors.New("compare called")
 
-		eng := &engine.InterfaceMock{
+		eng := &git.RepositoryMock{
 			GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
 				assert.Equal(t, "master", branch)
 				return "sha", nil
@@ -39,11 +38,15 @@ func TestService_Changelog(t *testing.T) {
 		}
 
 		svc := &Service{
-			Evaluator: &eval.Evaluator{}, // TODO: add git addon
-			Engine:    eng,
+			Evaluator: &eval.Evaluator{
+				Addon: eval.MultiAddon{
+					&git.TemplateFuncs{Repository: eng},
+				},
+			},
+			Engine: eng,
 		}
 
-		err := svc.Changelog(context.Background(), `{{ last_commit "master" }}`, `{{ previous "v0.2.0" tags }}`)
+		err := svc.Changelog(context.Background(), `{{ lastCommit "master" }}`, `{{ previous "v0.2.0" tags }}`)
 		assert.ErrorIs(t, err, compareCalledErr)
 	})
 
@@ -51,7 +54,7 @@ func TestService_Changelog(t *testing.T) {
 		now := time.Now()
 		buf := &strings.Builder{}
 
-		eng := &engine.InterfaceMock{
+		eng := &git.RepositoryMock{
 			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
 				return git.CommitsComparison{
 					Commits: []git.Commit{
@@ -87,7 +90,7 @@ func TestService_Changelog(t *testing.T) {
 
 		svc := &Service{
 			SquashCommitMessageRx: regexp.MustCompile(`^squash: (.*)$`),
-			Evaluator:             &eval.Evaluator{}, // TODO: add git addon
+			Evaluator:             &eval.Evaluator{},
 			Engine:                eng,
 			ReleaseNotesBuilder: lo.Must(notes.NewBuilder(notes.Config{
 				Categories: []notes.CategoryConfig{

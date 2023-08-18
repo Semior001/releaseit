@@ -19,8 +19,8 @@ type Addon interface {
 // MultiAddon is a list of addons.
 type MultiAddon []Addon
 
-// Name returns names of all underlying addons.
-func (m MultiAddon) Name() string {
+// String returns names of all underlying addons.
+func (m MultiAddon) String() string {
 	dests := make([]string, len(m))
 	for i, dest := range m {
 		dests[i] = dest.String()

@@ -3,16 +3,15 @@ package engine
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	gh "github.com/google/go-github/v37/github"
 	"github.com/samber/lo"
+	"net/http"
 )
 
-// Github implements Interface with github API below it.
+// Github implements Repository with github API below it.
 type Github struct {
 	cl    *gh.Client
 	owner string

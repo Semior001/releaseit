@@ -7,7 +7,6 @@ import (
 	"regexp"
 
 	"github.com/Semior001/releaseit/app/git"
-	"github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/notify"
 	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/Semior001/releaseit/app/service/notes"
@@ -16,7 +15,7 @@ import (
 
 // Service wraps repository storage and services
 type Service struct {
-	Engine                engine.Interface
+	Engine                git.Repository
 	Evaluator             *eval.Evaluator
 	ReleaseNotesBuilder   *notes.Builder
 	Notifier              notify.Destination
