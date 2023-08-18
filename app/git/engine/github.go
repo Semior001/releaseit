@@ -72,7 +72,7 @@ func (g *Github) Compare(ctx context.Context, fromSHA, toSHA string) (git.Commit
 	commits := make([]git.Commit, len(comp.Commits))
 
 	for i, commit := range comp.Commits {
-		commits[i] = g.commitToStore(commit)
+		commits[i] = g.transformCommit(commit)
 	}
 
 	return git.CommitsComparison{
@@ -91,17 +91,7 @@ func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 	res := make([]git.PullRequest, len(prs))
 
 	for i, pr := range prs {
-		res[i] = git.PullRequest{
-			Number:       pr.GetNumber(),
-			Title:        pr.GetTitle(),
-			Body:         pr.GetBody(),
-			ClosedAt:     pr.GetClosedAt(),
-			Author:       git.User{Username: pr.GetUser().GetLogin(), Email: pr.GetUser().GetEmail()},
-			Labels:       lo.Map(pr.Labels, func(l *gh.Label, _ int) string { return l.GetName() }),
-			SourceBranch: pr.GetHead().GetRef(),
-			TargetBranch: pr.GetBase().GetRef(),
-			URL:          pr.GetHTMLURL(),
-		}
+		res[i] = g.transformPR(pr)
 
 		for _, assignee := range pr.Assignees {
 			res[i].Assignees = append(res[i].Assignees, git.User{
@@ -126,7 +116,7 @@ func (g *Github) ListTags(ctx context.Context) ([]git.Tag, error) {
 	for i, tag := range tags {
 		res[i] = git.Tag{
 			Name:   tag.GetName(),
-			Commit: g.commitToStore(tag.GetCommit()),
+			Commit: g.transformCommit(tag.GetCommit()),
 		}
 	}
 
@@ -137,7 +127,7 @@ type shaGetter interface {
 	GetSHA() string
 }
 
-func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
+func (g *Github) transformCommit(commitInterface shaGetter) git.Commit {
 	res := git.Commit{SHA: commitInterface.GetSHA()}
 	switch cmt := commitInterface.(type) {
 	case *gh.Commit:
@@ -152,4 +142,18 @@ func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
 		res.AuthoredAt = cmt.GetCommit().GetAuthor().GetDate()
 	}
 	return res
+}
+
+func (g *Github) transformPR(pr *gh.PullRequest) git.PullRequest {
+	return git.PullRequest{
+		Number:       pr.GetNumber(),
+		Title:        pr.GetTitle(),
+		Body:         pr.GetBody(),
+		ClosedAt:     pr.GetClosedAt(),
+		Author:       git.User{Username: pr.GetUser().GetLogin(), Email: pr.GetUser().GetEmail()},
+		Labels:       lo.Map(pr.Labels, func(l *gh.Label, _ int) string { return l.GetName() }),
+		SourceBranch: pr.GetHead().GetRef(),
+		TargetBranch: pr.GetBase().GetRef(),
+		URL:          pr.GetHTMLURL(),
+	}
 }

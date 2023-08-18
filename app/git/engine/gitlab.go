@@ -55,7 +55,7 @@ func (g *Gitlab) Compare(ctx context.Context, fromSHA, toSHA string) (git.Commit
 
 	commits := make([]git.Commit, len(cmp.Commits))
 	for i, commit := range cmp.Commits {
-		commits[i] = g.commitToStore(commit)
+		commits[i] = g.transformCommit(commit)
 	}
 
 	return git.CommitsComparison{
@@ -83,22 +83,7 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 
 	res := make([]git.PullRequest, len(mrs))
 	for i, mr := range mrs {
-		res[i] = git.PullRequest{
-			Number: mr.IID,
-			Title:  mr.Title,
-			Body:   mr.Description,
-			Author: git.User{Username: lo.FromPtr(mr.Author).Username},
-			// FIXME: by some reason, library encodes labels as a string, not a slice.
-			Labels: lo.Flatten(lo.Map(mr.Labels, func(s string, _ int) []string {
-				return strings.Split(s, ",")
-			})),
-			// closed at in MR points to time when MR was closed without merging,
-			// so we use merged at instead.
-			ClosedAt:     lo.FromPtr(mr.MergedAt),
-			SourceBranch: mr.SourceBranch,
-			TargetBranch: mr.TargetBranch,
-			URL:          mr.WebURL,
-		}
+		res[i] = g.transformMR(mr)
 
 		for _, assignee := range mr.Assignees {
 			res[i].Assignees = append(res[i].Assignees, git.User{Username: assignee.Username})
@@ -121,19 +106,38 @@ func (g *Gitlab) ListTags(ctx context.Context) ([]git.Tag, error) {
 	for i, tag := range tags {
 		res[i] = git.Tag{
 			Name:   tag.Name,
-			Commit: g.commitToStore(tag.Commit),
+			Commit: g.transformCommit(tag.Commit),
 		}
 	}
 
 	return res, nil
 }
 
-func (g *Gitlab) commitToStore(commit *gl.Commit) git.Commit {
+func (g *Gitlab) transformCommit(commit *gl.Commit) git.Commit {
 	return git.Commit{
 		SHA:         commit.ID,
 		ParentSHAs:  commit.ParentIDs,
 		Message:     commit.Message,
 		CommittedAt: lo.FromPtr(commit.CommittedDate),
 		AuthoredAt:  lo.FromPtr(commit.AuthoredDate),
+	}
+}
+
+func (g *Gitlab) transformMR(mr *gl.MergeRequest) git.PullRequest {
+	return git.PullRequest{
+		Number: mr.IID,
+		Title:  mr.Title,
+		Body:   mr.Description,
+		Author: git.User{Username: lo.FromPtr(mr.Author).Username},
+		// FIXME: by some reason, library encodes labels as a string, not a slice.
+		Labels: lo.Flatten(lo.Map(mr.Labels, func(s string, _ int) []string {
+			return strings.Split(s, ",")
+		})),
+		// closed at in MR points to time when MR was closed without merging,
+		// so we use merged at instead.
+		ClosedAt:     lo.FromPtr(mr.MergedAt),
+		SourceBranch: mr.SourceBranch,
+		TargetBranch: mr.TargetBranch,
+		URL:          mr.WebURL,
 	}
 }
