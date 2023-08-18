@@ -14,7 +14,7 @@ import (
 
 const tmpl = `From: {{.From}}, To: {{.To}}, Date: {{.Date.Format "2006-01-02T15:04:05Z07:00"}}, Extras: {{.Extras}}
 {{range .Categories}}{{.Title}}
-{{ range .PRs }}- {{.Title}} ([#{{.Number}}]({{ .URL }}), branch {{ .SourceBranch }}) by @{{.Author}} at {{ .ClosedAt }}
+{{ range .PRs }}- {{.Title}} ([#{{.Number}}]({{ .URL }}), branch {{ .SourceBranch }}) by @{{.Author.Username}} at {{ .ClosedAt }}
 {{end}}
 {{end}}`
 
@@ -117,62 +117,78 @@ func TestBuilder_sortPRs(t *testing.T) {
 	tests := []struct {
 		name  string
 		field string
-		prs   []prTmplData
-		want  []prTmplData
+		prs   []git.PullRequest
+		want  []git.PullRequest
 	}{
 		{
 			name:  "sort by number",
 			field: "number",
-			prs:   []prTmplData{{Number: 2}, {Number: 1}},
-			want:  []prTmplData{{Number: 1}, {Number: 2}},
+			prs:   []git.PullRequest{{Number: 2}, {Number: 1}},
+			want:  []git.PullRequest{{Number: 1}, {Number: 2}},
 		},
 		{
 			name:  "sort by number desc",
 			field: "-number",
-			prs:   []prTmplData{{Number: 1}, {Number: 2}},
-			want:  []prTmplData{{Number: 2}, {Number: 1}},
+			prs:   []git.PullRequest{{Number: 1}, {Number: 2}},
+			want:  []git.PullRequest{{Number: 2}, {Number: 1}},
 		},
 		{
 			name:  "sort by title",
 			field: "title",
-			prs:   []prTmplData{{Title: "b"}, {Title: "a"}},
-			want:  []prTmplData{{Title: "a"}, {Title: "b"}},
+			prs:   []git.PullRequest{{Title: "b"}, {Title: "a"}},
+			want:  []git.PullRequest{{Title: "a"}, {Title: "b"}},
 		},
 		{
 			name:  "sort by title desc",
 			field: "-title",
-			prs:   []prTmplData{{Title: "a"}, {Title: "b"}},
-			want:  []prTmplData{{Title: "b"}, {Title: "a"}},
+			prs:   []git.PullRequest{{Title: "a"}, {Title: "b"}},
+			want:  []git.PullRequest{{Title: "b"}, {Title: "a"}},
 		},
 		{
 			name:  "sort by closed at",
 			field: "closed",
-			prs:   []prTmplData{{ClosedAt: tm.Add(time.Hour)}, {ClosedAt: tm}},
-			want:  []prTmplData{{ClosedAt: tm}, {ClosedAt: tm.Add(time.Hour)}},
+			prs:   []git.PullRequest{{ClosedAt: tm.Add(time.Hour)}, {ClosedAt: tm}},
+			want:  []git.PullRequest{{ClosedAt: tm}, {ClosedAt: tm.Add(time.Hour)}},
 		},
 		{
 			name:  "sort by closed at desc",
 			field: "-closed",
-			prs:   []prTmplData{{ClosedAt: tm}, {ClosedAt: tm.Add(time.Hour)}},
-			want:  []prTmplData{{ClosedAt: tm.Add(time.Hour)}, {ClosedAt: tm}},
+			prs:   []git.PullRequest{{ClosedAt: tm}, {ClosedAt: tm.Add(time.Hour)}},
+			want:  []git.PullRequest{{ClosedAt: tm.Add(time.Hour)}, {ClosedAt: tm}},
 		},
 		{
 			name:  "sort by author",
 			field: "author",
-			prs:   []prTmplData{{Author: "author2", Number: 2}, {Author: "author2", Number: 1}, {Author: "author1"}},
-			want:  []prTmplData{{Author: "author1"}, {Author: "author2", Number: 1}, {Author: "author2", Number: 2}},
+			prs: []git.PullRequest{
+				{Author: git.User{Username: "author2"}, Number: 2},
+				{Author: git.User{Username: "author2"}, Number: 1},
+				{Author: git.User{Username: "author1"}},
+			},
+			want: []git.PullRequest{
+				{Author: git.User{Username: "author1"}},
+				{Author: git.User{Username: "author2"}, Number: 1},
+				{Author: git.User{Username: "author2"}, Number: 2},
+			},
 		},
 		{
 			name:  "sort by author desc",
 			field: "-author",
-			prs:   []prTmplData{{Author: "author1"}, {Author: "author2", Number: 2}, {Author: "author2", Number: 1}},
-			want:  []prTmplData{{Author: "author2", Number: 1}, {Author: "author2", Number: 2}, {Author: "author1"}},
+			prs: []git.PullRequest{
+				{Author: git.User{Username: "author1"}},
+				{Author: git.User{Username: "author2"}, Number: 2},
+				{Author: git.User{Username: "author2"}, Number: 1},
+			},
+			want: []git.PullRequest{
+				{Author: git.User{Username: "author2"}, Number: 1},
+				{Author: git.User{Username: "author2"}, Number: 2},
+				{Author: git.User{Username: "author1"}},
+			},
 		},
 		{
 			name:  "default",
 			field: "",
-			prs:   []prTmplData{{Number: 2}, {Number: 1}},
-			want:  []prTmplData{{Number: 1}, {Number: 2}},
+			prs:   []git.PullRequest{{Number: 2}, {Number: 1}},
+			want:  []git.PullRequest{{Number: 1}, {Number: 2}},
 		},
 	}
 	for _, tt := range tests {

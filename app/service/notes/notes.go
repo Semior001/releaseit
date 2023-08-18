@@ -68,7 +68,7 @@ func (s *Builder) Build(ctx context.Context, req BuildRequest) (string, error) {
 
 			if hasAnyOfLabels || hasBranchPrefix {
 				usedPRs[i] = true
-				categoryData.PRs = append(categoryData.PRs, prToTmplData(pr))
+				categoryData.PRs = append(categoryData.PRs, pr)
 			}
 		}
 
@@ -99,13 +99,13 @@ func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) cate
 			continue
 		}
 
-		category.PRs = append(category.PRs, prToTmplData(pr))
+		category.PRs = append(category.PRs, pr)
 	}
 
 	return category
 }
 
-func (s *Builder) sortPRs(prs []prTmplData) {
+func (s *Builder) sortPRs(prs []git.PullRequest) {
 	sort.Slice(prs, func(i, j int) bool {
 		switch s.SortField {
 		case "+number", "-number", "number":
@@ -118,12 +118,12 @@ func (s *Builder) sortPRs(prs []prTmplData) {
 				if prs[i].Author == prs[j].Author {
 					return prs[i].Number < prs[j].Number
 				}
-				return prs[i].Author > prs[j].Author
+				return prs[i].Author.Username > prs[j].Author.Username
 			}
 			if prs[i].Author == prs[j].Author {
 				return prs[i].Number < prs[j].Number
 			}
-			return prs[i].Author < prs[j].Author
+			return prs[i].Author.Username < prs[j].Author.Username
 		case "+title", "-title", "title":
 			if strings.HasPrefix(s.SortField, "-") {
 				return prs[i].Title > prs[j].Title
@@ -151,33 +151,5 @@ type tmplData struct {
 
 type categoryTmplData struct {
 	Title string
-	PRs   []prTmplData
-}
-
-type prTmplData struct {
-	Number         int
-	Title          string
-	Author         string
-	URL            string
-	SourceBranch   string
-	TargetBranch   string
-	ClosedAt       time.Time
-	ReceivedBySHAs []string
-	Assignees      []string
-}
-
-func prToTmplData(pr git.PullRequest) prTmplData {
-	return prTmplData{
-		Number:         pr.Number,
-		Title:          pr.Title,
-		Author:         pr.Author.Username,
-		URL:            pr.URL,
-		ClosedAt:       pr.ClosedAt,
-		SourceBranch:   pr.SourceBranch,
-		TargetBranch:   pr.TargetBranch,
-		ReceivedBySHAs: pr.ReceivedBySHAs,
-		Assignees: lo.Map(pr.Assignees, func(u git.User, _ int) string {
-			return u.Username
-		}),
-	}
+	PRs   []git.PullRequest
 }
