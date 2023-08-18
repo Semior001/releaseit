@@ -49,9 +49,10 @@ func (s *Evaluator) funcs(ctx context.Context) template.FuncMap {
 			"strings":  strings,
 
 			// git
-			"last_commit": s.lastCommit(ctx),
-			"tags":        s.tags(ctx),
-			"headed":      headed,
+			"last_commit":  s.lastCommit(ctx),
+			"tags":         s.tags(ctx),
+			"previous_tag": s.previousTag(ctx),
+			"headed":       headed,
 
 			// constants
 			"semver": func() string { return `^v?(\d+)\.(\d+)\.(\d+)$` },
@@ -66,12 +67,14 @@ func (s *Evaluator) lastCommit(ctx context.Context) func(branch string) (string,
 	}
 }
 
-func (s *Evaluator) previousTag(ctx context.Context) func(commitAlias string) (string, error) {
-	return func(commitAlias string) (string, error) {
+func (s *Evaluator) previousTag(ctx context.Context) func(commitAlias string, tags []string) (string, error) {
+	return func(commitAlias string, tagNames []string) (string, error) {
 		tags, err := s.Engine.ListTags(ctx)
 		if err != nil {
 			return "", fmt.Errorf("list tags: %w", err)
 		}
+
+		tags = lo.Filter(tags, func(tag git.Tag, _ int) bool { return lo.Contains(tagNames, tag.Name) })
 
 		// if by any chance alias is a tag itself
 		for idx, tag := range tags {
@@ -98,21 +101,6 @@ func (s *Evaluator) previousTag(ctx context.Context) func(commitAlias string) (s
 		}
 
 		return "HEAD", nil
-	}
-}
-
-func (s *Evaluator) lastTag(ctx context.Context) func() (string, error) {
-	return func() (string, error) {
-		tags, err := s.Engine.ListTags(ctx)
-		if err != nil {
-			return "", fmt.Errorf("list tags: %w", err)
-		}
-
-		if len(tags) == 0 {
-			return "HEAD", nil
-		}
-
-		return tags[0].Name, nil
 	}
 }
 

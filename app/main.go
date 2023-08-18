@@ -48,6 +48,7 @@ func main() {
 		if errors.As(err, &flagsErr) && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		}
+		log.Printf("[ERROR] failed to parse flags: %v", err)
 		os.Exit(1)
 	}
 }
