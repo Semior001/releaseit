@@ -14,11 +14,6 @@ import (
 	"github.com/samber/lo"
 )
 
-const defaultTemplate = `Version {{.To}}
-{{if (eq .Total 0)}}- No changes{{end}}{{range .Categories}}{{.Title}}
-{{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}{{end}}
-{{end}}`
-
 // Builder provides methods to form changelog.
 type Builder struct {
 	Config
@@ -35,10 +30,6 @@ func NewBuilder(cfg Config, eval *eval.Evaluator, extras map[string]string) (*Bu
 		Evaluator: eval,
 		Config:    cfg,
 		now:       time.Now,
-	}
-
-	if svc.Template == "" {
-		svc.Template = defaultTemplate
 	}
 
 	return svc, nil
@@ -114,20 +105,6 @@ func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) cate
 	return category
 }
 
-func prToTmplData(pr git.PullRequest) prTmplData {
-	return prTmplData{
-		Number:         pr.Number,
-		Title:          pr.Title,
-		Author:         pr.Author.Username,
-		URL:            pr.URL,
-		ClosedAt:       pr.ClosedAt,
-		SourceBranch:   pr.SourceBranch,
-		TargetBranch:   pr.TargetBranch,
-		ReceivedBySHAs: pr.ReceivedBySHAs,
-		Assignees:      lo.Map(pr.Assignees, func(u git.User, _ int) string { return u.Username }),
-	}
-}
-
 func (s *Builder) sortPRs(prs []prTmplData) {
 	sort.Slice(prs, func(i, j int) bool {
 		switch s.SortField {
@@ -187,4 +164,20 @@ type prTmplData struct {
 	ClosedAt       time.Time
 	ReceivedBySHAs []string
 	Assignees      []string
+}
+
+func prToTmplData(pr git.PullRequest) prTmplData {
+	return prTmplData{
+		Number:         pr.Number,
+		Title:          pr.Title,
+		Author:         pr.Author.Username,
+		URL:            pr.URL,
+		ClosedAt:       pr.ClosedAt,
+		SourceBranch:   pr.SourceBranch,
+		TargetBranch:   pr.TargetBranch,
+		ReceivedBySHAs: pr.ReceivedBySHAs,
+		Assignees: lo.Map(pr.Assignees, func(u git.User, _ int) string {
+			return u.Username
+		}),
+	}
 }

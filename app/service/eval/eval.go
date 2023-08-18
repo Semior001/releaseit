@@ -43,14 +43,15 @@ func (s *Evaluator) funcs(ctx context.Context) template.FuncMap {
 	return lo.Assign(
 		lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"}),
 		template.FuncMap{
-			"last_commit":  s.lastCommit(ctx),
-			"previous_tag": s.previousTag(ctx),
-			"last_tag":     s.lastTag(ctx),
-			"tags":         s.tags(ctx),
-			"next":         next,
-			"previous":     previous,
-			"filter":       filter,
-			"strings":      strings,
+			"next":     next,
+			"previous": previous,
+			"filter":   filter,
+			"strings":  strings,
+
+			// git
+			"last_commit": s.lastCommit(ctx),
+			"tags":        s.tags(ctx),
+			"headed":      headed,
 
 			// constants
 			"semver": func() string { return `^v?(\d+)\.(\d+)\.(\d+)$` },

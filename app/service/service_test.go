@@ -43,7 +43,7 @@ func TestService_Changelog(t *testing.T) {
 			Engine:    eng,
 		}
 
-		err := svc.Changelog(context.Background(), `{{ last_commit "master" }}`, `{{ previous_tag "v0.2.0" }}`)
+		err := svc.Changelog(context.Background(), `{{ last_commit "master" }}`, `{{ previous "v0.2.0" tags }}`)
 		assert.ErrorIs(t, err, compareCalledErr)
 	})
 

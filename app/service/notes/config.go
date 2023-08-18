@@ -66,6 +66,17 @@ func (c *Config) validate() error {
 	return nil
 }
 
+const defaultTemplate = `Version {{.To}}
+{{if (eq .Total 0)}}- No changes{{end}}{{range .Categories}}{{.Title}}
+{{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}{{end}}
+{{end}}`
+
+func (c *Config) defaults() {
+	if c.Template == "" {
+		c.Template = defaultTemplate
+	}
+}
+
 // ConfigFromFile reads the configuration from the file.
 func ConfigFromFile(path string) (Config, error) {
 	bts, err := os.ReadFile(path) //nolint:gosec // we don't need to check permissions here
@@ -82,6 +93,8 @@ func ConfigFromFile(path string) (Config, error) {
 	if err = res.validate(); err != nil {
 		return Config{}, fmt.Errorf("config is invalid: %w", err)
 	}
+
+	res.defaults()
 
 	return res, nil
 }

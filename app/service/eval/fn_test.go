@@ -122,3 +122,11 @@ func TestEvaluator_Strings(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%v", []string{"1", "3", "v1.2.3", "2", "v1.2.4", "v1.2.5", "4"}), res)
 }
+
+func TestEvaluator_Headed(t *testing.T) {
+	svc := &Evaluator{}
+
+	res, err := svc.Evaluate(context.Background(), `{{ headed (strings (list "a" "b" "c")) }}`, nil)
+	require.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%v", []string{"HEAD", "a", "b", "c"}), res)
+}

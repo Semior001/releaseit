@@ -39,20 +39,6 @@ func TestEvaluator_Evaluate(t *testing.T) {
 	})
 }
 
-func TestEvaluator_EvaluateLastTag(t *testing.T) {
-	svc := &Evaluator{
-		Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{{Name: "v0.2.0"}, {Name: "v0.1.0"}}, nil
-			},
-		},
-	}
-
-	res, err := svc.Evaluate(context.Background(), `{{ last_tag }}`, nil)
-	require.NoError(t, err)
-	assert.Equal(t, "v0.2.0", res)
-}
-
 func TestEvaluator_EvaluateLastCommit(t *testing.T) {
 	svc := &Evaluator{Engine: &engine.InterfaceMock{
 		GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
@@ -76,88 +62,6 @@ func TestEvaluator_EvaluateTags(t *testing.T) {
 	res, err := svc.Evaluate(context.Background(), "{{ tags }}", nil)
 	require.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%v", []string{"v0.2.0", "v0.1.0"}), res)
-}
-
-func TestEvaluator_EvaluatePreviousTag(t *testing.T) {
-	t.Run("last tag", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{{Name: "v0.2.0"}, {Name: "v0.1.0"}}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(), `{{ previous_tag "v0.2.0" }}`, nil)
-		require.NoError(t, err)
-		assert.Equal(t, "v0.1.0", res)
-	})
-
-	t.Run("first tag", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{{Name: "v0.1.0"}}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(), `{{ previous_tag "v0.1.0" }}`, nil)
-		require.NoError(t, err)
-		assert.Equal(t, "HEAD", res)
-	})
-
-	t.Run("tag's commit SHA", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{
-					{Name: "v0.2.0", Commit: git.Commit{SHA: "sha"}},
-					{Name: "v0.1.0"},
-				}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(), `{{ previous_tag "sha" }}`, nil)
-		require.NoError(t, err)
-		assert.Equal(t, "v0.1.0", res)
-	})
-
-	t.Run("arbitrary commit SHA", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{
-					{Name: "v0.2.0"},
-					{Name: "v0.1.0"},
-				}, nil
-			},
-			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
-				assert.Equal(t, "sha", to)
-				if from == "v0.2.0" {
-					return git.CommitsComparison{}, nil
-				}
-
-				assert.Equal(t, "v0.1.0", from)
-				return git.CommitsComparison{Commits: []git.Commit{{SHA: "sha"}}}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(), `{{ previous_tag "sha" }}`, nil)
-		require.NoError(t, err)
-		assert.Equal(t, "v0.1.0", res)
-	})
-
-	t.Run("nothing found", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{{Name: "v0.1.0"}}, nil
-			},
-			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
-				assert.Equal(t, "sha", to)
-				assert.Equal(t, "v0.1.0", from)
-				return git.CommitsComparison{}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(), `{{ previous_tag "sha" }}`, nil)
-		require.NoError(t, err)
-		assert.Equal(t, "HEAD", res)
-	})
 }
 
 func TestEvaluator_EvaluateCustomFunction(t *testing.T) {

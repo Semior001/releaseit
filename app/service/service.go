@@ -101,5 +101,9 @@ func (s *Service) evalCommitIDs(ctx context.Context, fromExpr, toExpr string) (f
 		return "", "", fmt.Errorf("evaluate 'from' expression: %w", err)
 	}
 
+	if from == "" || to == "" {
+		return "", "", fmt.Errorf("empty commit ID; from: %s, to: %s", from, to)
+	}
+
 	return from, to, nil
 }
