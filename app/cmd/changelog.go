@@ -7,16 +7,17 @@ import (
 	"time"
 
 	"github.com/Semior001/releaseit/app/service"
+	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/Semior001/releaseit/app/service/notes"
 )
 
 // Changelog builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type Changelog struct {
-	From           string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previous_tag .To }}"`
-	To             string            `long:"to" env:"TO" description:"commit ref to end release notes to" default:"{{ last_tag }}"`
+	From           string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previous_tag .To (headed (filter semver tags)) }}"`
+	To             string            `long:"to" env:"TO" description:"commit ref to end release notes to" default:"{{ last (filter semver tags) }}"`
 	Timeout        time.Duration     `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`
-	SquashCommitRx string            `long:"squash-commit-rx" env:"SQUASH_COMMIT_RX" description:"regexp to match squash commits" default:"^.*#\\d+.*$"`
+	SquashCommitRx string            `long:"squash-commit-rx" env:"SQUASH_COMMIT_RX" description:"regexp to match squash commits" default:"(#\\d+)"`
 	ConfLocation   string            `long:"conf-location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
 	Extras         map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
 
@@ -44,7 +45,9 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
-	rnb, err := notes.NewBuilder(rnbCfg, r.Extras)
+	evaler := &eval.Evaluator{Engine: eng}
+
+	rnb, err := notes.NewBuilder(rnbCfg, evaler, r.Extras)
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}
@@ -55,6 +58,7 @@ func (r Changelog) Execute(_ []string) error {
 	}
 
 	svc := &service.Service{
+		Evaluator:             evaler,
 		Engine:                eng,
 		ReleaseNotesBuilder:   rnb,
 		Notifier:              notif,

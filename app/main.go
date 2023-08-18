@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -37,20 +38,18 @@ func main() {
 
 		if err := cmd.Execute(args); err != nil {
 			log.Printf("[ERROR] failed to execute command: %+v", err)
-			os.Exit(1)
 		}
 
 		return nil
 	}
 
-	// after failure command does not return non-zero code
 	if _, err := p.Parse(); err != nil {
-		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+		var flagsErr *flags.Error
+		if errors.As(err, &flagsErr) && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
-		} else {
-			log.Printf("[ERROR] failed to parse flags: %+v", err)
-			os.Exit(1)
 		}
+		log.Printf("[ERROR] failed to parse flags: %v", err)
+		os.Exit(1)
 	}
 }
 

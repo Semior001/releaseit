@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/go-pkgz/requester v0.0.4
+	github.com/go-pkgz/requester v0.1.0
 	github.com/google/go-github/v37 v37.0.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/logutils v1.0.0

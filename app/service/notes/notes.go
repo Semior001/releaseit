@@ -3,47 +3,34 @@
 package notes
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
 
-	"github.com/Masterminds/sprig"
 	"github.com/Semior001/releaseit/app/git"
+	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/samber/lo"
 )
-
-const defaultTemplate = `Version {{.To}}
-{{if (eq .Total 0)}}- No changes{{end}}{{range .Categories}}{{.Title}}
-{{range .PRs}}- {{.Title}} (#{{.Number}}) by @{{.Author}}{{end}}
-{{end}}`
 
 // Builder provides methods to form changelog.
 type Builder struct {
 	Config
-	Extras map[string]string
+	Evaluator *eval.Evaluator
+	Extras    map[string]string
 
-	now  func() time.Time
-	tmpl *template.Template
+	now func() time.Time
 }
 
 // NewBuilder creates a new Builder.
-func NewBuilder(cfg Config, extras map[string]string) (*Builder, error) {
-	svc := &Builder{Extras: extras, Config: cfg, now: time.Now}
-
-	if svc.Template == "" {
-		svc.Template = defaultTemplate
+func NewBuilder(cfg Config, eval *eval.Evaluator, extras map[string]string) (*Builder, error) {
+	svc := &Builder{
+		Extras:    extras,
+		Evaluator: eval,
+		Config:    cfg,
+		now:       time.Now,
 	}
-
-	tmpl, err := template.New("changelog").
-		Funcs(lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"})).
-		Parse(svc.Template)
-	if err != nil {
-		return nil, fmt.Errorf("parsing template: %w", err)
-	}
-
-	svc.tmpl = tmpl
 
 	return svc, nil
 }
@@ -56,7 +43,7 @@ type BuildRequest struct {
 }
 
 // Build builds the changelog for the tag.
-func (s *Builder) Build(req BuildRequest) (string, error) {
+func (s *Builder) Build(ctx context.Context, req BuildRequest) (string, error) {
 	data := tmplData{
 		From:   req.From,
 		To:     req.To,
@@ -96,13 +83,12 @@ func (s *Builder) Build(req BuildRequest) (string, error) {
 		}
 	}
 
-	buf := &strings.Builder{}
-
-	if err := s.tmpl.Execute(buf, data); err != nil {
+	res, err := s.Evaluator.Evaluate(ctx, s.Template, data)
+	if err != nil {
 		return "", fmt.Errorf("executing template for changelog: %w", err)
 	}
 
-	return buf.String(), nil
+	return res, nil
 }
 
 func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) categoryTmplData {
@@ -117,20 +103,6 @@ func (s *Builder) makeUnlabeledCategory(used []bool, prs []git.PullRequest) cate
 	}
 
 	return category
-}
-
-func prToTmplData(pr git.PullRequest) prTmplData {
-	return prTmplData{
-		Number:         pr.Number,
-		Title:          pr.Title,
-		Author:         pr.Author.Username,
-		URL:            pr.URL,
-		ClosedAt:       pr.ClosedAt,
-		SourceBranch:   pr.SourceBranch,
-		TargetBranch:   pr.TargetBranch,
-		ReceivedBySHAs: pr.ReceivedBySHAs,
-		Assignees:      lo.Map(pr.Assignees, func(u git.User, _ int) string { return u.Username }),
-	}
 }
 
 func (s *Builder) sortPRs(prs []prTmplData) {
@@ -192,4 +164,20 @@ type prTmplData struct {
 	ClosedAt       time.Time
 	ReceivedBySHAs []string
 	Assignees      []string
+}
+
+func prToTmplData(pr git.PullRequest) prTmplData {
+	return prTmplData{
+		Number:         pr.Number,
+		Title:          pr.Title,
+		Author:         pr.Author.Username,
+		URL:            pr.URL,
+		ClosedAt:       pr.ClosedAt,
+		SourceBranch:   pr.SourceBranch,
+		TargetBranch:   pr.TargetBranch,
+		ReceivedBySHAs: pr.ReceivedBySHAs,
+		Assignees: lo.Map(pr.Assignees, func(u git.User, _ int) string {
+			return u.Username
+		}),
+	}
 }

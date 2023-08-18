@@ -1,11 +1,13 @@
 package notes
 
 import (
+	"context"
 	"regexp"
 	"testing"
 	"time"
 
 	"github.com/Semior001/releaseit/app/git"
+	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -46,7 +48,7 @@ func TestBuilder_Build(t *testing.T) {
 		UnusedTitle:    "Unused",
 		IgnoreLabels:   []string{"ignore"},
 		IgnoreBranchRe: regexp.MustCompile(`^ignore/`),
-	}, map[string]string{"foo": "bar"})
+	}, &eval.Evaluator{}, map[string]string{"foo": "bar"})
 	require.NoError(t, err)
 
 	svc.now = func() time.Time { return tm }
@@ -104,7 +106,7 @@ func TestBuilder_Build(t *testing.T) {
 		},
 	}
 
-	txt, err := svc.Build(req)
+	txt, err := svc.Build(context.Background(), req)
 	require.NoError(t, err)
 
 	assert.Equal(t, example, txt)

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Semior001/releaseit/app/service/eval"
 	gh "github.com/google/go-github/v37/github"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -91,6 +92,7 @@ func TestGithub_Send(t *testing.T) {
 		defer ts.Close()
 
 		svc, err := NewGithub(GithubParams{
+			Evaluator:         &eval.Evaluator{},
 			Owner:             "owner",
 			Name:              "name",
 			BasicAuthUsername: "username",
