@@ -7,10 +7,6 @@ import (
 	"github.com/samber/lo"
 )
 
-func headed(vals []string) []string {
-	return append([]string{"HEAD"}, vals...)
-}
-
 func filter(rx string, elems []string) (res []string, err error) {
 	r, err := regexp.Compile(rx)
 	if err != nil {
@@ -54,7 +50,7 @@ func previous(elem string, elems []string) string {
 	return ""
 }
 
-func strings(elems []interface{}) []string {
+func stringsFromAnys(elems []interface{}) []string {
 	out, _ := lo.FromAnySlice[string](elems)
 	return out
 }

@@ -45,7 +45,7 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
-	evaler := &eval.Evaluator{Engine: eng}
+	evaler := &eval.Evaluator{} // TODO: add git and task addons
 
 	rnb, err := notes.NewBuilder(rnbCfg, evaler, r.Extras)
 	if err != nil {

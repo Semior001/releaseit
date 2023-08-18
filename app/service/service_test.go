@@ -39,7 +39,7 @@ func TestService_Changelog(t *testing.T) {
 		}
 
 		svc := &Service{
-			Evaluator: &eval.Evaluator{Engine: eng},
+			Evaluator: &eval.Evaluator{}, // TODO: add git addon
 			Engine:    eng,
 		}
 
@@ -87,7 +87,7 @@ func TestService_Changelog(t *testing.T) {
 
 		svc := &Service{
 			SquashCommitMessageRx: regexp.MustCompile(`^squash: (.*)$`),
-			Evaluator:             &eval.Evaluator{Engine: eng},
+			Evaluator:             &eval.Evaluator{}, // TODO: add git addon
 			Engine:                eng,
 			ReleaseNotesBuilder: lo.Must(notes.NewBuilder(notes.Config{
 				Categories: []notes.CategoryConfig{
