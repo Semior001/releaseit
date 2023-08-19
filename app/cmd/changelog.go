@@ -51,14 +51,15 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("prepare task service: %w", err)
 	}
 
-	evaler := &eval.Evaluator{
+	rnbEvaler := &eval.Evaluator{
 		Addon: eval.MultiAddon{
 			&eval.Git{Engine: gitEngine},
 			&eval.Task{Tracker: taskService},
+			&notes.EvalAddon{TaskTracker: taskService},
 		},
 	}
 
-	rnb, err := notes.NewBuilder(rnbCfg, evaler, r.Extras)
+	rnb, err := notes.NewBuilder(rnbCfg, rnbEvaler, r.Extras)
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}
