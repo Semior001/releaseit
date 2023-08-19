@@ -13,7 +13,7 @@ import (
 	"text/template"
 )
 
-func TestTemplateFuncs_previousTag(t *testing.T) {
+func TestGit_previousTag(t *testing.T) {
 	t.Run("last tag", func(t *testing.T) {
 		eng := &gengine.InterfaceMock{
 			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
@@ -21,7 +21,7 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 			},
 		}
 
-		res := execTmpl(t, eng, `{{ previousTag "v0.2.0" .Tags }}`,
+		res := execGitTmpl(t, eng, `{{ previousTag "v0.2.0" .Tags }}`,
 			struct{ Tags []string }{Tags: []string{"v0.2.0", "v0.1.0"}})
 		assert.Equal(t, "v0.1.0", res)
 	})
@@ -33,7 +33,7 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 			},
 		}
 
-		res := execTmpl(t, eng, `{{ previousTag "v0.1.0" .Tags }}`,
+		res := execGitTmpl(t, eng, `{{ previousTag "v0.1.0" .Tags }}`,
 			struct{ Tags []string }{Tags: []string{"v0.2.0", "v0.1.0"}},
 		)
 		assert.Equal(t, "HEAD", res)
@@ -49,7 +49,7 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 			},
 		}
 
-		res := execTmpl(t, svc, `{{ previousTag "sha" .Tags }}`,
+		res := execGitTmpl(t, svc, `{{ previousTag "sha" .Tags }}`,
 			struct{ Tags []string }{Tags: []string{"v0.2.0", "v0.1.0"}},
 		)
 		assert.Equal(t, "v0.1.0", res)
@@ -74,7 +74,7 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 			},
 		}
 
-		res := execTmpl(t, eng, `{{ previousTag "sha" .Tags }}`,
+		res := execGitTmpl(t, eng, `{{ previousTag "sha" .Tags }}`,
 			struct{ Tags []string }{Tags: []string{"v0.2.0", "v0.1.0"}},
 		)
 		assert.Equal(t, "v0.1.0", res)
@@ -92,14 +92,14 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 			},
 		}
 
-		res := execTmpl(t, eng, `{{ previousTag "sha" .Tags }}`,
+		res := execGitTmpl(t, eng, `{{ previousTag "sha" .Tags }}`,
 			struct{ Tags []string }{Tags: []string{"v0.2.0", "v0.1.0"}},
 		)
 		assert.Equal(t, "HEAD", res)
 	})
 }
 
-func TestTemplateFuncs_lastCommit(t *testing.T) {
+func TestGit_lastCommit(t *testing.T) {
 	eng := &gengine.InterfaceMock{
 		GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
 			assert.Equal(t, "master", branch)
@@ -107,28 +107,28 @@ func TestTemplateFuncs_lastCommit(t *testing.T) {
 		},
 	}
 
-	res := execTmpl(t, eng, `{{ lastCommit "master" }}`, nil)
+	res := execGitTmpl(t, eng, `{{ lastCommit "master" }}`, nil)
 	assert.Equal(t, "sha", res)
 }
 
-func TestTemplateFuncs_tags(t *testing.T) {
+func TestGit_tags(t *testing.T) {
 	eng := &gengine.InterfaceMock{
 		ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
 			return []git.Tag{{Name: "v0.1.0"}, {Name: "v0.2.0"}}, nil
 		},
 	}
 
-	res := execTmpl(t, eng, `{{ tags }}`, nil)
+	res := execGitTmpl(t, eng, `{{ tags }}`, nil)
 	assert.Equal(t, fmt.Sprintf("%v", []string{"v0.2.0", "v0.1.0"}), res)
 }
 
-func TestTemplateFuncs_headed(t *testing.T) {
-	res := execTmpl(t, nil, `{{ headed .List }}`, struct{ List []string }{List: []string{"v0.1.0"}})
+func TestGit_headed(t *testing.T) {
+	res := execGitTmpl(t, nil, `{{ headed .List }}`, struct{ List []string }{List: []string{"v0.1.0"}})
 	assert.Equal(t, fmt.Sprintf("%v", []string{"HEAD", "v0.1.0"}), res)
 }
 
-func TestTemplateFuncs_prTitles(t *testing.T) {
-	res := execTmpl(t, nil, `{{ prTitles .List }}`, struct{ List []git.PullRequest }{
+func TestGit_prTitles(t *testing.T) {
+	res := execGitTmpl(t, nil, `{{ prTitles .List }}`, struct{ List []git.PullRequest }{
 		List: []git.PullRequest{
 			{Title: "title1"},
 			{Title: "title2"},
@@ -138,7 +138,7 @@ func TestTemplateFuncs_prTitles(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%v", []string{"title1", "title2", "title3"}), res)
 }
 
-func execTmpl(t *testing.T, eng engine.Interface, expr string, data any) string {
+func execGitTmpl(t *testing.T, eng engine.Interface, expr string, data any) string {
 	fns, err := (&Git{Engine: eng}).Funcs(context.Background())
 	require.NoError(t, err)
 
@@ -151,6 +151,6 @@ func execTmpl(t *testing.T, eng engine.Interface, expr string, data any) string 
 	return buf.String()
 }
 
-func TestTemplateFuncs_String(t *testing.T) {
+func TestGit_String(t *testing.T) {
 	assert.Equal(t, "git", (&Git{}).String())
 }

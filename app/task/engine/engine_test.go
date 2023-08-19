@@ -12,7 +12,7 @@ import (
 func TestTracker_List(t *testing.T) {
 	t.Run("load parents", func(t *testing.T) {
 		svc := &Tracker{
-			Engine: &InterfaceMock{
+			Interface: &InterfaceMock{
 				ListFunc: func(ctx context.Context, ids []string) ([]task.Ticket, error) {
 					switch {
 					case reflect.DeepEqual(ids, []string{"1", "2"}):
@@ -48,7 +48,7 @@ func TestTracker_List(t *testing.T) {
 
 	t.Run("do not load parents", func(t *testing.T) {
 		svc := &Tracker{
-			Engine: &InterfaceMock{
+			Interface: &InterfaceMock{
 				ListFunc: func(ctx context.Context, ids []string) ([]task.Ticket, error) {
 					assert.Equal(t, []string{"1", "2"}, ids)
 					return []task.Ticket{

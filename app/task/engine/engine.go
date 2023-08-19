@@ -22,14 +22,14 @@ type Interface interface {
 // Tracker is a wrapper for task tracker engine with common functions
 // for each tracker implementation.
 type Tracker struct {
-	Engine Interface
+	Interface
 }
 
 // List lists tasks by their IDs and parents, if flag is set.
 func (s *Tracker) List(ctx context.Context, ids []string, loadParents bool) ([]task.Ticket, error) {
 	var result []task.Ticket
 	for len(ids) > 0 {
-		tickets, err := s.Engine.List(ctx, ids)
+		tickets, err := s.Interface.List(ctx, ids)
 		if err != nil {
 			return nil, fmt.Errorf("list tickets %s: %w", ids, err)
 		}

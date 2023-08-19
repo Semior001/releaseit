@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/Semior001/releaseit/app/git"
-	gengine "github.com/Semior001/releaseit/app/git/engine"
+	"github.com/Semior001/releaseit/app/git/engine"
 	"github.com/samber/lo"
 	"text/template"
 )
 
 // Git is an addon for evaluating git-related functions in templates.
 type Git struct {
-	Engine gengine.Interface
+	Engine engine.Interface
 }
 
 // String returns the name of the template addon.
