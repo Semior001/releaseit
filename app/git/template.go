@@ -19,8 +19,21 @@ func (g *TemplateFuncs) Funcs(ctx context.Context) (template.FuncMap, error) {
 		"previousTag": g.previousTag(ctx),
 		"lastCommit":  g.lastCommit(ctx),
 		"tags":        g.tags(ctx),
-		"headed":      func(vals []string) []string { return append([]string{"HEAD"}, vals...) },
+		"headed":      g.headed,
+		"prTitles":    g.prTitles,
 	}, nil
+}
+
+func (g *TemplateFuncs) prTitles(prs []PullRequest) []string {
+	titles := make([]string, len(prs))
+	for i, pr := range prs {
+		titles[i] = pr.Title
+	}
+	return titles
+}
+
+func (g *TemplateFuncs) headed(vals []string) []string {
+	return append([]string{"HEAD"}, vals...)
 }
 
 func (g *TemplateFuncs) lastCommit(ctx context.Context) func(branch string) (string, error) {

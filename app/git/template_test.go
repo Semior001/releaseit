@@ -10,7 +10,7 @@ import (
 	"text/template"
 )
 
-func TestEvaluator_EvaluatePreviousTag(t *testing.T) {
+func TestTemplateFuncs_previousTag(t *testing.T) {
 	t.Run("last tag", func(t *testing.T) {
 		eng := &RepositoryMock{
 			ListTagsFunc: func(ctx context.Context) ([]Tag, error) {
@@ -96,7 +96,7 @@ func TestEvaluator_EvaluatePreviousTag(t *testing.T) {
 	})
 }
 
-func TestEvaluator_EvaluateLastCommit(t *testing.T) {
+func TestTemplateFuncs_lastCommit(t *testing.T) {
 	eng := &RepositoryMock{
 		GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
 			assert.Equal(t, "master", branch)
@@ -108,7 +108,7 @@ func TestEvaluator_EvaluateLastCommit(t *testing.T) {
 	assert.Equal(t, "sha", res)
 }
 
-func TestEvaluator_EvaluateTags(t *testing.T) {
+func TestTemplateFuncs_tags(t *testing.T) {
 	eng := &RepositoryMock{
 		ListTagsFunc: func(ctx context.Context) ([]Tag, error) {
 			return []Tag{{Name: "v0.1.0"}, {Name: "v0.2.0"}}, nil
@@ -117,6 +117,22 @@ func TestEvaluator_EvaluateTags(t *testing.T) {
 
 	res := execTmpl(t, eng, `{{ tags }}`, nil)
 	assert.Equal(t, fmt.Sprintf("%v", []string{"v0.2.0", "v0.1.0"}), res)
+}
+
+func TestTemplateFuncs_headed(t *testing.T) {
+	res := execTmpl(t, nil, `{{ headed .List }}`, struct{ List []string }{List: []string{"v0.1.0"}})
+	assert.Equal(t, fmt.Sprintf("%v", []string{"HEAD", "v0.1.0"}), res)
+}
+
+func TestTemplateFuncs_prTitles(t *testing.T) {
+	res := execTmpl(t, nil, `{{ prTitles .List }}`, struct{ List []PullRequest }{
+		List: []PullRequest{
+			{Title: "title1"},
+			{Title: "title2"},
+			{Title: "title3"},
+		},
+	})
+	assert.Equal(t, fmt.Sprintf("%v", []string{"title1", "title2", "title3"}), res)
 }
 
 func execTmpl(t *testing.T, eng Repository, expr string, data any) string {
