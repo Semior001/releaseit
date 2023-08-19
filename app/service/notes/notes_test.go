@@ -2,6 +2,7 @@ package notes
 
 import (
 	"context"
+	"embed"
 	"regexp"
 	"testing"
 	"time"
@@ -12,24 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const tmpl = `From: {{.From}}, To: {{.To}}, Date: {{.Date.Format "2006-01-02T15:04:05Z07:00"}}, Extras: {{.Extras}}
-{{range .Categories}}{{.Title}}
-{{ range .PRs }}- {{.Title}} ([#{{.Number}}]({{ .URL }}), branch {{ .SourceBranch }}) by @{{.Author.Username}} at {{ .ClosedAt }}
-{{end}}
-{{end}}`
+//go:embed testdata
+var tdfs embed.FS
 
-const example = `From: 123, To: 456, Date: 2020-01-01T00:00:00Z, Extras: map[foo:bar]
-Features
-- Add feature 1 ([#3](url3), branch feat/feature-1) by @user3 at 2020-01-01 00:00:00 +0000 UTC
-- Add feature 2 ([#2](url2), branch feat/feature-2) by @user2 at 2020-01-01 00:00:00 +0000 UTC
-
-Bug fixes
-- Fix bug 1 ([#1](url1), branch fix/bug-1) by @user1 at 2020-01-01 00:00:00 +0000 UTC
-
-Unused
-- Add feature 3 ([#5](url5), branch blah/feature-3) by @user5 at 2020-01-01 00:00:00 +0000 UTC
-
-`
+func testData(t *testing.T, key string) string {
+	b, err := tdfs.ReadFile("testdata/" + key)
+	require.NoError(t, err)
+	return string(b)
+}
 
 func TestBuilder_Build(t *testing.T) {
 	tm := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -44,7 +35,7 @@ func TestBuilder_Build(t *testing.T) {
 			{Title: "Bug fixes", Labels: []string{"bug"}},
 		},
 		SortField:      "-number",
-		Template:       tmpl,
+		Template:       testData(t, "release-notes.gotmpl"),
 		UnusedTitle:    "Unused",
 		IgnoreLabels:   []string{"ignore"},
 		IgnoreBranchRe: regexp.MustCompile(`^ignore/`),
@@ -109,7 +100,7 @@ func TestBuilder_Build(t *testing.T) {
 	txt, err := svc.Build(context.Background(), req)
 	require.NoError(t, err)
 
-	assert.Equal(t, example, txt)
+	assert.Equal(t, testData(t, "release-notes.txt"), txt)
 }
 
 func TestBuilder_sortPRs(t *testing.T) {

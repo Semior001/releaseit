@@ -1,0 +1,11 @@
+From: 123, To: 456, Date: 2020-01-01T00:00:00Z, Extras: map[foo:bar]
+Features
+- Add feature 1 ([#3](url3), branch feat/feature-1) by @user3 at 2020-01-01 00:00:00 +0000 UTC
+- Add feature 2 ([#2](url2), branch feat/feature-2) by @user2 at 2020-01-01 00:00:00 +0000 UTC
+
+Bug fixes
+- Fix bug 1 ([#1](url1), branch fix/bug-1) by @user1 at 2020-01-01 00:00:00 +0000 UTC
+
+Unused
+- Add feature 3 ([#5](url5), branch blah/feature-3) by @user5 at 2020-01-01 00:00:00 +0000 UTC
+

@@ -1,0 +1,3 @@
+{{ define "node" }}{{ .ID }}:{ {{- range .Children}}{{ template "node" . }}{{ end }},} {{- end }}
+{{- range (treeTickets .) }}{{ template "node" . }}
+{{ end }}
