@@ -23,6 +23,7 @@ type Changelog struct {
 
 	Engine EngineGroup `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
 	Notify NotifyGroup `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
+	Task   TaskGroup   `group:"task" namespace:"task" env-namespace:"TASK"`
 }
 
 // Execute the release-notes command.
@@ -30,7 +31,7 @@ func (r Changelog) Execute(_ []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
-	eng, err := r.Engine.Build()
+	gitEngine, err := r.Engine.Build()
 	if err != nil {
 		return fmt.Errorf("prepare engine: %w", err)
 	}
@@ -45,9 +46,15 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
+	taskService, err := r.Task.Build()
+	if err != nil {
+		return fmt.Errorf("prepare task service: %w", err)
+	}
+
 	evaler := &eval.Evaluator{
 		Addon: eval.MultiAddon{
-			&eval.Git{Engine: eng},
+			&eval.Git{Engine: gitEngine},
+			&eval.Task{Tracker: taskService},
 		},
 	}
 
@@ -62,8 +69,8 @@ func (r Changelog) Execute(_ []string) error {
 	}
 
 	svc := &service.Service{
-		Evaluator:             evaler,
-		Engine:                eng,
+		Evaluator:             &eval.Evaluator{Addon: &eval.Git{Engine: gitEngine}},
+		Engine:                gitEngine,
 		ReleaseNotesBuilder:   rnb,
 		Notifier:              notif,
 		SquashCommitMessageRx: rx,

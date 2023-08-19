@@ -49,3 +49,12 @@ func (s *Tracker) List(ctx context.Context, ids []string, loadParents bool) ([]t
 	}
 	return result, nil
 }
+
+// NoOp is a dummy tracker engine that does nothing.
+type NoOp struct{}
+
+// List does nothing.
+func (n NoOp) List(_ context.Context, _ []string) ([]task.Ticket, error) { return nil, nil }
+
+// Get does nothing.
+func (n NoOp) Get(_ context.Context, _ string) (task.Ticket, error) { return task.Ticket{}, nil }

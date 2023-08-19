@@ -11,6 +11,7 @@ import (
 
 	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/notify"
+	tengine "github.com/Semior001/releaseit/app/task/engine"
 )
 
 // EngineGroup defines parameters for the engine.
@@ -44,6 +45,44 @@ func (r EngineGroup) Build() (gengine.Interface, error) {
 		)
 	}
 	return nil, fmt.Errorf("unsupported repository engine type %s", r.Type)
+}
+
+// TaskGroup defines parameters for task service
+type TaskGroup struct {
+	Type string `long:"type" env:"TYPE" choice:"" choice:"jira" description:"type of the task tracker"`
+	Jira Jira   `group:"jira" namespace:"jira" env-namespace:"JIRA"`
+}
+
+// Build builds the task service.
+func (r TaskGroup) Build() (_ *tengine.Tracker, err error) {
+	var eng tengine.Interface
+	switch r.Type {
+	case "jira":
+		if eng, err = r.Jira.Build(); err != nil {
+			return nil, fmt.Errorf("build jira task tracker: %w", err)
+		}
+	case "":
+		eng = &tengine.NoOp{}
+	default:
+		return nil, fmt.Errorf("unsupported task tracker type %s", r.Type)
+	}
+	return &tengine.Tracker{Interface: eng}, nil
+}
+
+// Jira defines parameters for the jira task tracker.
+type Jira struct {
+	URL     string        `long:"url" env:"URL" description:"url of the jira instance"`
+	Token   string        `long:"token" env:"TOKEN" description:"token to connect to the jira instance"`
+	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
+}
+
+// Build builds the jira engine.
+func (r Jira) Build() (tengine.Interface, error) {
+	return tengine.NewJira(tengine.JiraParams{
+		URL:        r.URL,
+		Token:      r.Token,
+		HTTPClient: http.Client{Timeout: r.Timeout},
+	})
 }
 
 // GithubGroup defines parameters to connect to the github repository.
