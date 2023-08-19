@@ -1,20 +1,24 @@
-package git
+package eval
 
 import (
 	"context"
 	"fmt"
+	"github.com/Semior001/releaseit/app/git"
+	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"github.com/samber/lo"
 	"text/template"
 )
 
-// TemplateFuncs is a wrapper for Repository that provides functions for use in templates.
-type TemplateFuncs struct{ Repository }
+// Git is an addon for evaluating git-related functions in templates.
+type Git struct {
+	Engine gengine.Interface
+}
 
 // String returns the name of the template addon.
-func (g *TemplateFuncs) String() string { return "git" }
+func (g *Git) String() string { return "git" }
 
 // Funcs returns a map of functions for use in templates.
-func (g *TemplateFuncs) Funcs(ctx context.Context) (template.FuncMap, error) {
+func (g *Git) Funcs(ctx context.Context) (template.FuncMap, error) {
 	return template.FuncMap{
 		"previousTag": g.previousTag(ctx),
 		"lastCommit":  g.lastCommit(ctx),
@@ -24,7 +28,7 @@ func (g *TemplateFuncs) Funcs(ctx context.Context) (template.FuncMap, error) {
 	}, nil
 }
 
-func (g *TemplateFuncs) prTitles(prs []PullRequest) []string {
+func (g *Git) prTitles(prs []git.PullRequest) []string {
 	titles := make([]string, len(prs))
 	for i, pr := range prs {
 		titles[i] = pr.Title
@@ -32,19 +36,19 @@ func (g *TemplateFuncs) prTitles(prs []PullRequest) []string {
 	return titles
 }
 
-func (g *TemplateFuncs) headed(vals []string) []string {
+func (g *Git) headed(vals []string) []string {
 	return append([]string{"HEAD"}, vals...)
 }
 
-func (g *TemplateFuncs) lastCommit(ctx context.Context) func(branch string) (string, error) {
+func (g *Git) lastCommit(ctx context.Context) func(branch string) (string, error) {
 	return func(branch string) (string, error) {
-		return g.Repository.GetLastCommitOfBranch(ctx, branch)
+		return g.Engine.GetLastCommitOfBranch(ctx, branch)
 	}
 }
 
-func (g *TemplateFuncs) tags(ctx context.Context) func() ([]string, error) {
+func (g *Git) tags(ctx context.Context) func() ([]string, error) {
 	return func() ([]string, error) {
-		tags, err := g.Repository.ListTags(ctx)
+		tags, err := g.Engine.ListTags(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("list tags: %w", err)
 		}
@@ -54,18 +58,18 @@ func (g *TemplateFuncs) tags(ctx context.Context) func() ([]string, error) {
 			tags[i], tags[j] = tags[j], tags[i]
 		}
 
-		return lo.Map(tags, func(tag Tag, _ int) string { return tag.Name }), nil
+		return lo.Map(tags, func(tag git.Tag, _ int) string { return tag.Name }), nil
 	}
 }
 
-func (g *TemplateFuncs) previousTag(ctx context.Context) func(commitAlias string, tags []string) (string, error) {
+func (g *Git) previousTag(ctx context.Context) func(commitAlias string, tags []string) (string, error) {
 	return func(commitAlias string, tagNames []string) (string, error) {
-		tags, err := g.Repository.ListTags(ctx)
+		tags, err := g.Engine.ListTags(ctx)
 		if err != nil {
 			return "", fmt.Errorf("list tags: %w", err)
 		}
 
-		tags = lo.Filter(tags, func(tag Tag, _ int) bool { return lo.Contains(tagNames, tag.Name) })
+		tags = lo.Filter(tags, func(tag git.Tag, _ int) bool { return lo.Contains(tagNames, tag.Name) })
 
 		// if by any chance alias is a tag itself
 		for idx, tag := range tags {
@@ -80,7 +84,7 @@ func (g *TemplateFuncs) previousTag(ctx context.Context) func(commitAlias string
 
 		// otherwise, we find the closest tag
 		for _, tag := range tags {
-			comp, err := g.Repository.Compare(ctx, tag.Name, commitAlias)
+			comp, err := g.Engine.Compare(ctx, tag.Name, commitAlias)
 			if err != nil {
 				return "", fmt.Errorf("compare tag %s with commit %s: %w",
 					tag.Commit.SHA, commitAlias, err)

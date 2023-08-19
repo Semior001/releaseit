@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"fmt"
+	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"regexp"
 
 	"github.com/Semior001/releaseit/app/git"
@@ -15,7 +16,7 @@ import (
 
 // Service wraps repository storage and services
 type Service struct {
-	Engine                git.Repository
+	Engine                gengine.Interface
 	Evaluator             *eval.Evaluator
 	ReleaseNotesBuilder   *notes.Builder
 	Notifier              notify.Destination

@@ -1,9 +1,12 @@
-package git
+package eval
 
 import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Semior001/releaseit/app/git"
+	"github.com/Semior001/releaseit/app/git/engine"
+	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -12,9 +15,9 @@ import (
 
 func TestTemplateFuncs_previousTag(t *testing.T) {
 	t.Run("last tag", func(t *testing.T) {
-		eng := &RepositoryMock{
-			ListTagsFunc: func(ctx context.Context) ([]Tag, error) {
-				return []Tag{{Name: "v0.2.0"}, {Name: "v0.1.0"}}, nil
+		eng := &gengine.InterfaceMock{
+			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+				return []git.Tag{{Name: "v0.2.0"}, {Name: "v0.1.0"}}, nil
 			},
 		}
 
@@ -24,9 +27,9 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 	})
 
 	t.Run("first tag", func(t *testing.T) {
-		eng := &RepositoryMock{
-			ListTagsFunc: func(ctx context.Context) ([]Tag, error) {
-				return []Tag{{Name: "v0.1.0"}}, nil
+		eng := &gengine.InterfaceMock{
+			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+				return []git.Tag{{Name: "v0.1.0"}}, nil
 			},
 		}
 
@@ -37,10 +40,10 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 	})
 
 	t.Run("tag's commit SHA", func(t *testing.T) {
-		svc := &RepositoryMock{
-			ListTagsFunc: func(ctx context.Context) ([]Tag, error) {
-				return []Tag{
-					{Name: "v0.2.0", Commit: Commit{SHA: "sha"}},
+		svc := &gengine.InterfaceMock{
+			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+				return []git.Tag{
+					{Name: "v0.2.0", Commit: git.Commit{SHA: "sha"}},
 					{Name: "v0.1.0"},
 				}, nil
 			},
@@ -53,21 +56,21 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 	})
 
 	t.Run("arbitrary commit SHA", func(t *testing.T) {
-		eng := &RepositoryMock{
-			ListTagsFunc: func(ctx context.Context) ([]Tag, error) {
-				return []Tag{
+		eng := &gengine.InterfaceMock{
+			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+				return []git.Tag{
 					{Name: "v0.2.0"},
 					{Name: "v0.1.0"},
 				}, nil
 			},
-			CompareFunc: func(ctx context.Context, from, to string) (CommitsComparison, error) {
+			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
 				assert.Equal(t, "sha", to)
 				if from == "v0.2.0" {
-					return CommitsComparison{}, nil
+					return git.CommitsComparison{}, nil
 				}
 
 				assert.Equal(t, "v0.1.0", from)
-				return CommitsComparison{Commits: []Commit{{SHA: "sha"}}}, nil
+				return git.CommitsComparison{Commits: []git.Commit{{SHA: "sha"}}}, nil
 			},
 		}
 
@@ -78,14 +81,14 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 	})
 
 	t.Run("nothing found", func(t *testing.T) {
-		eng := &RepositoryMock{
-			ListTagsFunc: func(ctx context.Context) ([]Tag, error) {
-				return []Tag{{Name: "v0.1.0"}}, nil
+		eng := &gengine.InterfaceMock{
+			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+				return []git.Tag{{Name: "v0.1.0"}}, nil
 			},
-			CompareFunc: func(ctx context.Context, from, to string) (CommitsComparison, error) {
+			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
 				assert.Equal(t, "sha", to)
 				assert.Equal(t, "v0.1.0", from)
-				return CommitsComparison{}, nil
+				return git.CommitsComparison{}, nil
 			},
 		}
 
@@ -97,7 +100,7 @@ func TestTemplateFuncs_previousTag(t *testing.T) {
 }
 
 func TestTemplateFuncs_lastCommit(t *testing.T) {
-	eng := &RepositoryMock{
+	eng := &gengine.InterfaceMock{
 		GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
 			assert.Equal(t, "master", branch)
 			return "sha", nil
@@ -109,9 +112,9 @@ func TestTemplateFuncs_lastCommit(t *testing.T) {
 }
 
 func TestTemplateFuncs_tags(t *testing.T) {
-	eng := &RepositoryMock{
-		ListTagsFunc: func(ctx context.Context) ([]Tag, error) {
-			return []Tag{{Name: "v0.1.0"}, {Name: "v0.2.0"}}, nil
+	eng := &gengine.InterfaceMock{
+		ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
+			return []git.Tag{{Name: "v0.1.0"}, {Name: "v0.2.0"}}, nil
 		},
 	}
 
@@ -125,8 +128,8 @@ func TestTemplateFuncs_headed(t *testing.T) {
 }
 
 func TestTemplateFuncs_prTitles(t *testing.T) {
-	res := execTmpl(t, nil, `{{ prTitles .List }}`, struct{ List []PullRequest }{
-		List: []PullRequest{
+	res := execTmpl(t, nil, `{{ prTitles .List }}`, struct{ List []git.PullRequest }{
+		List: []git.PullRequest{
 			{Title: "title1"},
 			{Title: "title2"},
 			{Title: "title3"},
@@ -135,8 +138,8 @@ func TestTemplateFuncs_prTitles(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%v", []string{"title1", "title2", "title3"}), res)
 }
 
-func execTmpl(t *testing.T, eng Repository, expr string, data any) string {
-	fns, err := (&TemplateFuncs{Repository: eng}).Funcs(context.Background())
+func execTmpl(t *testing.T, eng engine.Interface, expr string, data any) string {
+	fns, err := (&Git{Engine: eng}).Funcs(context.Background())
 	require.NoError(t, err)
 
 	tmpl, err := template.New("").Funcs(fns).Parse(expr)
@@ -149,5 +152,5 @@ func execTmpl(t *testing.T, eng Repository, expr string, data any) string {
 }
 
 func TestTemplateFuncs_String(t *testing.T) {
-	assert.Equal(t, "git", (&TemplateFuncs{}).String())
+	assert.Equal(t, "git", (&Git{}).String())
 }

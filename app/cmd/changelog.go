@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/Semior001/releaseit/app/git"
 	"regexp"
 	"time"
 
@@ -48,7 +47,7 @@ func (r Changelog) Execute(_ []string) error {
 
 	evaler := &eval.Evaluator{
 		Addon: eval.MultiAddon{
-			&git.TemplateFuncs{Repository: eng},
+			&eval.Git{Engine: eng},
 		},
 	}
 

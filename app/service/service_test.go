@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"regexp"
 	"strings"
 	"testing"
@@ -22,7 +23,7 @@ func TestService_Changelog(t *testing.T) {
 	t.Run("expressions on commits", func(t *testing.T) {
 		compareCalledErr := errors.New("compare called")
 
-		eng := &git.RepositoryMock{
+		eng := &gengine.InterfaceMock{
 			GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
 				assert.Equal(t, "master", branch)
 				return "sha", nil
@@ -40,7 +41,7 @@ func TestService_Changelog(t *testing.T) {
 		svc := &Service{
 			Evaluator: &eval.Evaluator{
 				Addon: eval.MultiAddon{
-					&git.TemplateFuncs{Repository: eng},
+					&eval.Git{Engine: eng},
 				},
 			},
 			Engine: eng,
@@ -54,7 +55,7 @@ func TestService_Changelog(t *testing.T) {
 		now := time.Now()
 		buf := &strings.Builder{}
 
-		eng := &git.RepositoryMock{
+		eng := &gengine.InterfaceMock{
 			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
 				return git.CommitsComparison{
 					Commits: []git.Commit{

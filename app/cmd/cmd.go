@@ -3,14 +3,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Semior001/releaseit/app/git"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/Semior001/releaseit/app/git/engine"
+	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/notify"
 )
 
@@ -22,14 +21,14 @@ type EngineGroup struct {
 }
 
 // Build builds the engine.
-func (r EngineGroup) Build() (git.Repository, error) {
+func (r EngineGroup) Build() (gengine.Interface, error) {
 	switch r.Type {
 	case "github":
 		if err := r.Github.fill(); err != nil {
 			return nil, err
 		}
 
-		return engine.NewGithub(engine.GithubParams{
+		return gengine.NewGithub(gengine.GithubParams{
 			Owner:             r.Github.Repo.Owner,
 			Name:              r.Github.Repo.Name,
 			BasicAuthUsername: r.Github.BasicAuth.Username,
@@ -37,7 +36,7 @@ func (r EngineGroup) Build() (git.Repository, error) {
 			HTTPClient:        http.Client{Timeout: r.Github.Timeout},
 		})
 	case "gitlab":
-		return engine.NewGitlab(
+		return gengine.NewGitlab(
 			r.Gitlab.Token,
 			r.Gitlab.BaseURL,
 			r.Gitlab.ProjectID,
