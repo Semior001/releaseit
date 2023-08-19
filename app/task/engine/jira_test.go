@@ -15,22 +15,8 @@ import (
 
 func TestJira_List(t *testing.T) {
 	j := newJira(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/rest/api/2/issue/KEY-3" {
-			w.WriteHeader(http.StatusOK)
-			err := json.NewEncoder(w).Encode(jira.Issue{
-				Key: "KEY-3",
-				Fields: &jira.IssueFields{
-					Summary:        "summary-2",
-					Description:    "description-2",
-					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 2, 0, 0, 0, time.UTC)),
-					Creator:        &jira.User{Name: "creator2", EmailAddress: "creator2@jira.com"},
-				},
-			})
-			require.NoError(t, err)
-			return
-		}
-
 		require.Equal(t, "/rest/api/2/search", r.URL.Path, "path is not set")
+		require.Equal(t, http.MethodGet, r.Method, "method is not set")
 
 		jql := r.URL.Query().Get("jql")
 		assert.Equal(t, "key in (KEY-1,KEY-2)", jql, "jql is not set")
@@ -77,52 +63,32 @@ func TestJira_List(t *testing.T) {
 		},
 		{
 			ID:       "KEY-2",
+			ParentID: "KEY-3",
 			Name:     "summary-1",
 			Body:     "description-1",
 			ClosedAt: time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC),
 			Author:   task.User{Username: "creator1", Email: "creator1@jira.com"},
-			Parent: &task.Ticket{
-				ID:       "KEY-3",
-				Name:     "summary-2",
-				Body:     "description-2",
-				ClosedAt: time.Date(2020, 1, 1, 2, 0, 0, 0, time.UTC),
-				Author:   task.User{Username: "creator2", Email: "creator2@jira.com"},
-			},
 		},
 	}, utcTimes(tickets))
 }
 
 func TestJira_Get(t *testing.T) {
 	j := newJira(t, func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/rest/api/2/issue/KEY-2":
-			w.WriteHeader(http.StatusOK)
-			err := json.NewEncoder(w).Encode(jira.Issue{
-				Key: "KEY-2",
-				Fields: &jira.IssueFields{
-					Summary:        "summary-1",
-					Description:    "description-1",
-					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
-					Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
-					Parent:         &jira.Parent{Key: "KEY-3"},
-				},
-			})
-			require.NoError(t, err)
-		case "/rest/api/2/issue/KEY-3":
-			w.WriteHeader(http.StatusOK)
-			err := json.NewEncoder(w).Encode(jira.Issue{
-				Key: "KEY-3",
-				Fields: &jira.IssueFields{
-					Summary:        "summary-2",
-					Description:    "description-2",
-					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 2, 0, 0, 0, time.UTC)),
-					Creator:        &jira.User{Name: "creator2", EmailAddress: "creator2@jira.com"},
-				},
-			})
-			require.NoError(t, err)
-		default:
-			require.Fail(t, "unexpected path: %s", r.URL.Path)
-		}
+		require.Equal(t, "/rest/api/2/issue/KEY-2", r.URL.Path, "path is not set")
+		require.Equal(t, http.MethodGet, r.Method, "method is not set")
+
+		w.WriteHeader(http.StatusOK)
+		err := json.NewEncoder(w).Encode(jira.Issue{
+			Key: "KEY-2",
+			Fields: &jira.IssueFields{
+				Summary:        "summary-1",
+				Description:    "description-1",
+				Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
+				Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
+				Parent:         &jira.Parent{Key: "KEY-3"},
+			},
+		})
+		require.NoError(t, err)
 	})
 
 	ticket, err := j.Get(context.Background(), "KEY-2")
@@ -130,17 +96,11 @@ func TestJira_Get(t *testing.T) {
 
 	assert.Equal(t, []task.Ticket{{
 		ID:       "KEY-2",
+		ParentID: "KEY-3",
 		Name:     "summary-1",
 		Body:     "description-1",
 		ClosedAt: time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC),
 		Author:   task.User{Username: "creator1", Email: "creator1@jira.com"},
-		Parent: &task.Ticket{
-			ID:       "KEY-3",
-			Name:     "summary-2",
-			Body:     "description-2",
-			ClosedAt: time.Date(2020, 1, 1, 2, 0, 0, 0, time.UTC),
-			Author:   task.User{Username: "creator2", Email: "creator2@jira.com"},
-		},
 	}}, utcTimes([]task.Ticket{ticket}))
 }
 
@@ -166,9 +126,6 @@ func newJira(t *testing.T, h http.HandlerFunc) *Jira {
 func utcTimes(tickets []task.Ticket) []task.Ticket {
 	for i := range tickets {
 		tickets[i].ClosedAt = tickets[i].ClosedAt.UTC()
-		if tickets[i].Parent != nil {
-			tickets[i].Parent.ClosedAt = tickets[i].Parent.ClosedAt.UTC()
-		}
 	}
 
 	return tickets

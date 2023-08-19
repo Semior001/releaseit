@@ -7,6 +7,7 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
+	"github.com/samber/lo"
 	"net/http"
 	"strings"
 	"time"
@@ -46,16 +47,9 @@ func (j *Jira) List(ctx context.Context, keys []string) ([]task.Ticket, error) {
 		return nil, fmt.Errorf("jira returned error: %w", err)
 	}
 
-	tickets := make([]task.Ticket, 0, len(issues))
-	for _, issue := range issues {
-		ticket := j.transformIssue(issue)
-		if ticket.Parent, err = j.loadParent(issue); err != nil {
-			return nil, fmt.Errorf("load parent: %w", err)
-		}
-		tickets = append(tickets, ticket)
-	}
-
-	return tickets, nil
+	return lo.Map(issues, func(item jira.Issue, _ int) task.Ticket {
+		return j.transformIssue(item)
+	}), nil
 }
 
 // Get returns a single task by its ID.
@@ -67,28 +61,11 @@ func (j *Jira) Get(ctx context.Context, key string) (task.Ticket, error) {
 
 	ticket := j.transformIssue(*issue)
 
-	if ticket.Parent, err = j.loadParent(*issue); err != nil {
-		return task.Ticket{}, fmt.Errorf("load parent: %w", err)
-	}
-
 	return ticket, nil
 }
 
-func (j *Jira) loadParent(issue jira.Issue) (*task.Ticket, error) {
-	if issue.Fields.Parent == nil {
-		return nil, nil
-	}
-
-	ticket, err := j.Get(context.Background(), issue.Fields.Parent.Key)
-	if err != nil {
-		return nil, fmt.Errorf("get parent ticket %s: %w", issue.Fields.Parent.Key, err)
-	}
-
-	return &ticket, nil
-}
-
 func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
-	return task.Ticket{
+	ticket := task.Ticket{
 		ID:       issue.Key,
 		Name:     issue.Fields.Summary,
 		Body:     issue.Fields.Description,
@@ -96,6 +73,12 @@ func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
 		Author:   j.transformUser(issue.Fields.Creator),
 		Assignee: j.transformUser(issue.Fields.Assignee),
 	}
+
+	if issue.Fields.Parent != nil {
+		ticket.ParentID = issue.Fields.Parent.Key
+	}
+
+	return ticket
 }
 
 func (j *Jira) transformUser(user *jira.User) task.User {
