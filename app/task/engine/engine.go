@@ -3,6 +3,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Semior001/releaseit/app/task"
 	"github.com/samber/lo"
@@ -50,11 +51,15 @@ func (s *Tracker) List(ctx context.Context, ids []string, loadParents bool) ([]t
 	return result, nil
 }
 
-// NoOp is a dummy tracker engine that does nothing.
-type NoOp struct{}
+// Unsupported is a tracker implementation that returns an error for each method.
+type Unsupported struct{}
 
-// List does nothing.
-func (n NoOp) List(_ context.Context, _ []string) ([]task.Ticket, error) { return nil, nil }
+// List returns an error.
+func (Unsupported) List(context.Context, []string) ([]task.Ticket, error) {
+	return nil, errors.New("operation not supported")
+}
 
-// Get does nothing.
-func (n NoOp) Get(_ context.Context, _ string) (task.Ticket, error) { return task.Ticket{}, nil }
+// Get returns an error.
+func (Unsupported) Get(context.Context, string) (task.Ticket, error) {
+	return task.Ticket{}, errors.New("operation not supported")
+}

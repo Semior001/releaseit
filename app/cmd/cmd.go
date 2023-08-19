@@ -62,7 +62,7 @@ func (r TaskGroup) Build() (_ *tengine.Tracker, err error) {
 			return nil, fmt.Errorf("build jira task tracker: %w", err)
 		}
 	case "":
-		eng = &tengine.NoOp{}
+		eng = &tengine.Unsupported{}
 	default:
 		return nil, fmt.Errorf("unsupported task tracker type %s", r.Type)
 	}
