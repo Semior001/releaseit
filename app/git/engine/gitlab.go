@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
+	"github.com/go-pkgz/requester/middleware/logger"
 	"github.com/samber/lo"
 	gl "github.com/xanzy/go-gitlab"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -20,7 +22,7 @@ type Gitlab struct {
 // NewGitlab creates a new Gitlab engine.
 func NewGitlab(token, baseURL, projectID string, httpCl http.Client) (*Gitlab, error) {
 	var (
-		cl  = requester.New(httpCl)
+		cl  = requester.New(httpCl, logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG] ")).Middleware)
 		svc = &Gitlab{projectID: projectID}
 		err error
 	)

@@ -57,7 +57,7 @@ func setupLog(dbg bool) {
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
 		MinLevel: "INFO",
-		Writer:   os.Stdout,
+		Writer:   os.Stderr,
 	}
 
 	logFlags := log.Ldate | log.Ltime

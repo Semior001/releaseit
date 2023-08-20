@@ -6,8 +6,10 @@ import (
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
+	"github.com/go-pkgz/requester/middleware/logger"
 	gh "github.com/google/go-github/v37/github"
 	"github.com/samber/lo"
+	"log"
 	"net/http"
 )
 
@@ -34,7 +36,7 @@ func NewGithub(params GithubParams) (*Github, error) {
 		name:  params.Name,
 	}
 
-	cl := requester.New(params.HTTPClient)
+	cl := requester.New(params.HTTPClient, logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG] ")).Middleware)
 
 	if params.BasicAuthUsername != "" && params.BasicAuthPassword != "" {
 		cl.Use(middleware.BasicAuth(params.BasicAuthUsername, params.BasicAuthPassword))

@@ -7,7 +7,9 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
+	"github.com/go-pkgz/requester/middleware/logger"
 	"github.com/samber/lo"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -29,6 +31,7 @@ type JiraParams struct {
 func NewJira(params JiraParams) (*Jira, error) {
 	rq := requester.New(params.HTTPClient,
 		middleware.Header("Authorization", "Bearer "+params.Token),
+		logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG] ")).Middleware,
 	)
 
 	cl, err := jira.NewClient(rq, params.URL)
