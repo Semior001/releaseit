@@ -19,6 +19,20 @@ type Evaluator struct {
 	Addon Addon
 }
 
+// Validate validates the expression.
+func (s *Evaluator) Validate(expr string) error {
+	fm, err := s.funcs(context.Background())
+	if err != nil {
+		return fmt.Errorf("build funcs: %w", err)
+	}
+
+	if _, err = template.New("").Funcs(fm).Parse(expr); err != nil {
+		return parseError{err: err}
+	}
+
+	return nil
+}
+
 // Evaluate evaluates the provided expression with the given data.
 func (s *Evaluator) Evaluate(ctx context.Context, expr string, data any) (string, error) {
 	buf := &bytes.Buffer{}

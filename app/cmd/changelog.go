@@ -36,19 +36,14 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("prepare engine: %w", err)
 	}
 
-	notif, err := r.Notify.Build()
+	taskService, err := r.Task.Build(ctx)
 	if err != nil {
-		return fmt.Errorf("prepare notifier: %w", err)
+		return fmt.Errorf("prepare task service: %w", err)
 	}
 
 	rnbCfg, err := notes.ConfigFromFile(r.ConfLocation)
 	if err != nil {
 		return fmt.Errorf("read release notes builder config: %w", err)
-	}
-
-	taskService, err := r.Task.Build(ctx)
-	if err != nil {
-		return fmt.Errorf("prepare task service: %w", err)
 	}
 
 	rnbEvaler := &eval.Evaluator{
@@ -59,9 +54,18 @@ func (r Changelog) Execute(_ []string) error {
 		},
 	}
 
+	if err = rnbEvaler.Validate(rnbCfg.Template); err != nil {
+		return fmt.Errorf("release notes template is invalid: %w", err)
+	}
+
 	rnb, err := notes.NewBuilder(rnbCfg, rnbEvaler, r.Extras)
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
+	}
+
+	notif, err := r.Notify.Build()
+	if err != nil {
+		return fmt.Errorf("prepare notifier: %w", err)
 	}
 
 	rx, err := regexp.Compile(r.SquashCommitRx)
