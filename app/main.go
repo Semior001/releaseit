@@ -30,7 +30,7 @@ func getVersion() string {
 }
 
 func main() {
-	fmt.Printf("releaseit, version: %s\n", getVersion())
+	_, _ = fmt.Fprintf(os.Stderr, "releaseit, version: %s\n", getVersion())
 
 	p := flags.NewParser(&opts, flags.Default)
 	p.CommandHandler = func(cmd flags.Commander, args []string) error {
