@@ -63,7 +63,7 @@ func setupLog(dbg bool) {
 	logFlags := log.Ldate | log.Ltime
 
 	if dbg {
-		logFlags = log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile
+		logFlags = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
 		filter.MinLevel = "DEBUG"
 	}
 

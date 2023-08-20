@@ -7,7 +7,12 @@ import (
 	"fmt"
 	"github.com/Semior001/releaseit/app/task"
 	"github.com/samber/lo"
+	"time"
 )
+
+// defaultSetupTimeout is the timeout that sets the maximum time available for tracker
+// instance to initialize all its internal structures.
+const defaultSetupTimeout = 3 * time.Minute
 
 //go:generate rm -f mock_interface.go
 //go:generate moq -out mock_interface.go . Interface

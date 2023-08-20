@@ -17,7 +17,8 @@ import (
 
 // Jira is a Jira task tracker engine.
 type Jira struct {
-	cl *jira.Client
+	cl           *jira.Client
+	epicFieldIDs []string
 }
 
 // JiraParams is a set of parameters for Jira engine.
@@ -28,10 +29,10 @@ type JiraParams struct {
 }
 
 // NewJira creates a new Jira engine.
-func NewJira(params JiraParams) (*Jira, error) {
+func NewJira(ctx context.Context, params JiraParams) (*Jira, error) {
 	rq := requester.New(params.HTTPClient,
 		middleware.Header("Authorization", "Bearer "+params.Token),
-		logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG] ")).Middleware,
+		logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG]")).Middleware,
 	)
 
 	cl, err := jira.NewClient(rq, params.URL)
@@ -39,7 +40,16 @@ func NewJira(params JiraParams) (*Jira, error) {
 		return nil, err
 	}
 
-	return &Jira{cl: cl}, nil
+	j := &Jira{cl: cl}
+
+	ctx, cancel := context.WithTimeout(ctx, defaultSetupTimeout)
+	defer cancel()
+
+	if j.epicFieldIDs, err = j.getEpicFieldIDs(ctx); err != nil {
+		return nil, fmt.Errorf("get epic key: %w", err)
+	}
+
+	return j, nil
 }
 
 // List lists tasks from the provided project by their IDs.
@@ -67,6 +77,29 @@ func (j *Jira) Get(ctx context.Context, key string) (task.Ticket, error) {
 	return ticket, nil
 }
 
+func (j *Jira) getEpicFieldIDs(ctx context.Context) ([]string, error) {
+	fields, _, err := j.cl.Field.GetListWithContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list jira fields: %w", err)
+	}
+
+	var fieldIDs []string
+	const epicLinkName = "epic link"
+	for _, field := range fields {
+		if strings.ToLower(field.Name) == epicLinkName {
+			fieldIDs = append(fieldIDs, field.ID)
+		}
+	}
+
+	return fieldIDs, nil
+}
+
+var ticketTypeMapping = map[string]task.Type{
+	"epic": task.TypeEpic,
+	"bug":  task.TypeTask, "task": task.TypeTask, "story": task.TypeTask,
+	"sub-task": task.TypeSubtask, "sub-story": task.TypeSubtask, "sub-bug": task.TypeSubtask,
+}
+
 func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
 	ticket := task.Ticket{
 		ID:       issue.Key,
@@ -75,10 +108,30 @@ func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
 		ClosedAt: time.Time(issue.Fields.Resolutiondate),
 		Author:   j.transformUser(issue.Fields.Creator),
 		Assignee: j.transformUser(issue.Fields.Assignee),
+		Type:     ticketTypeMapping[strings.ToLower(issue.Fields.Type.Name)],
+		TypeRaw:  task.Type(issue.Fields.Type.Name),
 	}
 
-	if issue.Fields.Parent != nil {
+	switch {
+	case issue.Fields.Parent != nil:
 		ticket.ParentID = issue.Fields.Parent.Key
+	case issue.Fields.Epic != nil:
+		ticket.ParentID = issue.Fields.Epic.Key
+	default:
+		for _, fieldID := range j.epicFieldIDs {
+			obj, ok := issue.Fields.Unknowns[fieldID]
+			if !ok || obj == nil {
+				continue
+			}
+
+			ticketID, ok := obj.(string)
+			if !ok {
+				continue
+			}
+
+			ticket.ParentID = ticketID
+			break
+		}
 	}
 
 	return ticket

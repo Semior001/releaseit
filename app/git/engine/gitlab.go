@@ -20,9 +20,9 @@ type Gitlab struct {
 }
 
 // NewGitlab creates a new Gitlab engine.
-func NewGitlab(token, baseURL, projectID string, httpCl http.Client) (*Gitlab, error) {
+func NewGitlab(ctx context.Context, token, baseURL, projectID string, httpCl http.Client) (*Gitlab, error) {
 	var (
-		cl  = requester.New(httpCl, logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG] ")).Middleware)
+		cl  = requester.New(httpCl, logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG]")).Middleware)
 		svc = &Gitlab{projectID: projectID}
 		err error
 	)
@@ -36,7 +36,7 @@ func NewGitlab(token, baseURL, projectID string, httpCl http.Client) (*Gitlab, e
 		return nil, fmt.Errorf("initialize gitlab client: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultPingTimeout)
+	ctx, cancel := context.WithTimeout(ctx, defaultPingTimeout)
 	defer cancel()
 
 	if _, _, err = svc.cl.Projects.GetProject(projectID, &gl.GetProjectOptions{}, gl.WithContext(ctx)); err != nil {

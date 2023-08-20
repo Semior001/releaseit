@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,14 +23,14 @@ type EngineGroup struct {
 }
 
 // Build builds the engine.
-func (r EngineGroup) Build() (gengine.Interface, error) {
+func (r EngineGroup) Build(ctx context.Context) (gengine.Interface, error) {
 	switch r.Type {
 	case "github":
 		if err := r.Github.fill(); err != nil {
 			return nil, err
 		}
 
-		return gengine.NewGithub(gengine.GithubParams{
+		return gengine.NewGithub(ctx, gengine.GithubParams{
 			Owner:             r.Github.Repo.Owner,
 			Name:              r.Github.Repo.Name,
 			BasicAuthUsername: r.Github.BasicAuth.Username,
@@ -37,7 +38,7 @@ func (r EngineGroup) Build() (gengine.Interface, error) {
 			HTTPClient:        http.Client{Timeout: r.Github.Timeout},
 		})
 	case "gitlab":
-		return gengine.NewGitlab(
+		return gengine.NewGitlab(ctx,
 			r.Gitlab.Token,
 			r.Gitlab.BaseURL,
 			r.Gitlab.ProjectID,
@@ -54,11 +55,11 @@ type TaskGroup struct {
 }
 
 // Build builds the task service.
-func (r TaskGroup) Build() (_ *tengine.Tracker, err error) {
+func (r TaskGroup) Build(ctx context.Context) (_ *tengine.Tracker, err error) {
 	var eng tengine.Interface
 	switch r.Type {
 	case "jira":
-		if eng, err = r.Jira.Build(); err != nil {
+		if eng, err = r.Jira.Build(ctx); err != nil {
 			return nil, fmt.Errorf("build jira task tracker: %w", err)
 		}
 	case "":
@@ -77,8 +78,8 @@ type Jira struct {
 }
 
 // Build builds the jira engine.
-func (r Jira) Build() (tengine.Interface, error) {
-	return tengine.NewJira(tengine.JiraParams{
+func (r Jira) Build(ctx context.Context) (tengine.Interface, error) {
+	return tengine.NewJira(ctx, tengine.JiraParams{
 		URL:        r.URL,
 		Token:      r.Token,
 		HTTPClient: http.Client{Timeout: r.Timeout},

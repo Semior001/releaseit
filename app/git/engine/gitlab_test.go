@@ -153,7 +153,7 @@ func newGitlab(t *testing.T, h http.HandlerFunc) *Gitlab {
 		h(w, r)
 	}))
 
-	svc, err := NewGitlab("token", ts.URL, "projectID", http.Client{
+	svc, err := NewGitlab(context.Background(), "token", ts.URL, "projectID", http.Client{
 		Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			return http.DefaultTransport.RoundTrip(req)
 		}),

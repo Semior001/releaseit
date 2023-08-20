@@ -30,13 +30,13 @@ type GithubParams struct {
 }
 
 // NewGithub makes new instance of Github.
-func NewGithub(params GithubParams) (*Github, error) {
+func NewGithub(ctx context.Context, params GithubParams) (*Github, error) {
 	svc := &Github{
 		owner: params.Owner,
 		name:  params.Name,
 	}
 
-	cl := requester.New(params.HTTPClient, logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG] ")).Middleware)
+	cl := requester.New(params.HTTPClient, logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG]")).Middleware)
 
 	if params.BasicAuthUsername != "" && params.BasicAuthPassword != "" {
 		cl.Use(middleware.BasicAuth(params.BasicAuthUsername, params.BasicAuthPassword))
@@ -44,7 +44,7 @@ func NewGithub(params GithubParams) (*Github, error) {
 
 	svc.cl = gh.NewClient(cl.Client())
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultPingTimeout)
+	ctx, cancel := context.WithTimeout(ctx, defaultPingTimeout)
 	defer cancel()
 
 	if _, _, err := svc.cl.Repositories.Get(ctx, svc.owner, svc.name); err != nil {

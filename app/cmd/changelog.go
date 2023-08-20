@@ -31,7 +31,7 @@ func (r Changelog) Execute(_ []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
-	gitEngine, err := r.Engine.Build()
+	gitEngine, err := r.Engine.Build(ctx)
 	if err != nil {
 		return fmt.Errorf("prepare engine: %w", err)
 	}
@@ -46,7 +46,7 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
-	taskService, err := r.Task.Build()
+	taskService, err := r.Task.Build(ctx)
 	if err != nil {
 		return fmt.Errorf("prepare task service: %w", err)
 	}

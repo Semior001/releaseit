@@ -109,11 +109,19 @@ func newJira(t *testing.T, h http.HandlerFunc) *Jira {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Bearer abacaba", r.Header.Get("Authorization"))
+
+		if r.URL.Path == "/rest/api/2/field" {
+			w.WriteHeader(http.StatusOK)
+			err := json.NewEncoder(w).Encode([]jira.Field{{ID: "customfield_10000", Name: "epic link"}})
+			require.NoError(t, err)
+			return
+		}
+
 		h(w, r)
 	}))
 	t.Cleanup(ts.Close)
 
-	svc, err := NewJira(JiraParams{
+	svc, err := NewJira(context.Background(), JiraParams{
 		URL:        ts.URL,
 		Token:      "abacaba",
 		HTTPClient: http.Client{},
