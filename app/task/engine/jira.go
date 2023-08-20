@@ -17,8 +17,9 @@ import (
 
 // Jira is a Jira task tracker engine.
 type Jira struct {
-	cl           *jira.Client
-	epicFieldIDs []string
+	cl              *jira.Client
+	epicFieldIDs    []string
+	flaggedFieldIDs []string
 }
 
 // JiraParams is a set of parameters for Jira engine.
@@ -45,7 +46,7 @@ func NewJira(ctx context.Context, params JiraParams) (*Jira, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultSetupTimeout)
 	defer cancel()
 
-	if j.epicFieldIDs, err = j.getEpicFieldIDs(ctx); err != nil {
+	if err = j.fillFieldIDs(ctx); err != nil {
 		return nil, fmt.Errorf("get epic key: %w", err)
 	}
 
@@ -77,21 +78,26 @@ func (j *Jira) Get(ctx context.Context, key string) (task.Ticket, error) {
 	return ticket, nil
 }
 
-func (j *Jira) getEpicFieldIDs(ctx context.Context) ([]string, error) {
+func (j *Jira) fillFieldIDs(ctx context.Context) error {
 	fields, _, err := j.cl.Field.GetListWithContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("list jira fields: %w", err)
+		return fmt.Errorf("list jira fields: %w", err)
 	}
 
-	var fieldIDs []string
-	const epicLinkName = "epic link"
-	for _, field := range fields {
-		if strings.ToLower(field.Name) == epicLinkName {
-			fieldIDs = append(fieldIDs, field.ID)
+	seek := func(key string) (result []string) {
+		key = strings.ToLower(key)
+		for _, field := range fields {
+			if strings.ToLower(field.Name) == key {
+				result = append(result, field.ID)
+			}
 		}
+		return result
 	}
 
-	return fieldIDs, nil
+	j.epicFieldIDs = seek("Epic Link")
+	j.flaggedFieldIDs = seek("Flagged")
+
+	return nil
 }
 
 var ticketTypeMapping = map[string]task.Type{
@@ -109,7 +115,7 @@ func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
 		Author:   j.transformUser(issue.Fields.Creator),
 		Assignee: j.transformUser(issue.Fields.Assignee),
 		Type:     ticketTypeMapping[strings.ToLower(issue.Fields.Type.Name)],
-		TypeRaw:  task.Type(issue.Fields.Type.Name),
+		TypeRaw:  issue.Fields.Type.Name,
 	}
 
 	switch {
@@ -118,23 +124,27 @@ func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
 	case issue.Fields.Epic != nil:
 		ticket.ParentID = issue.Fields.Epic.Key
 	default:
-		for _, fieldID := range j.epicFieldIDs {
-			obj, ok := issue.Fields.Unknowns[fieldID]
-			if !ok || obj == nil {
-				continue
-			}
-
-			ticketID, ok := obj.(string)
-			if !ok {
-				continue
-			}
-
-			ticket.ParentID = ticketID
-			break
+		if epicID, ok := j.seekCustomField(issue, j.epicFieldIDs).(string); ok {
+			ticket.ParentID = epicID
 		}
 	}
 
+	ticket.Flagged = j.seekCustomField(issue, j.flaggedFieldIDs) != nil
+
 	return ticket
+}
+
+func (j *Jira) seekCustomField(issue jira.Issue, ids []string) interface{} {
+	for _, fieldID := range ids {
+		obj, ok := issue.Fields.Unknowns[fieldID]
+		if !ok || obj == nil {
+			continue
+		}
+
+		return obj
+	}
+
+	return nil
 }
 
 func (j *Jira) transformUser(user *jira.User) task.User {
