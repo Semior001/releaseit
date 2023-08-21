@@ -1,0 +1,98 @@
+categories:
+  - title: "**🚀 Features**"
+    branch: "^(feat|feature)/"
+  - title: "**🐛 Fixes**"
+    branch: "^fix/"
+  - title: "**🔧 Maintenance**"
+    branch: "^chore/"
+  - title: "**🔄 Intermediate features/fixes (merged into other branches)**"
+    branch: "^ref/"
+unused_title: "**❓ Unlabeled**"
+ignore_labels: ["ignore"]
+sort_field: "+closed"
+template: |
+  {{- /* -------------- setup env values -------------- */ -}}
+  {{- $RELEASE_DATE := (index .Extras "PIPELINE_TRIGGERED_AT" | toDate "2006-01-02") -}}
+  {{- $PIPELINE_URL := index .Extras "PIPELINE_URL" -}}
+  {{- $PIPELINE_TRIGGERED_BY := index .Extras "PIPELINE_TRIGGERED_BY" -}}
+  {{- $PROJECT_URL := index .Extras "PROJECT_URL" -}}
+  {{- $PROJECT_NAME := index .Extras "PROJECT_NAME" -}}
+  {{- if (index .Extras "PROJECT_FULL_NAME" | contains "front") -}}
+      {{- $PROJECT_NAME = print "front-" $PROJECT_NAME -}}
+  {{- end -}}
+  
+  {{- /* -------------- template helpers -------------- */ -}}
+      
+  {{- /* makes a markdown URL out of task 
+          in format [[TASK-123](https://tasktracker.com/sometaskurl)] 
+  */ -}}
+  {{- define "task-link" -}}
+      [[{{.ID}}]({{ .URL }})]
+  {{- end -}}
+  
+  {{- /* builds a list of users that are related to the task, 
+          in format "by @author on @assignee" 
+  */ -}}
+  {{- define "task-users" -}}
+      {{- $parts := (list) }}
+      {{- if ne .Author.Username "" }}
+          {{- $parts = append $parts (printf "by @%s" .Author.Username) }}
+      {{- end }}
+      {{- if ne .Assignee.Username "" }}
+          {{- $parts = append $parts (printf "on @%s" .Assignee.Username) }}
+      {{- end }}
+      {{- join ", " $parts }}
+  {{- end -}}
+  
+  {{- /* builds a list of PRs that are related to the task, 
+          in format "([!12](https://some-pr-url), [!13](https://some-pr-url))" 
+  */ -}}
+  {{- define "task-PRs" -}}
+      {{- if . -}}
+      (
+          {{- $len := len . -}}
+          {{- range $index, $pr := . -}}
+              [!{{ $pr.Number }}]({{ $pr.URL }})
+              {{- if lt $index (sub $len 1) -}}, {{ end }}
+          {{- end -}}
+      )
+      {{- end -}}
+  {{- end -}}  
+  
+  {{- /* composes the list entry for a task, in format
+      - ❗ [[TASK-123](https://tasktracker.com/sometaskurl)] Task name by @author on @assignee 
+              ([!12](https://some-pr-url), [!13](https://some-pr-url))
+  */ -}}
+  {{- define "list-entry" -}}
+      - {{ if .Flagged }}❗ {{ end -}}
+          {{- template "task-link" . }} {{ .Name }} {{ template "task-users" . }} {{ template "task-PRs" .PRs }}
+  
+  {{ end -}}
+  
+  {{- /* builds a task tree in a template, prints leading tabs to make a list tree 
+      and invokes `list-entry` to print the task itself 
+  */ -}}
+  {{- define "node" -}}{{ if eq .Node.Type "epic" "task" }}
+      {{- repeat (int .Level) "    " }}{{- template "list-entry" .Node -}}
+      {{- range .Node.Children -}}
+          {{- template "node" (dict "Node" . "Level" (add $.Level 1)) -}}
+      {{- end -}}
+  {{ end }}{{- end -}}
+
+  {{- /* -------------- template itself -------------- */ -}}
+  ### Release [{{$PROJECT_NAME}}]({{ $PROJECT_URL }})
+  Date: {{ dateInZone "02.01.2006" $RELEASE_DATE "Asia/Almaty" }}
+  Version: [{{.From | substr 0 7}}...{{.To | substr 0 7}}]({{ $PROJECT_URL }}/-/compare/{{ .From }}...{{ .To }})
+  [Pipeline]({{ $PIPELINE_URL }}), triggered by @{{ $PIPELINE_TRIGGERED_BY }}
+  {{if eq .Total 0}}- Changes were not endured into pull requests.{{end}}
+  
+  {{ range .Categories -}}
+      {{- if not .PRs -}} {{ continue }} {{- end -}}
+      {{- $tree := loadTicketsTree "\\[(\\w+-\\d+)\\]" true .PRs -}}
+      {{- if not $tree.Roots -}} {{- continue -}} {{- end -}}
+      {{ .Title }} - {{ len .PRs }} MR's merged.
+  {{/* preserve newline */}}
+      {{- range $tree.Roots -}}
+          {{- template "node" (dict "Node" . "Level" 0) -}}
+      {{- end }}
+  {{ end }}
