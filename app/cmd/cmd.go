@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,8 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Semior001/releaseit/app/git/engine"
+	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/notify"
+	tengine "github.com/Semior001/releaseit/app/task/engine"
 )
 
 // EngineGroup defines parameters for the engine.
@@ -21,14 +23,14 @@ type EngineGroup struct {
 }
 
 // Build builds the engine.
-func (r EngineGroup) Build() (engine.Interface, error) {
+func (r EngineGroup) Build(ctx context.Context) (gengine.Interface, error) {
 	switch r.Type {
 	case "github":
 		if err := r.Github.fill(); err != nil {
 			return nil, err
 		}
 
-		return engine.NewGithub(engine.GithubParams{
+		return gengine.NewGithub(ctx, gengine.GithubParams{
 			Owner:             r.Github.Repo.Owner,
 			Name:              r.Github.Repo.Name,
 			BasicAuthUsername: r.Github.BasicAuth.Username,
@@ -36,7 +38,7 @@ func (r EngineGroup) Build() (engine.Interface, error) {
 			HTTPClient:        http.Client{Timeout: r.Github.Timeout},
 		})
 	case "gitlab":
-		return engine.NewGitlab(
+		return gengine.NewGitlab(ctx,
 			r.Gitlab.Token,
 			r.Gitlab.BaseURL,
 			r.Gitlab.ProjectID,
@@ -44,6 +46,44 @@ func (r EngineGroup) Build() (engine.Interface, error) {
 		)
 	}
 	return nil, fmt.Errorf("unsupported repository engine type %s", r.Type)
+}
+
+// TaskGroup defines parameters for task service
+type TaskGroup struct {
+	Type string `long:"type" env:"TYPE" choice:"" choice:"jira" description:"type of the task tracker"`
+	Jira Jira   `group:"jira" namespace:"jira" env-namespace:"JIRA"`
+}
+
+// Build builds the task service.
+func (r TaskGroup) Build(ctx context.Context) (_ *tengine.Tracker, err error) {
+	var eng tengine.Interface
+	switch r.Type {
+	case "jira":
+		if eng, err = r.Jira.Build(ctx); err != nil {
+			return nil, fmt.Errorf("build jira task tracker: %w", err)
+		}
+	case "":
+		eng = &tengine.Unsupported{}
+	default:
+		return nil, fmt.Errorf("unsupported task tracker type %s", r.Type)
+	}
+	return &tengine.Tracker{Interface: eng}, nil
+}
+
+// Jira defines parameters for the jira task tracker.
+type Jira struct {
+	URL     string        `long:"url" env:"URL" description:"url of the jira instance"`
+	Token   string        `long:"token" env:"TOKEN" description:"token to connect to the jira instance"`
+	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
+}
+
+// Build builds the jira engine.
+func (r Jira) Build(ctx context.Context) (tengine.Interface, error) {
+	return tengine.NewJira(ctx, tengine.JiraParams{
+		URL:        r.URL,
+		Token:      r.Token,
+		HTTPClient: http.Client{Timeout: r.Timeout},
+	})
 }
 
 // GithubGroup defines parameters to connect to the github repository.
@@ -223,7 +263,9 @@ func cloneLogger(lg *log.Logger) *log.Logger {
 	return log.New(lg.Writer(), lg.Prefix(), lg.Flags())
 }
 
-func (g MattermostBotGroup) empty() bool  { return g.BaseURL == "" || g.Token == "" || g.ChannelID == "" }
+func (g MattermostBotGroup) empty() bool {
+	return g.BaseURL == "" || g.Token == "" || g.ChannelID == ""
+}
 func (g PostGroup) empty() bool           { return g.URL == "" }
 func (g MattermostHookGroup) empty() bool { return g.URL == "" }
 func (g TelegramGroup) empty() bool       { return g.ChatID == "" || g.Token == "" }

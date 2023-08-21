@@ -1,4 +1,4 @@
-With the [preview data](./preview_data.yaml) in this directory, [config](./config.yaml) generates the following output:
+With the [preview data](preview_data.yaml) in this directory, [config](config.yaml) generates the following output:
 
 ## Release 30.01.2023
 Project: [Example](https://example.com)

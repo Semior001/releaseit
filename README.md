@@ -139,18 +139,150 @@ See [example](_example/preview_data.yaml) for details.
 The list of available to use functions consists of [sprig's](http://masterminds.github.io/sprig/)
 (excluding `env` and `expandenv`) functions list, and a several custom functions, including:
 
-| Function name                                  | Description                                                    |
-|------------------------------------------------|----------------------------------------------------------------|
-| `last_commit(branch string) (sha string)`      | returns last commit of the provided branch                     |
-| `previous_tag(ref string) (tagName string)`    | returns previous tag of the provided commit reference          |
-| `last_tag() (tagName string)`                  | returns last tag                                               |
-| `tags() []string`                              | returns list of tags                                           |
-| `next(elem string, elems []string) string`     | returns next element in the list                               |
-| `previous(elem string, elems []string) string` | returns previous element in the list                           |
-| `filter(rx string, elems []string) []string`   | filters list of strings by regular expression                  |
-| `strings([]interface{}) []string`              | casts list of `any` to list of strings                         |
-| **Constants**                                  |                                                                |
-| `semver() string`                              | returns semver regular expression  (`^v?(\d+)\.(\d+)\.(\d+)$`) |
+<details>
+
+<summary>Click to expand</summary>
+
+| Function name                                                                                     | Description                                                                                                                |
+|---------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| `next(elem string, elems []string) string`                                                        | returns next element in the list                                                                                           |
+| `previous(elem string, elems []string) string`                                                    | returns previous element in the list                                                                                       |
+| `filter(rx string, elems []string) []string`                                                      | filters list of strings by regular expression                                                                              |
+| `stringsFromAnys([]interface{}) []string`                                                         | casts list of `any` to list of strings                                                                                     |
+| **_Constants_**                                                                                   |                                                                                                                            |
+| `semver() string`                                                                                 | returns semver regular expression  (`^v?(\d+)\.(\d+)\.(\d+)$`)                                                             |
+| **_Addons_**                                                                                      |                                                                                                                            |
+| **git**                                                                                           |                                                                                                                            |
+| `prTitles(prs []git.PullRequest) []string`                                                        | returns the list of titles of provided pull requests                                                                       |
+| `headed(vals []string) []string`                                                                  | adds "HEAD" to the head of the list                                                                                        |
+| `lastCommit(branch string) (string, error)`                                                       | returns the SHA of the last commit of the branch                                                                           |
+| `tags() ([]string, error)`                                                                        | returns the list of all tags in repository                                                                                 |
+| `previousTag(commitAlias string, tags []string) (string, error)`                                  | returns the previous (closest) tag of the provided commit in the provided list of tags                                     |
+| **task**                                                                                          |                                                                                                                            |
+| `getTicket(id string) (task.Ticket, error)`                                                       | returns ticket by its ID                                                                                                   |
+| `listTickets(ids []string, loadParents bool) ([]task.Ticket, error)`                              | lists tickets by their IDs, with parents attached, if `loadParents` is set to true                                         |
+| **release-notes**                                                                                 |                                                                                                                            |
+| `buildTicketsTree(tickets []task.Ticket) (roots []*TicketNode, err error)`                        | builds tree out of provided tickets                                                                                        |
+| `loadTicketsTree(ticketIDRx string, loadParents bool, prs []git.PullRequest) (LoadedTree, error)` | loads tickets tree from the provided pull requests, ticket IDs are matched from pull request titles by the provided regexp |
+
+</details>
+
+- `from` and `to` flags may use `git` addon functions.
+- release notes builder template may use all functions above.
+
+### Types
+
+<details>
+
+<summary>Click to expand</summary>
+
+```go
+// LoadedTree is a tree of tickets with their children and PRs.
+type LoadedTree struct {
+	Roots      []*TicketNode
+	Unattached []git.PullRequest
+}
+
+// TicketNode is a representation of a ticket with its children.
+type TicketNode struct {
+	task.Ticket
+	Children []*TicketNode
+	PRs      []git.PullRequest
+}
+
+// PullRequest represents a pull/merge request from the
+// remote repository.
+type PullRequest struct {
+	Number         int       `yaml:"number"`
+	Title          string    `yaml:"title"`
+	Body           string    `yaml:"body"`
+	Author         User      `yaml:"author"`
+	Labels         []string  `yaml:"labels"`
+	ClosedAt       time.Time `yaml:"closed_at"`
+	SourceBranch   string    `yaml:"source_branch"`
+	TargetBranch   string    `yaml:"target_branch"`
+	URL            string    `yaml:"url"`
+	ReceivedBySHAs []string  `yaml:"received_by_shas"`
+	Assignees      []User    `yaml:"assignees"`
+}
+
+// User holds user data.
+type User struct {
+	Username string `yaml:"username"`
+	Email    string `yaml:"email"`
+}
+
+// Commit represents a repository commit.
+type Commit struct {
+	SHA         string
+	ParentSHAs  []string
+	Message     string
+	CommittedAt time.Time
+	AuthoredAt  time.Time
+}
+
+// CommitsComparison is the result of comparing two commits.
+type CommitsComparison struct {
+	Commits      []Commit
+	TotalCommits int
+}
+
+// Tag represents a repository tag.
+type Tag struct {
+	Name   string
+	Commit Commit
+}
+
+// Type specifies the type of the task.
+type Type string
+
+const (
+    // TypeEpic is an epic task type.
+    TypeEpic Type = "epic"
+    // TypeTask is a simple task type.
+    TypeTask Type = "task"
+    // TypeSubtask is a sub-task type.
+    TypeSubtask Type = "subtask"
+)
+
+// Ticket represents a single task in task tracker.
+type Ticket struct {
+    ID       string
+    ParentID string
+    
+    URL      string
+    Name     string
+    Body     string
+    ClosedAt time.Time
+    Author   User
+    Assignee User
+    Type     Type
+    TypeRaw  string // save raw type in case if user wants to distinguish different raw values
+    Flagged  bool
+}
+
+// User represents a task tracker user.
+type User struct {
+    Username string
+    Email    string
+}
+
+
+// LoadedTree is a tree of tickets with their children and PRs.
+type LoadedTree struct {
+    Roots      []*TicketNode
+    Unattached []git.PullRequest
+}
+
+// TicketNode is a representation of a ticket with its children.
+type TicketNode struct {
+    task.Ticket
+    Children []*TicketNode
+    PRs      []git.PullRequest
+}
+```
+
+</details>
 
 ## Release notes builder configuration
 | Name              | Description                                                                                                                                             |

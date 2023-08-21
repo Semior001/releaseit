@@ -3,16 +3,17 @@ package engine
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
+	"github.com/go-pkgz/requester/middleware/logger"
 	gh "github.com/google/go-github/v37/github"
 	"github.com/samber/lo"
+	"log"
+	"net/http"
 )
 
-// Github implements Interface with github API below it.
+// Github implements Repository with github API below it.
 type Github struct {
 	cl    *gh.Client
 	owner string
@@ -29,13 +30,13 @@ type GithubParams struct {
 }
 
 // NewGithub makes new instance of Github.
-func NewGithub(params GithubParams) (*Github, error) {
+func NewGithub(ctx context.Context, params GithubParams) (*Github, error) {
 	svc := &Github{
 		owner: params.Owner,
 		name:  params.Name,
 	}
 
-	cl := requester.New(params.HTTPClient)
+	cl := requester.New(params.HTTPClient, logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG]")).Middleware)
 
 	if params.BasicAuthUsername != "" && params.BasicAuthPassword != "" {
 		cl.Use(middleware.BasicAuth(params.BasicAuthUsername, params.BasicAuthPassword))
@@ -43,7 +44,7 @@ func NewGithub(params GithubParams) (*Github, error) {
 
 	svc.cl = gh.NewClient(cl.Client())
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultPingTimeout)
+	ctx, cancel := context.WithTimeout(ctx, defaultPingTimeout)
 	defer cancel()
 
 	if _, _, err := svc.cl.Repositories.Get(ctx, svc.owner, svc.name); err != nil {
@@ -73,7 +74,7 @@ func (g *Github) Compare(ctx context.Context, fromSHA, toSHA string) (git.Commit
 	commits := make([]git.Commit, len(comp.Commits))
 
 	for i, commit := range comp.Commits {
-		commits[i] = g.commitToStore(commit)
+		commits[i] = g.transformCommit(commit)
 	}
 
 	return git.CommitsComparison{
@@ -92,17 +93,7 @@ func (g *Github) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 	res := make([]git.PullRequest, len(prs))
 
 	for i, pr := range prs {
-		res[i] = git.PullRequest{
-			Number:       pr.GetNumber(),
-			Title:        pr.GetTitle(),
-			Body:         pr.GetBody(),
-			ClosedAt:     pr.GetClosedAt(),
-			Author:       git.User{Username: pr.GetUser().GetLogin(), Email: pr.GetUser().GetEmail()},
-			Labels:       lo.Map(pr.Labels, func(l *gh.Label, _ int) string { return l.GetName() }),
-			SourceBranch: pr.GetHead().GetRef(),
-			TargetBranch: pr.GetBase().GetRef(),
-			URL:          pr.GetHTMLURL(),
-		}
+		res[i] = g.transformPR(pr)
 
 		for _, assignee := range pr.Assignees {
 			res[i].Assignees = append(res[i].Assignees, git.User{
@@ -127,7 +118,7 @@ func (g *Github) ListTags(ctx context.Context) ([]git.Tag, error) {
 	for i, tag := range tags {
 		res[i] = git.Tag{
 			Name:   tag.GetName(),
-			Commit: g.commitToStore(tag.GetCommit()),
+			Commit: g.transformCommit(tag.GetCommit()),
 		}
 	}
 
@@ -138,7 +129,7 @@ type shaGetter interface {
 	GetSHA() string
 }
 
-func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
+func (g *Github) transformCommit(commitInterface shaGetter) git.Commit {
 	res := git.Commit{SHA: commitInterface.GetSHA()}
 	switch cmt := commitInterface.(type) {
 	case *gh.Commit:
@@ -153,4 +144,18 @@ func (g *Github) commitToStore(commitInterface shaGetter) git.Commit {
 		res.AuthoredAt = cmt.GetCommit().GetAuthor().GetDate()
 	}
 	return res
+}
+
+func (g *Github) transformPR(pr *gh.PullRequest) git.PullRequest {
+	return git.PullRequest{
+		Number:       pr.GetNumber(),
+		Title:        pr.GetTitle(),
+		Body:         pr.GetBody(),
+		ClosedAt:     pr.GetClosedAt(),
+		Author:       git.User{Username: pr.GetUser().GetLogin(), Email: pr.GetUser().GetEmail()},
+		Labels:       lo.Map(pr.Labels, func(l *gh.Label, _ int) string { return l.GetName() }),
+		SourceBranch: pr.GetHead().GetRef(),
+		TargetBranch: pr.GetBase().GetRef(),
+		URL:          pr.GetHTMLURL(),
+	}
 }

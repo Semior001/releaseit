@@ -3,25 +3,26 @@ package engine
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"strings"
-
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
+	"github.com/go-pkgz/requester/middleware/logger"
 	"github.com/samber/lo"
 	gl "github.com/xanzy/go-gitlab"
+	"log"
+	"net/http"
+	"strings"
 )
 
-// Gitlab implements Interface with gitlab API below it.
+// Gitlab implements Repository with gitlab API below it.
 type Gitlab struct {
 	cl        *gl.Client
 	projectID string
 }
 
 // NewGitlab creates a new Gitlab engine.
-func NewGitlab(token, baseURL, projectID string, httpCl http.Client) (*Gitlab, error) {
+func NewGitlab(ctx context.Context, token, baseURL, projectID string, httpCl http.Client) (*Gitlab, error) {
 	var (
-		cl  = requester.New(httpCl)
+		cl  = requester.New(httpCl, logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG]")).Middleware)
 		svc = &Gitlab{projectID: projectID}
 		err error
 	)
@@ -35,7 +36,7 @@ func NewGitlab(token, baseURL, projectID string, httpCl http.Client) (*Gitlab, e
 		return nil, fmt.Errorf("initialize gitlab client: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultPingTimeout)
+	ctx, cancel := context.WithTimeout(ctx, defaultPingTimeout)
 	defer cancel()
 
 	if _, _, err = svc.cl.Projects.GetProject(projectID, &gl.GetProjectOptions{}, gl.WithContext(ctx)); err != nil {
@@ -56,7 +57,7 @@ func (g *Gitlab) Compare(ctx context.Context, fromSHA, toSHA string) (git.Commit
 
 	commits := make([]git.Commit, len(cmp.Commits))
 	for i, commit := range cmp.Commits {
-		commits[i] = g.commitToStore(commit)
+		commits[i] = g.transformCommit(commit)
 	}
 
 	return git.CommitsComparison{
@@ -84,22 +85,7 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 
 	res := make([]git.PullRequest, len(mrs))
 	for i, mr := range mrs {
-		res[i] = git.PullRequest{
-			Number: mr.IID,
-			Title:  mr.Title,
-			Body:   mr.Description,
-			Author: git.User{Username: lo.FromPtr(mr.Author).Username},
-			// FIXME: by some reason, library encodes labels as a string, not a slice.
-			Labels: lo.Flatten(lo.Map(mr.Labels, func(s string, _ int) []string {
-				return strings.Split(s, ",")
-			})),
-			// closed at in MR points to time when MR was closed without merging,
-			// so we use merged at instead.
-			ClosedAt:     lo.FromPtr(mr.MergedAt),
-			SourceBranch: mr.SourceBranch,
-			TargetBranch: mr.TargetBranch,
-			URL:          mr.WebURL,
-		}
+		res[i] = g.transformMR(mr)
 
 		for _, assignee := range mr.Assignees {
 			res[i].Assignees = append(res[i].Assignees, git.User{Username: assignee.Username})
@@ -122,19 +108,38 @@ func (g *Gitlab) ListTags(ctx context.Context) ([]git.Tag, error) {
 	for i, tag := range tags {
 		res[i] = git.Tag{
 			Name:   tag.Name,
-			Commit: g.commitToStore(tag.Commit),
+			Commit: g.transformCommit(tag.Commit),
 		}
 	}
 
 	return res, nil
 }
 
-func (g *Gitlab) commitToStore(commit *gl.Commit) git.Commit {
+func (g *Gitlab) transformCommit(commit *gl.Commit) git.Commit {
 	return git.Commit{
 		SHA:         commit.ID,
 		ParentSHAs:  commit.ParentIDs,
 		Message:     commit.Message,
 		CommittedAt: lo.FromPtr(commit.CommittedDate),
 		AuthoredAt:  lo.FromPtr(commit.AuthoredDate),
+	}
+}
+
+func (g *Gitlab) transformMR(mr *gl.MergeRequest) git.PullRequest {
+	return git.PullRequest{
+		Number: mr.IID,
+		Title:  mr.Title,
+		Body:   mr.Description,
+		Author: git.User{Username: lo.FromPtr(mr.Author).Username},
+		// FIXME: by some reason, library encodes labels as a string, not a slice.
+		Labels: lo.Flatten(lo.Map(mr.Labels, func(s string, _ int) []string {
+			return strings.Split(s, ",")
+		})),
+		// closed at in MR points to time when MR was closed without merging,
+		// so we use merged at instead.
+		ClosedAt:     lo.FromPtr(mr.MergedAt),
+		SourceBranch: mr.SourceBranch,
+		TargetBranch: mr.TargetBranch,
+		URL:          mr.WebURL,
 	}
 }

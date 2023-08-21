@@ -30,7 +30,7 @@ func getVersion() string {
 }
 
 func main() {
-	fmt.Printf("releaseit, version: %s\n", getVersion())
+	_, _ = fmt.Fprintf(os.Stderr, "releaseit, version: %s\n", getVersion())
 
 	p := flags.NewParser(&opts, flags.Default)
 	p.CommandHandler = func(cmd flags.Commander, args []string) error {
@@ -57,13 +57,13 @@ func setupLog(dbg bool) {
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
 		MinLevel: "INFO",
-		Writer:   os.Stdout,
+		Writer:   os.Stderr,
 	}
 
 	logFlags := log.Ldate | log.Ltime
 
 	if dbg {
-		logFlags = log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile
+		logFlags = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
 		filter.MinLevel = "DEBUG"
 	}
 

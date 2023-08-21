@@ -1,7 +1,9 @@
 // Package git contains types and engines to work with git repositories.
 package git
 
-import "time"
+import (
+	"time"
+)
 
 // PullRequest represents a pull/merge request from the
 // remote repository.

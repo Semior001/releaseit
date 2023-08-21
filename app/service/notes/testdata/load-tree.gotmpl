@@ -1,0 +1,6 @@
+{{ define "node" }}{{ .ID }}-{{ prTitles .PRs | sort }}:{ {{- range .Children}}{{ template "node" . }}{{ end }},} {{- end }}
+{{- $tree := (loadTicketsTree "\\[(\\w+-\\d+)\\]" true .) }}
+{{- range $tree.Roots }}{{ template "node" . }}
+{{ end }}
+{{- range $tree.Unattached }}{{ .Title }}
+{{ end }}

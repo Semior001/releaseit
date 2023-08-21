@@ -4,10 +4,11 @@ package service
 import (
 	"context"
 	"fmt"
+	gengine "github.com/Semior001/releaseit/app/git/engine"
+	"log"
 	"regexp"
 
 	"github.com/Semior001/releaseit/app/git"
-	"github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/notify"
 	"github.com/Semior001/releaseit/app/service/eval"
 	"github.com/Semior001/releaseit/app/service/notes"
@@ -16,7 +17,7 @@ import (
 
 // Service wraps repository storage and services
 type Service struct {
-	Engine                engine.Interface
+	Engine                gengine.Interface
 	Evaluator             *eval.Evaluator
 	ReleaseNotesBuilder   *notes.Builder
 	Notifier              notify.Destination
@@ -25,11 +26,13 @@ type Service struct {
 
 // Changelog makes a release between two commit SHAs.
 func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error {
+	log.Printf("[DEBUG] evaluating commit IDs from %s to %s", fromExpr, toExpr)
 	from, to, err := s.evalCommitIDs(ctx, fromExpr, toExpr)
 	if err != nil {
 		return fmt.Errorf("evaluate commit IDs: %w", err)
 	}
 
+	log.Printf("[DEBUG] aggregating closed pull requests between %s and %s", from, to)
 	prs, err := s.closedPRsBetweenSHA(ctx, from, to)
 	if err != nil {
 		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
@@ -37,11 +40,13 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 
 	req := notes.BuildRequest{From: from, To: to, ClosedPRs: prs}
 
+	log.Printf("[DEBUG] building release notes for %d pull requests", len(prs))
 	text, err := s.ReleaseNotesBuilder.Build(ctx, req)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)
 	}
 
+	log.Printf("[DEBUG] sending release notes to destinations")
 	if err = s.Notifier.Send(ctx, text); err != nil {
 		return fmt.Errorf("notify: %w", err)
 	}

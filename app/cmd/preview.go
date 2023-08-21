@@ -3,6 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	gengine "github.com/Semior001/releaseit/app/git/engine"
+	"github.com/Semior001/releaseit/app/task"
+	tengine "github.com/Semior001/releaseit/app/task/engine"
 	"os"
 
 	"github.com/Semior001/releaseit/app/git"
@@ -28,10 +31,11 @@ func (p Preview) Execute(_ []string) error {
 	}
 
 	var data struct {
-		From         string            `yaml:"from"`
-		To           string            `yaml:"to"`
-		Extras       map[string]string `yaml:"extras"`
-		PullRequests []git.PullRequest `yaml:"pull_requests"`
+		From         string                     `yaml:"from"`
+		To           string                     `yaml:"to"`
+		Extras       map[string]string          `yaml:"extras"`
+		PullRequests map[string]git.PullRequest `yaml:"pull_requests"`
+		Tasks        map[string]task.Ticket     `yaml:"tasks"`
 	}
 
 	if err = yaml.Unmarshal(f, &data); err != nil {
@@ -43,7 +47,28 @@ func (p Preview) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
-	rnb, err := notes.NewBuilder(rnbCfg, &eval.Evaluator{}, lo.Assign(data.Extras, p.Extras))
+	evaler := &eval.Evaluator{
+		Addon: eval.MultiAddon{
+			&eval.Git{Engine: gengine.Unsupported{}},
+			&eval.Task{Tracker: &tengine.Tracker{Interface: &tengine.InterfaceMock{
+				GetFunc: func(ctx context.Context, id string) (task.Ticket, error) {
+					if t, ok := data.Tasks[id]; ok {
+						return t, nil
+					}
+					return task.Ticket{}, fmt.Errorf("task %s not found", id)
+				},
+				ListFunc: func(ctx context.Context, ids []string) ([]task.Ticket, error) {
+					var result []task.Ticket
+					for _, id := range ids {
+						result = append(result, data.Tasks[id])
+					}
+					return result, nil
+				},
+			}}},
+		},
+	}
+
+	rnb, err := notes.NewBuilder(rnbCfg, evaler, lo.Assign(data.Extras, p.Extras))
 	if err != nil {
 		return fmt.Errorf("prepare release notes builder: %w", err)
 	}
@@ -51,7 +76,7 @@ func (p Preview) Execute(_ []string) error {
 	rn, err := rnb.Build(context.Background(), notes.BuildRequest{
 		From:      data.From,
 		To:        data.To,
-		ClosedPRs: data.PullRequests,
+		ClosedPRs: lo.Values(data.PullRequests),
 	})
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)

@@ -196,7 +196,7 @@ func newGithub(t *testing.T, h http.HandlerFunc) *Github {
 	}))
 	t.Cleanup(ts.Close)
 
-	svc, err := NewGithub(GithubParams{
+	svc, err := NewGithub(context.Background(), GithubParams{
 		Owner:             "owner",
 		Name:              "name",
 		BasicAuthUsername: "username",

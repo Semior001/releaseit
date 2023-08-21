@@ -2,187 +2,194 @@ package eval
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"testing"
-	"text/template"
-
-	"github.com/Semior001/releaseit/app/git"
-	"github.com/Semior001/releaseit/app/git/engine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
+	"text/template"
 )
 
 func TestEvaluator_Evaluate(t *testing.T) {
-	t.Run("evaluate previous tag over a list of mixed tags", func(t *testing.T) {
+	t.Run("func from addon", func(t *testing.T) {
 		svc := &Evaluator{
-			Engine: &engine.InterfaceMock{
-				ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-					return []git.Tag{
-						{Name: "npm1.2.0"},
-						{Name: "v1.2.0"},
-						{Name: "v1.1.0"},
-						{Name: "npm1.1.0"},
-						{Name: "v1.0.0"},
-						{Name: "npm1.0.0"},
-					}, nil
-				},
-			},
+			Addon: &AddonMock{FuncsFunc: func(ctx context.Context) (template.FuncMap, error) {
+				return template.FuncMap{"foo": func() string { return "bar" }}, nil
+			}},
 		}
 
-		res, err := svc.Evaluate(context.Background(), `{{ last (filter semver tags) }}`, nil)
+		res, err := svc.Evaluate(context.Background(), `{{ foo }}`, nil)
 		require.NoError(t, err)
-		assert.Equal(t, "v1.2.0", res)
-
-		res, err = svc.Evaluate(context.Background(), `{{ previous .To (filter semver tags) }}`, struct{ To string }{To: res})
-		require.NoError(t, err)
-		assert.Equal(t, "v1.1.0", res)
-	})
-}
-
-func TestEvaluator_EvaluatePreviousTag(t *testing.T) {
-	t.Run("last tag", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{{Name: "v0.2.0"}, {Name: "v0.1.0"}}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(),
-			`{{ previous_tag "v0.2.0" (strings (list "v0.2.0" "v0.1.0")) }}`,
-			nil,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "v0.1.0", res)
+		assert.Equal(t, "bar", res)
 	})
 
-	t.Run("first tag", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{{Name: "v0.1.0"}}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(),
-			`{{ previous_tag "v0.1.0" (strings (list "v0.2.0" "v0.1.0")) }}`,
-			nil,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "HEAD", res)
-	})
-
-	t.Run("tag's commit SHA", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{
-					{Name: "v0.2.0", Commit: git.Commit{SHA: "sha"}},
-					{Name: "v0.1.0"},
-				}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(),
-			`{{ previous_tag "sha" (strings (list "v0.2.0" "v0.1.0")) }}`,
-			nil,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "v0.1.0", res)
-	})
-
-	t.Run("arbitrary commit SHA", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{
-					{Name: "v0.2.0"},
-					{Name: "v0.1.0"},
-				}, nil
-			},
-			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
-				assert.Equal(t, "sha", to)
-				if from == "v0.2.0" {
-					return git.CommitsComparison{}, nil
-				}
-
-				assert.Equal(t, "v0.1.0", from)
-				return git.CommitsComparison{Commits: []git.Commit{{SHA: "sha"}}}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(),
-			`{{ previous_tag "sha" (strings (list "v0.2.0" "v0.1.0")) }}`,
-			nil,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "v0.1.0", res)
-	})
-
-	t.Run("nothing found", func(t *testing.T) {
-		svc := &Evaluator{Engine: &engine.InterfaceMock{
-			ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-				return []git.Tag{{Name: "v0.1.0"}}, nil
-			},
-			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
-				assert.Equal(t, "sha", to)
-				assert.Equal(t, "v0.1.0", from)
-				return git.CommitsComparison{}, nil
-			},
-		}}
-
-		res, err := svc.Evaluate(context.Background(),
-			`{{ previous_tag "sha" (strings (list "v0.2.0" "v0.1.0")) }}`,
-			nil,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "HEAD", res)
-	})
-}
-
-func TestEvaluator_EvaluateLastCommit(t *testing.T) {
-	svc := &Evaluator{Engine: &engine.InterfaceMock{
-		GetLastCommitOfBranchFunc: func(ctx context.Context, branch string) (string, error) {
-			assert.Equal(t, "master", branch)
-			return "sha", nil
-		},
-	}}
-
-	res, err := svc.Evaluate(context.Background(), `{{ last_commit "master" }}`, nil)
-	require.NoError(t, err)
-	assert.Equal(t, "sha", res)
-}
-
-func TestEvaluator_EvaluateTags(t *testing.T) {
-	svc := &Evaluator{Engine: &engine.InterfaceMock{
-		ListTagsFunc: func(ctx context.Context) ([]git.Tag, error) {
-			return []git.Tag{{Name: "v0.1.0"}, {Name: "v0.2.0"}}, nil
-		},
-	}}
-
-	res, err := svc.Evaluate(context.Background(), "{{ tags }}", nil)
-	require.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%v", []string{"v0.2.0", "v0.1.0"}), res)
-}
-
-func TestEvaluator_EvaluateCustomFunction(t *testing.T) {
-	svc := &Evaluator{
-		Funcs: template.FuncMap{
-			"custom_func": func() string { return "some custom output" },
-		},
-	}
-
-	res, err := svc.Evaluate(context.Background(), `{{ custom_func }}`, nil)
-	require.NoError(t, err)
-	assert.Equal(t, "some custom output", res)
-}
-
-func TestEvaluator_EvaluateSprigFuncs(t *testing.T) {
 	t.Run("env and expandenv should be omitted", func(t *testing.T) {
 		svc := &Evaluator{}
 
 		res, err := svc.Evaluate(context.Background(), `{{ env "SOME_VAR" }}`, nil)
+		assert.EqualError(t, err, "parse expression: template: :1: function \"env\" not defined")
 		require.ErrorAs(t, err, &parseError{})
 		assert.Equal(t, "", res)
 
 		res, err = svc.Evaluate(context.Background(), `{{ expandenv "SOME_VAR" }}`, nil)
 		require.ErrorAs(t, err, &parseError{})
 		assert.Equal(t, "", res)
+	})
+}
+
+func TestEvaluator_EvaluateNext(t *testing.T) {
+	t.Run("in the middle", func(t *testing.T) {
+		svc := &Evaluator{}
+
+		res, err := svc.Evaluate(context.Background(),
+			`{{ next "2" .List }}`,
+			struct{ List []string }{
+				List: []string{"1", "2", "3"},
+			},
+		)
+		require.NoError(t, err)
+
+		assert.Equal(t, "3", res)
+	})
+
+	t.Run("at the end", func(t *testing.T) {
+		svc := &Evaluator{}
+
+		res, err := svc.Evaluate(context.Background(),
+			`{{ next "3" .List }}`,
+			struct{ List []string }{
+				List: []string{"1", "2", "3"},
+			},
+		)
+		require.NoError(t, err)
+
+		assert.Equal(t, "", res)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		svc := &Evaluator{}
+
+		res, err := svc.Evaluate(context.Background(),
+			`{{ next "4" .List }}`,
+			struct{ List []string }{
+				List: []string{"1", "2", "3"},
+			},
+		)
+		require.NoError(t, err)
+
+		assert.Equal(t, "", res)
+	})
+}
+
+func TestEvaluator_EvaluatePrevious(t *testing.T) {
+	t.Run("in the middle", func(t *testing.T) {
+		svc := &Evaluator{}
+
+		res, err := svc.Evaluate(context.Background(),
+			`{{ previous "2" .List }}`,
+			struct{ List []string }{
+				List: []string{"1", "2", "3"},
+			},
+		)
+		require.NoError(t, err)
+
+		assert.Equal(t, "1", res)
+	})
+
+	t.Run("at the beginning", func(t *testing.T) {
+		svc := &Evaluator{}
+
+		res, err := svc.Evaluate(context.Background(),
+			`{{ previous "1" .List }}`,
+			struct{ List []string }{
+				List: []string{"1", "2", "3"},
+			},
+		)
+		require.NoError(t, err)
+
+		assert.Equal(t, "", res)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		svc := &Evaluator{}
+
+		res, err := svc.Evaluate(context.Background(),
+			`{{ previous "4" .List }}`,
+			struct{ List []string }{
+				List: []string{"1", "2", "3"},
+			},
+		)
+		require.NoError(t, err)
+
+		assert.Equal(t, "", res)
+	})
+}
+
+func TestEvaluator_FilterSemver(t *testing.T) {
+	svc := &Evaluator{}
+
+	res, err := svc.Evaluate(context.Background(),
+		`{{ filter semver .List }}`,
+		struct{ List []string }{
+			List: []string{"1", "3", "v1.2.3", "2", "v1.2.4", "v1.2.5", "4"},
+		},
+	)
+	require.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%v", []string{"v1.2.3", "v1.2.4", "v1.2.5"}), res)
+}
+
+func TestEvaluator_Strings(t *testing.T) {
+	svc := &Evaluator{}
+
+	res, err := svc.Evaluate(context.Background(),
+		`{{ strings .List }}`,
+		struct{ List []interface{} }{
+			List: []interface{}{"1", "3", "v1.2.3", "2", "v1.2.4", "v1.2.5", "4"},
+		},
+	)
+	require.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%v", []string{"1", "3", "v1.2.3", "2", "v1.2.4", "v1.2.5", "4"}), res)
+}
+
+func TestEvaluator_Validate(t *testing.T) {
+	t.Run("ok - without addons", func(t *testing.T) {
+		svc := &Evaluator{}
+
+		err := svc.Validate(`{{ .List }}`)
+		require.NoError(t, err)
+	})
+
+	t.Run("fail - without addons", func(t *testing.T) {
+		svc := &Evaluator{}
+
+		err := svc.Validate(`{{ unknownFunc .List }}`)
+		require.ErrorAs(t, err, &parseError{})
+	})
+
+	t.Run("fail - failed to build addon funcs", func(t *testing.T) {
+		expectedErr := errors.New("some lousy error")
+		svc := &Evaluator{
+			Addon: &AddonMock{
+				FuncsFunc: func(ctx context.Context) (template.FuncMap, error) {
+					return nil, expectedErr
+				},
+			},
+		}
+
+		err := svc.Validate(`{{ .List }}`)
+		require.ErrorIs(t, err, expectedErr)
+	})
+
+	t.Run("fail - with addons", func(t *testing.T) {
+		svc := &Evaluator{
+			Addon: &AddonMock{
+				FuncsFunc: func(ctx context.Context) (template.FuncMap, error) {
+					return template.FuncMap{"foo": func() string { return "bar" }}, nil
+				},
+			},
+		}
+
+		err := svc.Validate(`{{ foo }}{{ .List }}{{ unknownFunc }}`)
+		require.ErrorAs(t, err, &parseError{})
 	})
 }

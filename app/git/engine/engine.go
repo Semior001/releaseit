@@ -3,9 +3,9 @@ package engine
 
 import (
 	"context"
-	"time"
-
+	"errors"
 	"github.com/Semior001/releaseit/app/git"
+	"time"
 )
 
 const defaultPingTimeout = 1 * time.Minute
@@ -25,4 +25,27 @@ type Interface interface {
 	ListTags(ctx context.Context) ([]git.Tag, error)
 	// GetLastCommitOfBranch returns the SHA or alias of the last commit in the branch.
 	GetLastCommitOfBranch(ctx context.Context, branch string) (string, error)
+}
+
+// Unsupported is a git engine implementation that returns an error for each method.
+type Unsupported struct{}
+
+// Compare returns an error.
+func (Unsupported) Compare(context.Context, string, string) (git.CommitsComparison, error) {
+	return git.CommitsComparison{}, errors.New("operation not supported")
+}
+
+// ListPRsOfCommit returns an error.
+func (Unsupported) ListPRsOfCommit(context.Context, string) ([]git.PullRequest, error) {
+	return nil, errors.New("operation not supported")
+}
+
+// ListTags returns an error.
+func (Unsupported) ListTags(context.Context) ([]git.Tag, error) {
+	return nil, errors.New("operation not supported")
+}
+
+// GetLastCommitOfBranch returns an error.
+func (Unsupported) GetLastCommitOfBranch(context.Context, string) (string, error) {
+	return "", errors.New("operation not supported")
 }
