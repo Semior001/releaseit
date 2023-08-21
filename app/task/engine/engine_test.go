@@ -67,3 +67,15 @@ func TestTracker_List(t *testing.T) {
 		}, tickets)
 	})
 }
+
+func TestUnsupported_List(t *testing.T) {
+	res, err := Unsupported{}.List(nil, nil)
+	assert.EqualError(t, err, "operation not supported")
+	assert.Empty(t, res)
+}
+
+func TestUnsupported_Get(t *testing.T) {
+	res, err := Unsupported{}.Get(nil, "")
+	assert.EqualError(t, err, "operation not supported")
+	assert.Empty(t, res)
+}

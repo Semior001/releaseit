@@ -73,35 +73,110 @@ func TestJira_List(t *testing.T) {
 }
 
 func TestJira_Get(t *testing.T) {
-	j := newJira(t, func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "/rest/api/2/issue/KEY-2", r.URL.Path, "path is not set")
-		require.Equal(t, http.MethodGet, r.Method, "method is not set")
+	t.Run("parent explicitly defined", func(t *testing.T) {
+		j := newJira(t, func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(t, "/rest/api/2/issue/KEY-2", r.URL.Path, "path is not set")
+			require.Equal(t, http.MethodGet, r.Method, "method is not set")
 
-		w.WriteHeader(http.StatusOK)
-		err := json.NewEncoder(w).Encode(jira.Issue{
-			Key: "KEY-2",
-			Fields: &jira.IssueFields{
-				Summary:        "summary-1",
-				Description:    "description-1",
-				Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
-				Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
-				Parent:         &jira.Parent{Key: "KEY-3"},
-			},
+			w.WriteHeader(http.StatusOK)
+			err := json.NewEncoder(w).Encode(jira.Issue{
+				Key: "KEY-2",
+				Fields: &jira.IssueFields{
+					Summary:        "summary-1",
+					Description:    "description-1",
+					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
+					Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
+					Parent:         &jira.Parent{Key: "KEY-3"},
+				},
+			})
+			require.NoError(t, err)
 		})
+
+		ticket, err := j.Get(context.Background(), "KEY-2")
 		require.NoError(t, err)
+
+		assert.Equal(t, []task.Ticket{{
+			ID:       "KEY-2",
+			ParentID: "KEY-3",
+			Name:     "summary-1",
+			Body:     "description-1",
+			ClosedAt: time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC),
+			Author:   task.User{Username: "creator1", Email: "creator1@jira.com"},
+		}}, utcTimes([]task.Ticket{ticket}))
 	})
 
-	ticket, err := j.Get(context.Background(), "KEY-2")
-	require.NoError(t, err)
+	t.Run("parent is epic in unknown field", func(t *testing.T) {
+		j := newJira(t, func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(t, "/rest/api/2/issue/KEY-2", r.URL.Path, "path is not set")
+			require.Equal(t, http.MethodGet, r.Method, "method is not set")
 
-	assert.Equal(t, []task.Ticket{{
-		ID:       "KEY-2",
-		ParentID: "KEY-3",
-		Name:     "summary-1",
-		Body:     "description-1",
-		ClosedAt: time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC),
-		Author:   task.User{Username: "creator1", Email: "creator1@jira.com"},
-	}}, utcTimes([]task.Ticket{ticket}))
+			w.WriteHeader(http.StatusOK)
+			err := json.NewEncoder(w).Encode(jira.Issue{
+				Key: "KEY-2",
+				Fields: &jira.IssueFields{
+					Summary:        "summary-1",
+					Description:    "description-1",
+					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
+					Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
+					Unknowns: map[string]interface{}{
+						"customfield_10002": "KEY-3",
+						"customfield_10001": true, // value doesn't matter, only it's presence
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
+
+		ticket, err := j.Get(context.Background(), "KEY-2")
+		require.NoError(t, err)
+
+		assert.Equal(t, []task.Ticket{{
+			ID:       "KEY-2",
+			ParentID: "KEY-3",
+			Name:     "summary-1",
+			Body:     "description-1",
+			ClosedAt: time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC),
+			Author:   task.User{Username: "creator1", Email: "creator1@jira.com"},
+			Flagged:  true,
+		}}, utcTimes([]task.Ticket{ticket}))
+	})
+
+	t.Run("epic is explicitly defined", func(t *testing.T) {
+		j := newJira(t, func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(t, "/rest/api/2/issue/KEY-2", r.URL.Path, "path is not set")
+			require.Equal(t, http.MethodGet, r.Method, "method is not set")
+
+			w.WriteHeader(http.StatusOK)
+			err := json.NewEncoder(w).Encode(jira.Issue{
+				Key: "KEY-2",
+				Fields: &jira.IssueFields{
+					Summary:        "summary-1",
+					Description:    "description-1",
+					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
+					Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
+					Epic:           &jira.Epic{Key: "KEY-3"},
+					Unknowns: map[string]interface{}{
+						"customfield_10002": "KEY-199",
+						"customfield_10001": true, // value doesn't matter, only it's presence
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
+
+		ticket, err := j.Get(context.Background(), "KEY-2")
+		require.NoError(t, err)
+
+		assert.Equal(t, []task.Ticket{{
+			ID:       "KEY-2",
+			ParentID: "KEY-3",
+			Name:     "summary-1",
+			Body:     "description-1",
+			ClosedAt: time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC),
+			Author:   task.User{Username: "creator1", Email: "creator1@jira.com"},
+			Flagged:  true,
+		}}, utcTimes([]task.Ticket{ticket}))
+	})
 }
 
 func newJira(t *testing.T, h http.HandlerFunc) *Jira {
@@ -112,7 +187,11 @@ func newJira(t *testing.T, h http.HandlerFunc) *Jira {
 
 		if r.URL.Path == "/rest/api/2/field" {
 			w.WriteHeader(http.StatusOK)
-			err := json.NewEncoder(w).Encode([]jira.Field{{ID: "customfield_10000", Name: "epic link"}})
+			err := json.NewEncoder(w).Encode([]jira.Field{
+				{ID: "customfield_10000", Name: "epic link"},
+				{ID: "customfield_10001", Name: "flagged"},
+				{ID: "customfield_10002", Name: "epic link"},
+			})
 			require.NoError(t, err)
 			return
 		}
