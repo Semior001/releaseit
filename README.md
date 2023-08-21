@@ -250,6 +250,7 @@ type Ticket struct {
     ID       string
     ParentID string
     
+    URL      string
     Name     string
     Body     string
     ClosedAt time.Time
