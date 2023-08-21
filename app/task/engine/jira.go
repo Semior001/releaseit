@@ -11,6 +11,7 @@ import (
 	"github.com/samber/lo"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -18,6 +19,7 @@ import (
 // Jira is a Jira task tracker engine.
 type Jira struct {
 	cl              *jira.Client
+	baseURL         string
 	epicFieldIDs    []string
 	flaggedFieldIDs []string
 }
@@ -41,7 +43,7 @@ func NewJira(ctx context.Context, params JiraParams) (*Jira, error) {
 		return nil, err
 	}
 
-	j := &Jira{cl: cl}
+	j := &Jira{cl: cl, baseURL: params.URL}
 
 	ctx, cancel := context.WithTimeout(ctx, defaultSetupTimeout)
 	defer cancel()
@@ -107,9 +109,11 @@ var ticketTypeMapping = map[string]task.Type{
 }
 
 func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
+	u, _ := url.JoinPath(j.baseURL, "browse", issue.Key)
+
 	ticket := task.Ticket{
 		ID:       issue.Key,
-		URL:      issue.Self,
+		URL:      u,
 		Name:     issue.Fields.Summary,
 		Body:     issue.Fields.Description,
 		ClosedAt: time.Time(issue.Fields.Resolutiondate),

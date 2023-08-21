@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/Semior001/releaseit/app/task"
 	"github.com/andygrunwald/go-jira"
 	"github.com/stretchr/testify/assert"
@@ -55,6 +56,7 @@ func TestJira_List(t *testing.T) {
 	assert.Equal(t, []task.Ticket{
 		{
 			ID:       "KEY-1",
+			URL:      fmt.Sprintf("%s/browse/KEY-1", j.baseURL),
 			Name:     "summary",
 			Body:     "description",
 			ClosedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -63,6 +65,7 @@ func TestJira_List(t *testing.T) {
 		},
 		{
 			ID:       "KEY-2",
+			URL:      fmt.Sprintf("%s/browse/KEY-2", j.baseURL),
 			ParentID: "KEY-3",
 			Name:     "summary-1",
 			Body:     "description-1",
@@ -97,6 +100,7 @@ func TestJira_Get(t *testing.T) {
 
 		assert.Equal(t, []task.Ticket{{
 			ID:       "KEY-2",
+			URL:      fmt.Sprintf("%s/browse/KEY-2", j.baseURL),
 			ParentID: "KEY-3",
 			Name:     "summary-1",
 			Body:     "description-1",
@@ -132,6 +136,7 @@ func TestJira_Get(t *testing.T) {
 
 		assert.Equal(t, []task.Ticket{{
 			ID:       "KEY-2",
+			URL:      fmt.Sprintf("%s/browse/KEY-2", j.baseURL),
 			ParentID: "KEY-3",
 			Name:     "summary-1",
 			Body:     "description-1",
@@ -170,7 +175,7 @@ func TestJira_Get(t *testing.T) {
 
 		assert.Equal(t, []task.Ticket{{
 			ID:       "KEY-2",
-			URL:      "https://some-jira-instance/KEY-2",
+			URL:      fmt.Sprintf("%s/browse/KEY-2", j.baseURL),
 			ParentID: "KEY-3",
 			Name:     "summary-1",
 			Body:     "description-1",
