@@ -109,6 +109,7 @@ var ticketTypeMapping = map[string]task.Type{
 func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
 	ticket := task.Ticket{
 		ID:       issue.Key,
+		URL:      issue.Self,
 		Name:     issue.Fields.Summary,
 		Body:     issue.Fields.Description,
 		ClosedAt: time.Time(issue.Fields.Resolutiondate),

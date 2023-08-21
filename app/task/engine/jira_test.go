@@ -148,7 +148,8 @@ func TestJira_Get(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			err := json.NewEncoder(w).Encode(jira.Issue{
-				Key: "KEY-2",
+				Key:  "KEY-2",
+				Self: "https://some-jira-instance/KEY-2",
 				Fields: &jira.IssueFields{
 					Summary:        "summary-1",
 					Description:    "description-1",
@@ -169,6 +170,7 @@ func TestJira_Get(t *testing.T) {
 
 		assert.Equal(t, []task.Ticket{{
 			ID:       "KEY-2",
+			URL:      "https://some-jira-instance/KEY-2",
 			ParentID: "KEY-3",
 			Name:     "summary-1",
 			Body:     "description-1",
