@@ -36,19 +36,21 @@ func main() {
 	p.CommandHandler = func(cmd flags.Commander, args []string) error {
 		setupLog(opts.Debug)
 
-		if err := cmd.Execute(args); err != nil {
-			log.Printf("[ERROR] failed to execute command: %+v", err)
+		err := cmd.Execute(args)
+		if err != nil {
+			log.Printf("[ERROR] failed to run command: %+v", err)
 		}
 
-		return nil
+		return err
 	}
 
 	if _, err := p.Parse(); err != nil {
 		var flagsErr *flags.Error
+
 		if errors.As(err, &flagsErr) && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		}
-		log.Printf("[ERROR] failed to parse flags: %v", err)
+
 		os.Exit(1)
 	}
 }
