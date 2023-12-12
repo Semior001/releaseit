@@ -22,15 +22,17 @@ type Ticket struct {
 	ID       string
 	ParentID string
 
-	URL      string
-	Name     string
-	Body     string
-	ClosedAt time.Time
-	Author   User
-	Assignee User
-	Type     Type
-	TypeRaw  string // save raw type in case if user wants to distinguish different raw values
-	Flagged  bool
+	URL          string
+	Name         string
+	Body         string
+	ClosedAt     time.Time
+	Author       User
+	Assignee     User
+	Type         Type
+	TypeRaw      string // save raw type in case if user wants to distinguish different raw values
+	Flagged      bool
+	Watchers     []User
+	WatchesCount int
 }
 
 // User represents a task tracker user.

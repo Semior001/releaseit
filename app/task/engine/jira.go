@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Semior001/releaseit/app/task"
 	"github.com/andygrunwald/go-jira"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-pkgz/requester/middleware"
 	"github.com/go-pkgz/requester/middleware/logger"
 	"github.com/samber/lo"
+	"golang.org/x/sync/errgroup"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,10 +20,13 @@ import (
 
 // Jira is a Jira task tracker engine.
 type Jira struct {
+	httpCl          *http.Client
 	cl              *jira.Client
 	baseURL         string
 	epicFieldIDs    []string
 	flaggedFieldIDs []string
+
+	JiraParams
 }
 
 // JiraParams is a set of parameters for Jira engine.
@@ -29,6 +34,9 @@ type JiraParams struct {
 	URL        string
 	Token      string
 	HTTPClient http.Client
+	Enricher   struct {
+		LoadWatchers bool
+	}
 }
 
 // NewJira creates a new Jira engine.
@@ -43,7 +51,7 @@ func NewJira(ctx context.Context, params JiraParams) (*Jira, error) {
 		return nil, err
 	}
 
-	j := &Jira{cl: cl, baseURL: params.URL}
+	j := &Jira{cl: cl, baseURL: params.URL, JiraParams: params, httpCl: rq.Client()}
 
 	ctx, cancel := context.WithTimeout(ctx, defaultSetupTimeout)
 	defer cancel()
@@ -63,9 +71,15 @@ func (j *Jira) List(ctx context.Context, keys []string) ([]task.Ticket, error) {
 		return nil, fmt.Errorf("jira returned error: %w", err)
 	}
 
-	return lo.Map(issues, func(item jira.Issue, _ int) task.Ticket {
+	tickets := lo.Map(issues, func(item jira.Issue, _ int) task.Ticket {
 		return j.transformIssue(item)
-	}), nil
+	})
+
+	if tickets, err = j.enrich(ctx, tickets); err != nil {
+		return nil, fmt.Errorf("enrich tickets: %w", err)
+	}
+
+	return tickets, nil
 }
 
 // Get returns a single task by its ID.
@@ -77,7 +91,76 @@ func (j *Jira) Get(ctx context.Context, key string) (task.Ticket, error) {
 
 	ticket := j.transformIssue(*issue)
 
-	return ticket, nil
+	tickets, err := j.enrich(ctx, []task.Ticket{ticket})
+	if err != nil {
+		return task.Ticket{}, fmt.Errorf("enrich tickets: %w", err)
+	}
+
+	return tickets[0], nil
+}
+
+func (j *Jira) enrich(ctx context.Context, tickets []task.Ticket) ([]task.Ticket, error) {
+	if !j.Enricher.LoadWatchers {
+		return tickets, nil
+	}
+
+	ticketsWithWatchers := lo.FilterMap(tickets, func(item task.Ticket, idx int) (int, bool) {
+		return idx, item.WatchesCount > 0
+	})
+
+	if len(ticketsWithWatchers) == 0 {
+		return tickets, nil
+	}
+
+	ewg, ctx := errgroup.WithContext(ctx)
+	for _, ticketIdx := range ticketsWithWatchers {
+		ticketIdx := ticketIdx
+		ewg.Go(func() error {
+			ticket := tickets[ticketIdx]
+			defer func() { tickets[ticketIdx] = ticket }()
+
+			watchers, err := j.listWatchers(ctx, ticket.ID)
+			if err != nil {
+				return fmt.Errorf("list watchers: %w", err)
+			}
+			ticket.Watchers = watchers
+
+			return nil
+		})
+	}
+
+	if err := ewg.Wait(); err != nil {
+		return tickets, fmt.Errorf("enrich watchers: %w", err)
+	}
+
+	return tickets, nil
+}
+
+func (j *Jira) listWatchers(ctx context.Context, key string) ([]task.User, error) {
+	u := fmt.Sprintf("%s/rest/api/2/issue/%s/watchers", j.baseURL, key)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := j.httpCl.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("do request: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	var body struct {
+		Watchers []*jira.User `json:"watchers"`
+	}
+
+	if err = json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
+
+	return lo.Map(body.Watchers, func(item *jira.User, _ int) task.User {
+		return j.transformUser(item)
+	}), nil
 }
 
 func (j *Jira) fillFieldIDs(ctx context.Context) error {
@@ -135,6 +218,10 @@ func (j *Jira) transformIssue(issue jira.Issue) task.Ticket {
 	}
 
 	ticket.Flagged = j.seekCustomField(issue, j.flaggedFieldIDs) != nil
+
+	if issue.Fields.Watches != nil {
+		ticket.WatchesCount = issue.Fields.Watches.WatchCount
+	}
 
 	return ticket
 }
