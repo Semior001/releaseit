@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+type J = map[string]interface{}
+
 func TestJira_List(t *testing.T) {
 	j := newJira(t, func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/rest/api/2/search", r.URL.Path, "path is not set")
@@ -23,30 +25,28 @@ func TestJira_List(t *testing.T) {
 		assert.Equal(t, "key in (KEY-1,KEY-2)", jql, "jql is not set")
 
 		w.WriteHeader(http.StatusOK)
-		err := json.NewEncoder(w).Encode(map[string]any{
-			"issues": []jira.Issue{
-				{
-					Key: "KEY-1",
-					Fields: &jira.IssueFields{
-						Summary:        "summary",
-						Description:    "description",
-						Resolutiondate: jira.Time(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
-						Creator:        &jira.User{Name: "creator", EmailAddress: "creator@jira.com"},
-						Assignee:       &jira.User{Name: "assignee", EmailAddress: "assignee@jira.com"},
-					},
-				},
-				{
-					Key: "KEY-2",
-					Fields: &jira.IssueFields{
-						Summary:        "summary-1",
-						Description:    "description-1",
-						Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
-						Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
-						Parent:         &jira.Parent{Key: "KEY-3"},
-					},
+		err := json.NewEncoder(w).Encode(J{"issues": []jira.Issue{
+			{
+				Key: "KEY-1",
+				Fields: &jira.IssueFields{
+					Summary:        "summary",
+					Description:    "description",
+					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
+					Creator:        &jira.User{Name: "creator", EmailAddress: "creator@jira.com"},
+					Assignee:       &jira.User{Name: "assignee", EmailAddress: "assignee@jira.com"},
 				},
 			},
-		})
+			{
+				Key: "KEY-2",
+				Fields: &jira.IssueFields{
+					Summary:        "summary-1",
+					Description:    "description-1",
+					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
+					Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
+					Parent:         &jira.Parent{Key: "KEY-3"},
+				},
+			},
+		}})
 		require.NoError(t, err)
 	})
 
@@ -122,7 +122,7 @@ func TestJira_Get(t *testing.T) {
 					Description:    "description-1",
 					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
 					Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
-					Unknowns: map[string]interface{}{
+					Unknowns: J{
 						"customfield_10002": "KEY-3",
 						"customfield_10001": true, // value doesn't matter, only it's presence
 					},
@@ -161,7 +161,7 @@ func TestJira_Get(t *testing.T) {
 					Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
 					Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
 					Epic:           &jira.Epic{Key: "KEY-3"},
-					Unknowns: map[string]interface{}{
+					Unknowns: J{
 						"customfield_10002": "KEY-199",
 						"customfield_10001": true, // value doesn't matter, only it's presence
 					},
@@ -182,6 +182,60 @@ func TestJira_Get(t *testing.T) {
 			ClosedAt: time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC),
 			Author:   task.User{Username: "creator1", Email: "creator1@jira.com"},
 			Flagged:  true,
+		}}, utcTimes([]task.Ticket{ticket}))
+	})
+
+	t.Run("watchers were requested", func(t *testing.T) {
+		j := newJira(t, func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(t, http.MethodGet, r.Method, "method is not set")
+			switch r.URL.Path {
+			case "/rest/api/2/issue/KEY-2":
+				w.WriteHeader(http.StatusOK)
+				err := json.NewEncoder(w).Encode(jira.Issue{
+					Key:  "KEY-2",
+					Self: "https://some-jira-instance/KEY-2",
+					Fields: &jira.IssueFields{
+						Summary:        "summary-1",
+						Description:    "description-1",
+						Resolutiondate: jira.Time(time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC)),
+						Creator:        &jira.User{Name: "creator1", EmailAddress: "creator1@jira.com"},
+						Epic:           &jira.Epic{Key: "KEY-3"},
+						Watches:        &jira.Watches{WatchCount: 1},
+						Unknowns: J{
+							"customfield_10002": "KEY-199",
+							"customfield_10001": true, // value doesn't matter, only it's presence
+						},
+					},
+				})
+				require.NoError(t, err)
+			case "/rest/api/2/issue/KEY-2/watchers":
+				w.WriteHeader(http.StatusOK)
+				err := json.NewEncoder(w).Encode(J{
+					"self":       "https://some-jira-instance/KEY-2/watchers",
+					"isWatching": true,
+					"watchCount": 1,
+					"watchers":   []J{{"name": "watcher1", "emailAddress": "example@test.com"}},
+				})
+				require.NoError(t, err)
+			default:
+				require.Fail(t, "unexpected path", r.URL.Path)
+			}
+		})
+
+		ticket, err := j.Get(context.Background(), "KEY-2")
+		require.NoError(t, err)
+
+		assert.Equal(t, []task.Ticket{{
+			ID:           "KEY-2",
+			URL:          fmt.Sprintf("%s/browse/KEY-2", j.baseURL),
+			ParentID:     "KEY-3",
+			Name:         "summary-1",
+			Body:         "description-1",
+			ClosedAt:     time.Date(2020, 1, 1, 1, 0, 0, 0, time.UTC),
+			Author:       task.User{Username: "creator1", Email: "creator1@jira.com"},
+			Flagged:      true,
+			WatchesCount: 1,
+			Watchers:     []task.User{{Username: "watcher1", Email: "example@test.com"}},
 		}}, utcTimes([]task.Ticket{ticket}))
 	})
 }
@@ -207,11 +261,14 @@ func newJira(t *testing.T, h http.HandlerFunc) *Jira {
 	}))
 	t.Cleanup(ts.Close)
 
-	svc, err := NewJira(context.Background(), JiraParams{
+	params := JiraParams{
 		URL:        ts.URL,
 		Token:      "abacaba",
-		HTTPClient: http.Client{},
-	})
+		HTTPClient: *ts.Client(),
+	}
+	params.Enricher.LoadWatchers = true
+
+	svc, err := NewJira(context.Background(), params)
 	require.NoError(t, err)
 
 	return svc

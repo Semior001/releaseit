@@ -72,18 +72,23 @@ func (r TaskGroup) Build(ctx context.Context) (_ *tengine.Tracker, err error) {
 
 // Jira defines parameters for the jira task tracker.
 type Jira struct {
-	URL     string        `long:"url" env:"URL" description:"url of the jira instance"`
-	Token   string        `long:"token" env:"TOKEN" description:"token to connect to the jira instance"`
-	Timeout time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
+	URL      string        `long:"url" env:"URL" description:"url of the jira instance"`
+	Token    string        `long:"token" env:"TOKEN" description:"token to connect to the jira instance"`
+	Timeout  time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
+	Enricher struct {
+		LoadWatchers bool `long:"load-watchers" env:"LOAD_WATCHERS" description:"load watchers for the issue"`
+	} `group:"enricher" namespace:"enricher" env-namespace:"ENRICHER"`
 }
 
 // Build builds the jira engine.
 func (r Jira) Build(ctx context.Context) (tengine.Interface, error) {
-	return tengine.NewJira(ctx, tengine.JiraParams{
+	params := tengine.JiraParams{
 		URL:        r.URL,
 		Token:      r.Token,
 		HTTPClient: http.Client{Timeout: r.Timeout},
-	})
+	}
+	params.Enricher.LoadWatchers = r.Enricher.LoadWatchers
+	return tengine.NewJira(ctx, params)
 }
 
 // GithubGroup defines parameters to connect to the github repository.
