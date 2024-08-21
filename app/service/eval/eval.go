@@ -58,7 +58,7 @@ func (s *Evaluator) Evaluate(ctx context.Context, expr string, data any) (string
 
 func (s *Evaluator) funcs(ctx context.Context) (template.FuncMap, error) {
 	funcs := lo.Assign(
-		lo.OmitByKeys(sprig.FuncMap(), []string{"env", "expandenv"}),
+		sprig.FuncMap(),
 		template.FuncMap{
 			"next":     next,
 			"previous": previous,

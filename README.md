@@ -136,8 +136,7 @@ See [example](_example/simple-prs/preview_data.yaml) for details.
 
 ## Evaluator functions
 
-The list of available to use functions consists of [sprig's](http://masterminds.github.io/sprig/)
-(excluding `env` and `expandenv`) functions list, and a several custom functions, including:
+The list of available to use functions consists of [sprig's](http://masterminds.github.io/sprig/) functions list, and a several custom functions, including:
 
 <details>
 
