@@ -14,12 +14,13 @@ import (
 // Changelog builds the release-notes from the specified template
 // ands sends it to the desired destinations (telegram, stdout (for CI), etc.).
 type Changelog struct {
-	From           string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previousTag .To (headed (filter semver tags)) }}"`
-	To             string            `long:"to" env:"TO" description:"commit ref to end release notes to" default:"{{ last (filter semver tags) }}"`
-	Timeout        time.Duration     `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`
-	SquashCommitRx string            `long:"squash-commit-rx" env:"SQUASH_COMMIT_RX" description:"regexp to match squash commits" default:"(#\\d+)"`
-	ConfLocation   string            `long:"conf-location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
-	Extras         map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
+	From                    string            `long:"from" env:"FROM" description:"commit ref to start release notes from" default:"{{ previousTag .To (headed (filter semver tags)) }}"`
+	To                      string            `long:"to" env:"TO" description:"commit ref to end release notes to" default:"{{ last (filter semver tags) }}"`
+	Timeout                 time.Duration     `long:"timeout" env:"TIMEOUT" description:"timeout for assembling the release" default:"5m"`
+	FetchMergeCommitsFilter string            `long:"fetch-merge-commits-filter" env:"FETCH_MERGE_COMMITS_FILTER" description:"regexp to filter merge commits" default:".*"`
+	ConfLocation            string            `long:"conf-location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
+	Extras                  map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
+	MaxConcurrentPRRequests int               `long:"max-concurrent-pr-requests" env:"MAX_CONCURRENT_PR_REQUESTS" description:"maximum number of concurrent PR requests" default:"10"`
 
 	Engine EngineGroup `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
 	Notify NotifyGroup `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
@@ -68,17 +69,18 @@ func (r Changelog) Execute(_ []string) error {
 		return fmt.Errorf("prepare notifier: %w", err)
 	}
 
-	rx, err := regexp.Compile(r.SquashCommitRx)
+	rx, err := regexp.Compile(r.FetchMergeCommitsFilter)
 	if err != nil {
 		return fmt.Errorf("compile squash commit regexp: %w", err)
 	}
 
 	svc := &service.Service{
-		Evaluator:             &eval.Evaluator{Addon: &eval.Git{Engine: gitEngine}},
-		Engine:                gitEngine,
-		ReleaseNotesBuilder:   rnb,
-		Notifier:              notif,
-		SquashCommitMessageRx: rx,
+		Evaluator:               &eval.Evaluator{Addon: &eval.Git{Engine: gitEngine}},
+		Engine:                  gitEngine,
+		ReleaseNotesBuilder:     rnb,
+		Notifier:                notif,
+		FetchMergeCommitsFilter: rx,
+		MaxConcurrentPRRequests: r.MaxConcurrentPRRequests,
 	}
 
 	if err = svc.Changelog(ctx, r.From, r.To); err != nil {

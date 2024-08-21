@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"sync"
 
 	gengine "github.com/Semior001/releaseit/app/git/engine"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/notify"
@@ -18,11 +20,12 @@ import (
 
 // Service wraps repository storage and services
 type Service struct {
-	Engine                gengine.Interface
-	Evaluator             *eval.Evaluator
-	ReleaseNotesBuilder   *notes.Builder
-	Notifier              notify.Destination
-	SquashCommitMessageRx *regexp.Regexp
+	Engine                  gengine.Interface
+	Evaluator               *eval.Evaluator
+	ReleaseNotesBuilder     *notes.Builder
+	Notifier                notify.Destination
+	FetchMergeCommitsFilter *regexp.Regexp
+	MaxConcurrentPRRequests int
 }
 
 // Changelog makes a release between two commit SHAs.
@@ -39,7 +42,9 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 		return fmt.Errorf("compare commits between %s and %s: %w", from, to, err)
 	}
 
+	log.Printf("[DEBUG] got total of %d commits", len(compare.Commits))
 	log.Printf("[DEBUG] aggregating closed pull requests between %s and %s", from, to)
+
 	prs, err := s.closedPRsBetweenSHA(ctx, compare.Commits)
 	if err != nil {
 		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
@@ -64,22 +69,38 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 func (s *Service) closedPRsBetweenSHA(ctx context.Context, commits []git.Commit) ([]git.PullRequest, error) {
 	var res []git.PullRequest
 
+	ewg, ctx := errgroup.WithContext(ctx)
+	ewg.SetLimit(s.MaxConcurrentPRRequests)
+	mu := sync.Mutex{}
+
 	for _, commit := range commits {
+		commit := commit
 		if ok := s.isMergeCommit(commit); !ok {
 			continue
 		}
 
-		prs, err := s.Engine.ListPRsOfCommit(ctx, commit.SHA)
-		if err != nil {
-			return nil, fmt.Errorf("list pull requests of commit %s: %w", commit.SHA, err)
-		}
-
-		for _, pr := range prs {
-			if !pr.ClosedAt.IsZero() {
-				pr.ReceivedBySHAs = append(pr.ReceivedBySHAs, commit.SHA)
-				res = append(res, pr)
+		ewg.Go(func() error {
+			prs, err := s.Engine.ListPRsOfCommit(ctx, commit.SHA)
+			if err != nil {
+				return fmt.Errorf("list pull requests of commit %s: %w", commit.SHA, err)
 			}
-		}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			for _, pr := range prs {
+				if !pr.ClosedAt.IsZero() {
+					pr.ReceivedBySHAs = append(pr.ReceivedBySHAs, commit.SHA)
+					res = append(res, pr)
+				}
+			}
+
+			return nil
+		})
+	}
+
+	if err := ewg.Wait(); err != nil {
+		return nil, fmt.Errorf("wait for pull requests: %w", err)
 	}
 
 	// merge "received by sha" between PRs
@@ -96,7 +117,7 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, commits []git.Commit)
 }
 
 func (s *Service) isMergeCommit(commit git.Commit) bool {
-	return len(commit.ParentSHAs) > 1 || s.SquashCommitMessageRx.MatchString(commit.Message)
+	return len(commit.ParentSHAs) > 1 || s.FetchMergeCommitsFilter.MatchString(commit.Message)
 }
 
 func (s *Service) evalCommitIDs(ctx context.Context, fromExpr, toExpr string) (from string, to string, err error) {

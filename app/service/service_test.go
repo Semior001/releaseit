@@ -91,9 +91,9 @@ func TestService_Changelog(t *testing.T) {
 		}
 
 		svc := &Service{
-			SquashCommitMessageRx: regexp.MustCompile(`^squash: (.*)$`),
-			Evaluator:             &eval.Evaluator{},
-			Engine:                eng,
+			FetchMergeCommitsFilter: regexp.MustCompile(`^squash: (.*)$`),
+			Evaluator:               &eval.Evaluator{},
+			Engine:                  eng,
 			ReleaseNotesBuilder: lo.Must(notes.NewBuilder(notes.Config{
 				Categories: []notes.CategoryConfig{
 					{Title: "Features", BranchRe: regexp.MustCompile(`^feature/.*$`)},

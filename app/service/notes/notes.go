@@ -110,10 +110,33 @@ func (s *Builder) Build(ctx context.Context, req BuildRequest) (string, error) {
 	}
 
 	if s.UnusedTitle != "" {
-		unlabeled := s.makeUnlabeledCategory(usedPRs, usedCommits, req.ClosedPRs, req.Commits)
-		if len(unlabeled.PRs) > 0 || len(unlabeled.Commits) > 0 {
-			s.sortPRs(unlabeled.PRs)
-			data.Categories = append(data.Categories, unlabeled)
+		category := categoryTmplData{Title: s.UnusedTitle}
+
+		for i, pr := range req.ClosedPRs {
+			if usedPRs[i] {
+				continue
+			}
+
+			for _, commit := range pr.ReceivedBySHAs {
+				if commitIdx, ok := commitIDxBySHA[commit]; ok {
+					usedCommits[commitIdx] = true
+				}
+			}
+
+			category.PRs = append(category.PRs, pr)
+		}
+
+		for i, commit := range req.Commits {
+			if usedCommits[i] {
+				continue
+			}
+
+			category.Commits = append(category.Commits, commit)
+		}
+
+		if len(category.PRs) > 0 || len(category.Commits) > 0 {
+			s.sortPRs(category.PRs)
+			data.Categories = append(data.Categories, category)
 		}
 	}
 
@@ -123,32 +146,6 @@ func (s *Builder) Build(ctx context.Context, req BuildRequest) (string, error) {
 	}
 
 	return res, nil
-}
-
-func (s *Builder) makeUnlabeledCategory(
-	usedPR, usedCommit []bool,
-	prs []git.PullRequest,
-	commits []git.Commit,
-) categoryTmplData {
-	category := categoryTmplData{Title: s.UnusedTitle}
-
-	for i, pr := range prs {
-		if usedPR[i] {
-			continue
-		}
-
-		category.PRs = append(category.PRs, pr)
-	}
-
-	for i, commit := range commits {
-		if usedCommit[i] {
-			continue
-		}
-
-		category.Commits = append(category.Commits, commit)
-	}
-
-	return category
 }
 
 func (s *Builder) sortPRs(prs []git.PullRequest) {
