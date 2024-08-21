@@ -7,7 +7,7 @@ Inspired by [mikepenz/release-changelog-builder-action](https://github.com/mikep
 ## Installation
 ReleaseIt is distributed as a docker image. You can pull it from [ghcr package](https://github.com/Semior001/releaseit/pkgs/container/releaseit).
 
-Env vars configuration example is available [here](_example/.env).
+Env vars configuration example is available [here](_example/simple-prs/example.env).
 
 ## How it works.
 It looks for the closed pull requests attached to merge or squash commits between the references provided in arguments,
@@ -132,7 +132,7 @@ Example (from .env file): `TO='{{ last_commit "develop" }}'`
 | pull_requests.assignees.username | Assignee's username                                                              |
 | pull_requests.assignees.email    | Assignee's email                                                                 |
 
-See [example](_example/preview_data.yaml) for details.
+See [example](_example/simple-prs/preview_data.yaml) for details.
 
 ## Evaluator functions
 
@@ -297,7 +297,7 @@ type TicketNode struct {
 | ignore_labels     | An array of labels, to match pull request labels against. If PR contains any of the defined ignore labels - this PR won't be provided to the template   |
 | ignore_branch     | A regular expression to match pull request branches, that won't appear in the changelog                                                                 |
 
-See [example](_example/config.yaml) for details.
+See [example](_example/simple-prs/config.yaml) for details.
 
 ## Template variables for release notes builder
 
