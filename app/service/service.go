@@ -4,9 +4,10 @@ package service
 import (
 	"context"
 	"fmt"
-	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"log"
 	"regexp"
+
+	gengine "github.com/Semior001/releaseit/app/git/engine"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/notify"
@@ -32,13 +33,19 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 		return fmt.Errorf("evaluate commit IDs: %w", err)
 	}
 
+	log.Printf("[DEBUG] comparing commits between %s and %s", from, to)
+	compare, err := s.Engine.Compare(ctx, from, to)
+	if err != nil {
+		return fmt.Errorf("compare commits between %s and %s: %w", from, to, err)
+	}
+
 	log.Printf("[DEBUG] aggregating closed pull requests between %s and %s", from, to)
-	prs, err := s.closedPRsBetweenSHA(ctx, from, to)
+	prs, err := s.closedPRsBetweenSHA(ctx, compare.Commits)
 	if err != nil {
 		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
 	}
 
-	req := notes.BuildRequest{From: from, To: to, ClosedPRs: prs}
+	req := notes.BuildRequest{From: from, To: to, ClosedPRs: prs, Commits: compare.Commits}
 
 	log.Printf("[DEBUG] building release notes for %d pull requests", len(prs))
 	text, err := s.ReleaseNotesBuilder.Build(ctx, req)
@@ -54,15 +61,10 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 	return nil
 }
 
-func (s *Service) closedPRsBetweenSHA(ctx context.Context, fromSHA, toSHA string) ([]git.PullRequest, error) {
+func (s *Service) closedPRsBetweenSHA(ctx context.Context, commits []git.Commit) ([]git.PullRequest, error) {
 	var res []git.PullRequest
 
-	commits, err := s.Engine.Compare(ctx, fromSHA, toSHA)
-	if err != nil {
-		return nil, fmt.Errorf("compare commits between %s and %s: %w", fromSHA, toSHA, err)
-	}
-
-	for _, commit := range commits.Commits {
+	for _, commit := range commits {
 		if ok := s.isMergeCommit(commit); !ok {
 			continue
 		}

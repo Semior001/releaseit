@@ -46,11 +46,12 @@ type BuildRequest struct {
 // Build builds the changelog for the tag.
 func (s *Builder) Build(ctx context.Context, req BuildRequest) (string, error) {
 	data := tmplData{
-		From:   req.From,
-		To:     req.To,
-		Date:   s.now(),
-		Extras: s.Extras,
-		Total:  len(req.ClosedPRs),
+		From:         req.From,
+		To:           req.To,
+		Date:         s.now(),
+		Extras:       s.Extras,
+		Total:        len(req.ClosedPRs),
+		TotalCommits: len(req.Commits),
 	}
 
 	usedPRs := make([]bool, len(req.ClosedPRs))
@@ -109,7 +110,8 @@ func (s *Builder) Build(ctx context.Context, req BuildRequest) (string, error) {
 	}
 
 	if s.UnusedTitle != "" {
-		if unlabeled := s.makeUnlabeledCategory(usedPRs, usedCommits, req.ClosedPRs, req.Commits); len(unlabeled.PRs) > 0 {
+		unlabeled := s.makeUnlabeledCategory(usedPRs, usedCommits, req.ClosedPRs, req.Commits)
+		if len(unlabeled.PRs) > 0 || len(unlabeled.Commits) > 0 {
 			s.sortPRs(unlabeled.PRs)
 			data.Categories = append(data.Categories, unlabeled)
 		}
@@ -185,12 +187,13 @@ func (s *Builder) sortPRs(prs []git.PullRequest) {
 }
 
 type tmplData struct {
-	From       string
-	To         string
-	Date       time.Time // always set to the time when the changelog is generated
-	Extras     map[string]string
-	Total      int // total number of PRs
-	Categories []categoryTmplData
+	From         string
+	To           string
+	Date         time.Time // always set to the time when the changelog is generated
+	Extras       map[string]string
+	Total        int // total number of PRs
+	TotalCommits int // total number of commits
+	Categories   []categoryTmplData
 }
 
 type categoryTmplData struct {
