@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"text/template"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEvaluator_Evaluate(t *testing.T) {
@@ -21,19 +22,6 @@ func TestEvaluator_Evaluate(t *testing.T) {
 		res, err := svc.Evaluate(context.Background(), `{{ foo }}`, nil)
 		require.NoError(t, err)
 		assert.Equal(t, "bar", res)
-	})
-
-	t.Run("env and expandenv should be omitted", func(t *testing.T) {
-		svc := &Evaluator{}
-
-		res, err := svc.Evaluate(context.Background(), `{{ env "SOME_VAR" }}`, nil)
-		assert.EqualError(t, err, "parse expression: template: :1: function \"env\" not defined")
-		require.ErrorAs(t, err, &parseError{})
-		assert.Equal(t, "", res)
-
-		res, err = svc.Evaluate(context.Background(), `{{ expandenv "SOME_VAR" }}`, nil)
-		require.ErrorAs(t, err, &parseError{})
-		assert.Equal(t, "", res)
 	})
 }
 

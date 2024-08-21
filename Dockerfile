@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine AS builder
+FROM golang:1.23-alpine AS builder
 LABEL maintainer="Semior <ura2178@gmail.com>"
 
 ENV CGO_ENABLED=0
@@ -12,6 +12,7 @@ RUN apk add --no-cache --update git bash curl tzdata && \
     rm -rf /var/cache/apk/*
 
 COPY ./app /srv/app
+COPY ./main.go /srv/app/main.go
 COPY ./go.mod /srv/go.mod
 COPY ./go.sum /srv/go.sum
 

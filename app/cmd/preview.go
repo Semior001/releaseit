@@ -3,10 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+
 	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"github.com/Semior001/releaseit/app/task"
 	tengine "github.com/Semior001/releaseit/app/task/engine"
-	"os"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/notify"
@@ -31,11 +32,12 @@ func (p Preview) Execute(_ []string) error {
 	}
 
 	var data struct {
-		From         string                     `yaml:"from"`
-		To           string                     `yaml:"to"`
-		Extras       map[string]string          `yaml:"extras"`
-		PullRequests map[string]git.PullRequest `yaml:"pull_requests"`
-		Tasks        map[string]task.Ticket     `yaml:"tasks"`
+		From         string            `yaml:"from"`
+		To           string            `yaml:"to"`
+		Extras       map[string]string `yaml:"extras"`
+		PullRequests []git.PullRequest `yaml:"pull_requests"`
+		Commits      []git.Commit      `yaml:"commits"`
+		Tasks        []task.Ticket     `yaml:"tasks"`
 	}
 
 	if err = yaml.Unmarshal(f, &data); err != nil {
@@ -47,24 +49,34 @@ func (p Preview) Execute(_ []string) error {
 		return fmt.Errorf("read release notes builder config: %w", err)
 	}
 
+	trackerMock := &tengine.Tracker{Interface: &tengine.InterfaceMock{
+		GetFunc: func(_ context.Context, id string) (task.Ticket, error) {
+			for _, t := range data.Tasks {
+				if t.ID == id {
+					return t, nil
+				}
+			}
+			return task.Ticket{}, fmt.Errorf("task %s not found", id)
+		},
+		ListFunc: func(_ context.Context, ids []string) ([]task.Ticket, error) {
+			tickets := make([]task.Ticket, 0, len(ids))
+			for _, id := range ids {
+				for _, t := range data.Tasks {
+					if t.ID == id {
+						tickets = append(tickets, t)
+						break
+					}
+				}
+			}
+			return tickets, nil
+		},
+	}}
+
 	evaler := &eval.Evaluator{
 		Addon: eval.MultiAddon{
 			&eval.Git{Engine: gengine.Unsupported{}},
-			&eval.Task{Tracker: &tengine.Tracker{Interface: &tengine.InterfaceMock{
-				GetFunc: func(ctx context.Context, id string) (task.Ticket, error) {
-					if t, ok := data.Tasks[id]; ok {
-						return t, nil
-					}
-					return task.Ticket{}, fmt.Errorf("task %s not found", id)
-				},
-				ListFunc: func(ctx context.Context, ids []string) ([]task.Ticket, error) {
-					var result []task.Ticket
-					for _, id := range ids {
-						result = append(result, data.Tasks[id])
-					}
-					return result, nil
-				},
-			}}},
+			&eval.Task{Tracker: trackerMock},
+			&notes.EvalAddon{TaskTracker: trackerMock},
 		},
 	}
 
@@ -76,7 +88,8 @@ func (p Preview) Execute(_ []string) error {
 	rn, err := rnb.Build(context.Background(), notes.BuildRequest{
 		From:      data.From,
 		To:        data.To,
-		ClosedPRs: lo.Values(data.PullRequests),
+		ClosedPRs: data.PullRequests,
+		Commits:   data.Commits,
 	})
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)

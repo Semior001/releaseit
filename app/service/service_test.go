@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	gengine "github.com/Semior001/releaseit/app/git/engine"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
+
+	gengine "github.com/Semior001/releaseit/app/git/engine"
 
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/Semior001/releaseit/app/notify"

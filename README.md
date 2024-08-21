@@ -7,7 +7,7 @@ Inspired by [mikepenz/release-changelog-builder-action](https://github.com/mikep
 ## Installation
 ReleaseIt is distributed as a docker image. You can pull it from [ghcr package](https://github.com/Semior001/releaseit/pkgs/container/releaseit).
 
-Env vars configuration example is available [here](_example/.env).
+Env vars configuration example is available [here](_example/simple-prs/example.env).
 
 ## How it works.
 It looks for the closed pull requests attached to merge or squash commits between the references provided in arguments,
@@ -113,6 +113,11 @@ Help Options:
 Example (from .env file): `TO='{{ last_commit "develop" }}'`
 
 ## Preview data file structure
+
+<details>
+
+<summary>Click to expand</summary>
+
 | Field                            | Description                                                                      |
 |----------------------------------|----------------------------------------------------------------------------------|
 | from                             | Commit ref to start release notes from                                           |
@@ -131,39 +136,71 @@ Example (from .env file): `TO='{{ last_commit "develop" }}'`
 | pull_requests.received_by_shas   | List of commit SHAs by which pull request was retrieved (for debugging purposes) |
 | pull_requests.assignees.username | Assignee's username                                                              |
 | pull_requests.assignees.email    | Assignee's email                                                                 |
+| tasks.id                         | Task ID                                                                          |
+| tasks.parent_id                  | Task's parent ID                                                                 |
+| tasks.url                        | Task's URL                                                                       |
+| tasks.name                       | Task's name                                                                      |
+| tasks.body                       | Task's body                                                                      |
+| tasks.closed_at                  | Task's closing date                                                              |
+| tasks.author.username            | Task's author's username                                                         |
+| tasks.author.email               | Task's author's email                                                            |
+| tasks.assignee.username          | Task's assignee's username                                                       |
+| tasks.assignee.email             | Task's assignee's email                                                          |
+| tasks.type                       | Task's type                                                                      |
+| tasks.type_raw                   | Task's raw type                                                                  |
+| tasks.flagged                    | Task's flagged status                                                            |
+| tasks.watchers.username          | List of task's watchers                                                          |
+| tasks.watchers.email             | List of task's watchers' emails                                                  |
+| tasks.watches_count              | Count of task's watchers                                                         |
+| commits.sha                      | Commit SHA                                                                       |
+| commits.parent_shas              | List of commit's parent SHAs                                                     |
+| commits.message                  | Commit message                                                                   |
+| commits.committed_at             | Commit's commit date                                                             |
+| commits.authored_at              | Commit's authored date                                                           |
+| commits.url                      | Commit's URL                                                                     |
+| commits.author.username          | Commit's author's username                                                       |
+| commits.author.email             | Commit's author's email                                                          |
+| commits.committer.username       | Commit's committer's username                                                    |
+| commits.committer.email          | Commit's committer's email                                                       |
 
-See [example](_example/preview_data.yaml) for details.
+</details>
+
+See [example](_example/simple-prs/preview_data.yaml) for details.
 
 ## Evaluator functions
 
-The list of available to use functions consists of [sprig's](http://masterminds.github.io/sprig/)
-(excluding `env` and `expandenv`) functions list, and a several custom functions, including:
+The list of available to use functions consists of [sprig's](http://masterminds.github.io/sprig/) functions list, and a several custom functions, including:
 
 <details>
 
 <summary>Click to expand</summary>
 
-| Function name                                                                                     | Description                                                                                                                |
-|---------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| `next(elem string, elems []string) string`                                                        | returns next element in the list                                                                                           |
-| `previous(elem string, elems []string) string`                                                    | returns previous element in the list                                                                                       |
-| `filter(rx string, elems []string) []string`                                                      | filters list of strings by regular expression                                                                              |
-| `stringsFromAnys([]interface{}) []string`                                                         | casts list of `any` to list of strings                                                                                     |
-| **_Constants_**                                                                                   |                                                                                                                            |
-| `semver() string`                                                                                 | returns semver regular expression  (`^v?(\d+)\.(\d+)\.(\d+)$`)                                                             |
-| **_Addons_**                                                                                      |                                                                                                                            |
-| **git**                                                                                           |                                                                                                                            |
-| `prTitles(prs []git.PullRequest) []string`                                                        | returns the list of titles of provided pull requests                                                                       |
-| `headed(vals []string) []string`                                                                  | adds "HEAD" to the head of the list                                                                                        |
-| `lastCommit(branch string) (string, error)`                                                       | returns the SHA of the last commit of the branch                                                                           |
-| `tags() ([]string, error)`                                                                        | returns the list of all tags in repository                                                                                 |
-| `previousTag(commitAlias string, tags []string) (string, error)`                                  | returns the previous (closest) tag of the provided commit in the provided list of tags                                     |
-| **task**                                                                                          |                                                                                                                            |
-| `getTicket(id string) (task.Ticket, error)`                                                       | returns ticket by its ID                                                                                                   |
-| `listTickets(ids []string, loadParents bool) ([]task.Ticket, error)`                              | lists tickets by their IDs, with parents attached, if `loadParents` is set to true                                         |
-| **release-notes**                                                                                 |                                                                                                                            |
-| `buildTicketsTree(tickets []task.Ticket) (roots []*TicketNode, err error)`                        | builds tree out of provided tickets                                                                                        |
-| `loadTicketsTree(ticketIDRx string, loadParents bool, prs []git.PullRequest) (LoadedTree, error)` | loads tickets tree from the provided pull requests, ticket IDs are matched from pull request titles by the provided regexp |
+| Function name                                                                                                           | Description                                                                                                                                      |
+|-------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `next(elem string, elems []string) string`                                                                              | returns next element in the list                                                                                                                 |
+| `previous(elem string, elems []string) string`                                                                          | returns previous element in the list                                                                                                             |
+| `filter(rx string, elems []string) []string`                                                                            | filters list of strings by regular expression                                                                                                    |
+| `stringsFromAnys([]interface{}) []string`                                                                               | casts list of `any` to list of strings                                                                                                           |
+| **_Constants_**                                                                                                         |                                                                                                                                                  |
+| `semver() string`                                                                                                       | returns semver regular expression  (`^v?(\d+)\.(\d+)\.(\d+)$`)                                                                                   |
+| **_Addons_**                                                                                                            |                                                                                                                                                  |
+| **git**                                                                                                                 |                                                                                                                                                  |
+| `prTitles(prs []git.PullRequest) []string`                                                                              | returns the list of titles of provided pull requests                                                                                             |
+| `headed(vals []string) []string`                                                                                        | adds "HEAD" to the head of the list                                                                                                              |
+| `lastCommit(branch string) (string, error)`                                                                             | returns the SHA of the last commit of the branch                                                                                                 |
+| `tags() ([]string, error)`                                                                                              | returns the list of all tags in repository                                                                                                       |
+| `previousTag(commitAlias string, tags []string) (string, error)`                                                        | returns the previous (closest) tag of the provided commit in the provided list of tags                                                           |
+| **task**                                                                                                                |                                                                                                                                                  |
+| `getTicket(id string) (task.Ticket, error)`                                                                             | returns ticket by its ID                                                                                                                         |
+| `listTickets(ids []string, loadParents bool) ([]task.Ticket, error)`                                                    | lists tickets by their IDs, with parents attached, if `loadParents` is set to true                                                               |
+| **release-notes**                                                                                                       |                                                                                                                                                  |
+| `buildTicketsTree(tickets []task.Ticket) (roots []*TicketNode, err error)`                                              | builds tree out of provided tickets                                                                                                              |
+| `loadTicketsTree(ticketIDRx string, loadParents bool, prs []git.PullRequest, commits []git.Commit) (LoadedTree, error)` | loads tickets tree from the provided pull requests, ticket IDs are matched from pull request titles by the provided regexp                       |
+| `listTaskUsers(obj any, args ...string) (string, error)`                                                                | lists users from the provided task ticket, any in first argument to match embedded structs                                                       |
+| `listPRs(prs []git.PullRequest) string`                                                                                 | returns a comma-separated list of markdown-formatted links to PRs, example: `[Title1](URL1), [Title2](URL2)`                                     |
+| `mdTaskLink(obj any) (string, error)`                                                                                   | returns markdown-formatted link to the task ticket, example: `[Title](URL)`                                                                      |
+| `brackets(s string, square ...bool) string`                                                                             | returns string wrapped in brackets, if `square` is set to true, square brackets will be used. If the string is empty, it returns an empty string |
+| `log(msg string, args ...interface{}) string`                                                                           | logs the debug message with provided arguments to stderr. Always returns an empty string                                                         |
 
 </details>
 
@@ -285,39 +322,50 @@ type TicketNode struct {
 </details>
 
 ## Release notes builder configuration
-| Name              | Description                                                                                                                                             |
-|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| categories        | Categories of pull requests                                                                                                                             |
-| categories.title  | Title, which will be provided to the release notes template                                                                                             |
-| categories.labels | An array of labels, to match pull request labels against. If any PR label matches any category label, the pull request will show up under this category |
-| categories.branch | A regular expression to match source branch name to the corresponding category.                                                                         |
-| sort_field        | Field, by which pull requests must be sorted, in format +&#124;-field currently supported fields: `number`, `author`, `title`, `closed`                 |
-| template          | Template for a changelog in golang's text template language                                                                                             |
-| unused_title      | If set, the unused category will be built under this title at the end of the changelog                                                                  |
-| ignore_labels     | An array of labels, to match pull request labels against. If PR contains any of the defined ignore labels - this PR won't be provided to the template   |
-| ignore_branch     | A regular expression to match pull request branches, that won't appear in the changelog                                                                 |
+| Name                      | Description                                                                                                                                             |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| categories                | Categories of pull requests                                                                                                                             |
+| categories.title          | Title, which will be provided to the release notes template                                                                                             |
+| categories.labels         | An array of labels, to match pull request labels against. If any PR label matches any category label, the pull request will show up under this category |
+| categories.branch         | A regular expression to match source branch name to the corresponding category.                                                                         |
+| categories.commit_message | A regular expression to match commit message to the corresponding category.                                                                             |
+| sort_field                | Field, by which pull requests must be sorted, in format +&#124;-field currently supported fields: `number`, `author`, `title`, `closed`                 |
+| template                  | Template for a changelog in golang's text template language                                                                                             |
+| unused_title              | If set, the unused category will be built under this title at the end of the changelog                                                                  |
+| ignore_labels             | An array of labels, to match pull request labels against. If PR contains any of the defined ignore labels - this PR won't be provided to the template   |
+| ignore_branch             | A regular expression to match pull request branches, that won't appear in the changelog                                                                 |
 
-See [example](_example/config.yaml) for details.
+See [example](_example/simple-prs/config.yaml) for details.
 
 ## Template variables for release notes builder
 
-| Name                               | Description                                                    | Example                                         |
-|------------------------------------|----------------------------------------------------------------|-------------------------------------------------|
-| {{.From}}                          | From commit SHA / tag                                          | v0.1.0                                          |
-| {{.To}}                            | To commit SHA / tag                                            | v0.2.0                                          |
-| {{.Date}}                          | Date, when the changelog was built                             | Jan 02, 2006 15:04:05 UTC                       |
-| {{.Extras}}                        | Map of extra variables, provided by the user in envs           | map[foo:bar]                                    |
-| {{.Total}}                         | Total number of pull requests                                  | 10                                              |
-| {{.Categories.Title}}              | Title of the category from the config                          | Features                                        |
-| {{.Categories.PRs.Number}}         | Number of the pull request                                     | 642                                             |
-| {{.Categories.PRs.Title}}          | Title of the pull request                                      | Some awesome feature added                      |
-| {{.Categories.PRs.Author}}         | Username of the author of pull request                         | Semior001                                       |
-| {{.Categories.PRs.URL}}            | URL to the pull request                                        | `https://github.com/Semior001/releaseit/pull/6` |
-| {{.Categories.PRs.SourceBranch}}   | Source branch name, from which the pull request was created    | feature/awesome-feature                         |
-| {{.Categories.PRs.TargetBranch}}   | Target branch name, to which the pull request was created      | develop                                         |
-| {{.Categories.PRs.ClosedAt}}       | Timestamp, when the pull request was closed (might be empty)   | Jan 02, 2006 15:04:05 UTC                       |
-| {{.Categories.PRs.ReceivedBySHAs}} | List of commit SHAs, by which releaseit received pull requests | [a1b2c3d4e5f6, 1a2b3c4d5e6f]                    |
-| {{.Categories.PRs.Assignees}}      | List of assignees of the pull request                          | [Semior001, Semior002]                          |
+**NOTE:** commits will be provided in categories only in case if it wasn't matched to any pull request.
+
+| Name                                | Description                                                    | Example                                         |
+|-------------------------------------|----------------------------------------------------------------|-------------------------------------------------|
+| {{.From}}                           | From commit SHA / tag                                          | v0.1.0                                          |
+| {{.To}}                             | To commit SHA / tag                                            | v0.2.0                                          |
+| {{.Date}}                           | Date, when the changelog was built                             | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Extras}}                         | Map of extra variables, provided by the user in envs           | map[foo:bar]                                    |
+| {{.Total}}                          | Total number of pull requests                                  | 10                                              |
+| {{.Categories.Title}}               | Title of the category from the config                          | Features                                        |
+| {{.Categories.PRs.Number}}          | Number of the pull request                                     | 642                                             |
+| {{.Categories.PRs.Title}}           | Title of the pull request                                      | Some awesome feature added                      |
+| {{.Categories.PRs.Author}}          | Username of the author of pull request                         | Semior001                                       |
+| {{.Categories.PRs.URL}}             | URL to the pull request                                        | `https://github.com/Semior001/releaseit/pull/6` |
+| {{.Categories.PRs.SourceBranch}}    | Source branch name, from which the pull request was created    | feature/awesome-feature                         |
+| {{.Categories.PRs.TargetBranch}}    | Target branch name, to which the pull request was created      | develop                                         |
+| {{.Categories.PRs.ClosedAt}}        | Timestamp, when the pull request was closed (might be empty)   | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Categories.PRs.ReceivedBySHAs}}  | List of commit SHAs, by which releaseit received pull requests | [a1b2c3d4e5f6, 1a2b3c4d5e6f]                    |
+| {{.Categories.PRs.Assignees}}       | List of assignees of the pull request                          | [Semior001, Semior002]                          |
+| {{.Categories.Commits.SHA}}         | SHA of the commit                                              | a1b2c3d4e5f6                                    |
+| {{.Categories.Commits.ParentSHAs}}  | List of parent commit SHAs                                     | [a1b2c3d4e5f6, 1a2b3c4d5e6f]                    |
+| {{.Categories.Commits.Message}}     | Message of the commit                                          | some feature merged                             |
+| {{.Categories.Commits.CommittedAt}} | Timestamp, when the commit was committed                       | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Categories.Commits.AuthoredAt}}  | Timestamp, when the commit was authored                        | Jan 02, 2006 15:04:05 UTC                       |
+| {{.Categories.Commits.URL}}         | URL to the commit                                              | `                                               |
+| {{.Categories.Commits.Author}}      | Username of the author of the commit                           | Semior001                                       |
+| {{.Categories.Commits.Committer}}   | Username of the committer of the commit                        | Semior001                                       |
 
 For functions available to use see the [list of evaluator functions](#evaluator-functions).
 

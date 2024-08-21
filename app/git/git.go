@@ -29,11 +29,14 @@ type User struct {
 
 // Commit represents a repository commit.
 type Commit struct {
-	SHA         string
-	ParentSHAs  []string
-	Message     string
-	CommittedAt time.Time
-	AuthoredAt  time.Time
+	SHA         string    `yaml:"sha"`
+	ParentSHAs  []string  `yaml:"parent_shas"`
+	Message     string    `yaml:"message"`
+	CommittedAt time.Time `yaml:"committed_at"`
+	AuthoredAt  time.Time `yaml:"authored_at"`
+	URL         string    `yaml:"url"`
+	Author      User      `yaml:"author"`
+	Committer   User      `yaml:"committer"`
 }
 
 // CommitsComparison is the result of comparing two commits.
