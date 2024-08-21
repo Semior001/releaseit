@@ -3,14 +3,15 @@ package engine
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware"
 	"github.com/go-pkgz/requester/middleware/logger"
 	gh "github.com/google/go-github/v37/github"
 	"github.com/samber/lo"
-	"log"
-	"net/http"
 )
 
 // Github implements Repository with github API below it.
@@ -137,11 +138,17 @@ func (g *Github) transformCommit(commitInterface shaGetter) git.Commit {
 		res.Message = cmt.GetMessage()
 		res.CommittedAt = cmt.GetCommitter().GetDate()
 		res.AuthoredAt = cmt.GetAuthor().GetDate()
+		res.URL = cmt.GetURL()
+		res.Author = git.User{Username: cmt.GetAuthor().GetLogin(), Email: cmt.GetAuthor().GetEmail()}
+		res.Committer = git.User{Username: cmt.GetCommitter().GetLogin(), Email: cmt.GetCommitter().GetEmail()}
 	case *gh.RepositoryCommit:
 		res.ParentSHAs = lo.Map(cmt.Parents, func(c *gh.Commit, _ int) string { return c.GetSHA() })
 		res.Message = cmt.GetCommit().GetMessage()
 		res.CommittedAt = cmt.GetCommit().GetCommitter().GetDate()
 		res.AuthoredAt = cmt.GetCommit().GetAuthor().GetDate()
+		res.URL = cmt.GetURL()
+		res.Author = git.User{Username: cmt.GetAuthor().GetLogin(), Email: cmt.GetAuthor().GetEmail()}
+		res.Committer = git.User{Username: cmt.GetCommitter().GetLogin(), Email: cmt.GetCommitter().GetEmail()}
 	}
 	return res
 }

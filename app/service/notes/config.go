@@ -12,24 +12,15 @@ import (
 
 // Config describes the configuration of the changelog builder.
 type Config struct {
-	// categories to parse in pull requests
-	Categories []CategoryConfig `yaml:"categories"`
+	Categories []CategoryConfig `yaml:"categories"` // categories to parse in pull requests
 
 	// field, by which pull requests must be sorted, in format +|-field
 	// currently supported fields: number, author, title, closed
 	SortField string `yaml:"sort_field"`
-	// template for a changelog.
-	Template string `yaml:"template"`
 
-	// if set, the unused category will be built under this title at the
-	// end of the changelog
-	UnusedTitle string `yaml:"unused_title"`
-	// labels for pull requests, which won't be in release notes
-	IgnoreLabels []string `yaml:"ignore_labels"`
-	// regexp for pull request branches, which won't be in release notes
-	IgnoreBranch string `yaml:"ignore_branch"`
-	// compiled regexp, used internally
-	IgnoreBranchRe *regexp.Regexp `yaml:"-"`
+	Template     string   `yaml:"template"`      // template for a changelog.
+	UnusedTitle  string   `yaml:"unused_title"`  // if set, the unused category will be built under this title at the, end of the changelog
+	IgnoreLabels []string `yaml:"ignore_labels"` // labels for pull requests, which won't be in release notes
 }
 
 // CategoryConfig describes the category configuration.
@@ -37,11 +28,12 @@ type CategoryConfig struct {
 	Title  string   `yaml:"title"`
 	Labels []string `yaml:"labels"`
 
-	// regexp to match source branch name
-	Branch string `yaml:"branch"`
+	Branch        string `yaml:"branch"`         // regexp to match source branch name
+	CommitMessage string `yaml:"commit_message"` // regexp to match commit message
 
-	// compiled branch regexp, used internally
-	BranchRe *regexp.Regexp `yaml:"-"`
+	// next fields are used internally
+	BranchRe    *regexp.Regexp `yaml:"-"`
+	CommitMsgRe *regexp.Regexp `yaml:"-"`
 }
 
 func (c *Config) validate() error {
@@ -60,6 +52,14 @@ func (c *Config) validate() error {
 				return fmt.Errorf("invalid regexp for branch: %w", err)
 			}
 			c.Categories[idx].BranchRe = re
+		}
+
+		if category.CommitMessage != "" {
+			re, err := regexp.Compile(category.CommitMessage)
+			if err != nil {
+				return fmt.Errorf("invalid regexp for commit message: %w", err)
+			}
+			c.Categories[idx].CommitMsgRe = re
 		}
 	}
 

@@ -36,6 +36,7 @@ func (p Preview) Execute(_ []string) error {
 		To           string            `yaml:"to"`
 		Extras       map[string]string `yaml:"extras"`
 		PullRequests []git.PullRequest `yaml:"pull_requests"`
+		Commits      []git.Commit      `yaml:"commits"`
 		Tasks        []task.Ticket     `yaml:"tasks"`
 	}
 
@@ -88,6 +89,7 @@ func (p Preview) Execute(_ []string) error {
 		From:      data.From,
 		To:        data.To,
 		ClosedPRs: data.PullRequests,
+		Commits:   data.Commits,
 	})
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)

@@ -59,11 +59,9 @@ func TestConfigFromFile(t *testing.T) {
 			{Title: "**🐛 Fixes**", Branch: "^fix/", BranchRe: regexp.MustCompile("^fix/")},
 			{Title: "**🔧 Maintenance**", Branch: "^chore/", BranchRe: regexp.MustCompile("^chore/")},
 		},
-		SortField:      "+closed",
-		Template:       defaultTemplate,
-		UnusedTitle:    "**❓ Unlabeled**",
-		IgnoreLabels:   []string{"ignore"},
-		IgnoreBranch:   "",
-		IgnoreBranchRe: nil,
+		SortField:    "+closed",
+		Template:     defaultTemplate,
+		UnusedTitle:  "**❓ Unlabeled**",
+		IgnoreLabels: []string{"ignore"},
 	}, cfg)
 }

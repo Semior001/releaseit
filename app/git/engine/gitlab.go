@@ -3,14 +3,15 @@ package engine
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
+
 	"github.com/Semior001/releaseit/app/git"
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware/logger"
 	"github.com/samber/lo"
 	gl "github.com/xanzy/go-gitlab"
-	"log"
-	"net/http"
-	"strings"
 )
 
 // Gitlab implements Repository with gitlab API below it.
@@ -122,6 +123,15 @@ func (g *Gitlab) transformCommit(commit *gl.Commit) git.Commit {
 		Message:     commit.Message,
 		CommittedAt: lo.FromPtr(commit.CommittedDate),
 		AuthoredAt:  lo.FromPtr(commit.AuthoredDate),
+		URL:         commit.WebURL,
+		Author: git.User{
+			Username: commit.AuthorName,
+			Email:    commit.AuthorEmail,
+		},
+		Committer: git.User{
+			Username: commit.CommitterName,
+			Email:    commit.CommitterEmail,
+		},
 	}
 }
 

@@ -136,19 +136,22 @@ func (e *EvalAddon) buildTicketsTree(tickets []task.Ticket) (roots []*TicketNode
 	return roots, nil
 }
 
-func (e *EvalAddon) loadTicketsTree(ctx context.Context) func(string, bool, []git.PullRequest) (LoadedTree, error) {
-	return func(ticketIDRx string, loadParents bool, prs []git.PullRequest) (LoadedTree, error) {
+func (e *EvalAddon) loadTicketsTree(ctx context.Context) func(string, bool, []git.PullRequest, []git.Commit) (LoadedTree, error) {
+	return func(ticketIDRx string, loadParents bool, prs []git.PullRequest, commits []git.Commit) (LoadedTree, error) {
 		rx, err := regexp.Compile(ticketIDRx)
 		if err != nil {
 			return LoadedTree{}, fmt.Errorf("compile regexp: %w", err)
 		}
 
 		ticketPRs := map[string][]git.PullRequest{} // ticketID -> PR index
-		var unattached []git.PullRequest
+		ticketCommits := map[string][]git.Commit{}  // ticketID -> commit hash
+		var unattachedPRs []git.PullRequest
+		var unattachedCommits []git.Commit
+
 		for _, pr := range prs {
 			submatches := rx.FindAllStringSubmatch(pr.Title, -1)
 			if len(submatches) == 0 {
-				unattached = append(unattached, pr)
+				unattachedPRs = append(unattachedPRs, pr)
 				continue
 			}
 
@@ -158,7 +161,23 @@ func (e *EvalAddon) loadTicketsTree(ctx context.Context) func(string, bool, []gi
 			}
 		}
 
-		tickets, err := e.TaskTracker.List(ctx, lo.Keys(ticketPRs), loadParents)
+		for _, commit := range commits {
+			submatches := rx.FindAllStringSubmatch(commit.Message, -1)
+			if len(submatches) == 0 {
+				unattachedCommits = append(unattachedCommits, commit)
+				continue
+			}
+
+			for _, submatch := range submatches {
+				ticketID := submatch[1]
+				ticketCommits[ticketID] = append(ticketCommits[ticketID], commit)
+			}
+		}
+
+		tickets, err := e.TaskTracker.List(ctx,
+			append(lo.Keys(ticketPRs), lo.Keys(ticketCommits)...),
+			loadParents,
+		)
 		if err != nil {
 			return LoadedTree{}, fmt.Errorf("load tickets: %w", err)
 		}
@@ -168,8 +187,9 @@ func (e *EvalAddon) loadTicketsTree(ctx context.Context) func(string, bool, []gi
 			return LoadedTree{}, fmt.Errorf("build tickets tree: %w", err)
 		}
 		addPRs(ticketPRs, tree)
+		addCommits(ticketCommits, tree)
 
-		return LoadedTree{Roots: tree, Unattached: unattached}, nil
+		return LoadedTree{Roots: tree, UnattachedPRs: unattachedPRs, UnattachedCommits: unattachedCommits}, nil
 	}
 }
 
@@ -189,10 +209,20 @@ func addPRs(ticketPRs map[string][]git.PullRequest, nodes []*TicketNode) {
 	}
 }
 
+func addCommits(commits map[string][]git.Commit, tree []*TicketNode) {
+	for _, node := range tree {
+		if c, ok := commits[node.ID]; ok {
+			node.Commits = c
+		}
+		addCommits(commits, node.Children)
+	}
+}
+
 // LoadedTree is a tree of tickets with their children and PRs.
 type LoadedTree struct {
-	Roots      []*TicketNode
-	Unattached []git.PullRequest
+	Roots             []*TicketNode
+	UnattachedPRs     []git.PullRequest
+	UnattachedCommits []git.Commit
 }
 
 // TicketNode is a representation of a ticket with its children.
@@ -200,6 +230,7 @@ type TicketNode struct {
 	task.Ticket
 	Children []*TicketNode
 	PRs      []git.PullRequest
+	Commits  []git.Commit
 }
 
 // GetTicket returns the ticket.

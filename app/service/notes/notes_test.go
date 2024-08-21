@@ -34,11 +34,10 @@ func TestBuilder_Build(t *testing.T) {
 			},
 			{Title: "Bug fixes", Labels: []string{"bug"}},
 		},
-		SortField:      "-number",
-		Template:       testData(t, "release-notes.gotmpl"),
-		UnusedTitle:    "Unused",
-		IgnoreLabels:   []string{"ignore"},
-		IgnoreBranchRe: regexp.MustCompile(`^ignore/`),
+		SortField:    "-number",
+		Template:     testData(t, "release-notes.gotmpl"),
+		UnusedTitle:  "Unused",
+		IgnoreLabels: []string{"ignore"},
 	}, &eval.Evaluator{}, map[string]string{"foo": "bar"})
 	require.NoError(t, err)
 
