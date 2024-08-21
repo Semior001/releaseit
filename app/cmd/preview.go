@@ -50,7 +50,7 @@ func (p Preview) Execute(_ []string) error {
 	}
 
 	trackerMock := &tengine.Tracker{Interface: &tengine.InterfaceMock{
-		GetFunc: func(ctx context.Context, id string) (task.Ticket, error) {
+		GetFunc: func(_ context.Context, id string) (task.Ticket, error) {
 			for _, t := range data.Tasks {
 				if t.ID == id {
 					return t, nil
@@ -58,7 +58,7 @@ func (p Preview) Execute(_ []string) error {
 			}
 			return task.Ticket{}, fmt.Errorf("task %s not found", id)
 		},
-		ListFunc: func(ctx context.Context, ids []string) ([]task.Ticket, error) {
+		ListFunc: func(_ context.Context, ids []string) ([]task.Ticket, error) {
 			tickets := make([]task.Ticket, 0, len(ids))
 			for _, id := range ids {
 				for _, t := range data.Tasks {
