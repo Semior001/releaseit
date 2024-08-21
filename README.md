@@ -26,10 +26,10 @@ merge/squash commit is after the commit provided within the `FROM` argument.
 
 ```
 Application Options:
-      --dbg                                    turn on debug mode [$DEBUG]
+      --dbg                turn on debug mode [$DEBUG]
 
 Help Options:
-  -h, --help                                   Show this help message
+  -h, --help               Show this help message
 
 [preview command options]
           --data-file=     path to the file with release data [$DATA_FILE]
@@ -37,10 +37,10 @@ Help Options:
           --conf-location= location to the config file [$CONF_LOCATION]
 
 [changelog command options]
-          --from=                              commit ref to start release notes from (default: {{ previous .To (filter semver tags) }}) [$FROM]
+          --from=                              commit ref to start release notes from (default: {{ previousTag .To (headed (filter semver tags)) }}) [$FROM]
           --to=                                commit ref to end release notes to (default: {{ last (filter semver tags) }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
-          --squash-commit-rx=                  regexp to match squash commits (default: ^.*#\d+.*$) [$SQUASH_COMMIT_RX]
+          --squash-commit-rx=                  regexp to match squash commits (default: (#\d+)) [$SQUASH_COMMIT_RX]
           --conf-location=                     location to the config file [$CONF_LOCATION]
           --extras=                            extra variables to use in the template [$EXTRAS]
 
@@ -103,6 +103,17 @@ Help Options:
     post:
           --notify.post.url=                   url to send the release notes [$NOTIFY_POST_URL]
           --notify.post.timeout=               timeout for http requests (default: 5s) [$NOTIFY_POST_TIMEOUT]
+
+    task:
+          --task.type=[|jira]                  type of the task tracker [$TASK_TYPE]
+
+    jira:
+          --task.jira.base-url=                url of the jira instance [$TASK_JIRA_BASE_URL]
+          --task.jira.token=                   token to connect to the jira instance [$TASK_JIRA_TOKEN]
+          --task.jira.timeout=                 timeout for http requests (default: 5s) [$TASK_JIRA_TIMEOUT]
+
+    enricher:
+          --task.jira.enricher.load-watchers   load watchers for the issue [$TASK_JIRA_ENRICHER_LOAD_WATCHERS]
 ```
 
 </details>
@@ -198,6 +209,7 @@ The list of available to use functions consists of [sprig's](http://masterminds.
 | `loadTicketsTree(ticketIDRx string, loadParents bool, prs []git.PullRequest, commits []git.Commit) (LoadedTree, error)` | loads tickets tree from the provided pull requests, ticket IDs are matched from pull request titles by the provided regexp                       |
 | `listTaskUsers(obj any, args ...string) (string, error)`                                                                | lists users from the provided task ticket, any in first argument to match embedded structs                                                       |
 | `listPRs(prs []git.PullRequest) string`                                                                                 | returns a comma-separated list of markdown-formatted links to PRs, example: `[Title1](URL1), [Title2](URL2)`                                     |
+| `listCommits(commits []git.Commit) string`                                                                              | returns a comma-separated list of markdown-formatted links to commits, example: `[short-SHA1](URL1), [short-SHA2](URL2)`                         |
 | `mdTaskLink(obj any) (string, error)`                                                                                   | returns markdown-formatted link to the task ticket, example: `[Title](URL)`                                                                      |
 | `brackets(s string, square ...bool) string`                                                                             | returns string wrapped in brackets, if `square` is set to true, square brackets will be used. If the string is empty, it returns an empty string |
 | `log(msg string, args ...interface{}) string`                                                                           | logs the debug message with provided arguments to stderr. Always returns an empty string                                                         |

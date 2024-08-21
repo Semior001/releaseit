@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Semior001/releaseit/app/task"
-	"github.com/andygrunwald/go-jira"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/Semior001/releaseit/app/task"
+	"github.com/andygrunwald/go-jira"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type J = map[string]interface{}
@@ -262,7 +263,7 @@ func newJira(t *testing.T, h http.HandlerFunc) *Jira {
 	t.Cleanup(ts.Close)
 
 	params := JiraParams{
-		URL:        ts.URL,
+		BaseURL:    ts.URL,
 		Token:      "abacaba",
 		HTTPClient: *ts.Client(),
 	}

@@ -72,7 +72,7 @@ func (r TaskGroup) Build(ctx context.Context) (_ *tengine.Tracker, err error) {
 
 // Jira defines parameters for the jira task tracker.
 type Jira struct {
-	URL      string        `long:"url" env:"URL" description:"url of the jira instance"`
+	BaseURL  string        `long:"base-url" env:"BASE_URL" description:"url of the jira instance"`
 	Token    string        `long:"token" env:"TOKEN" description:"token to connect to the jira instance"`
 	Timeout  time.Duration `long:"timeout" env:"TIMEOUT" description:"timeout for http requests" default:"5s"`
 	Enricher struct {
@@ -83,7 +83,7 @@ type Jira struct {
 // Build builds the jira engine.
 func (r Jira) Build(ctx context.Context) (tengine.Interface, error) {
 	params := tengine.JiraParams{
-		URL:        r.URL,
+		BaseURL:    r.BaseURL,
 		Token:      r.Token,
 		HTTPClient: http.Client{Timeout: r.Timeout},
 	}

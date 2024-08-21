@@ -4,6 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/Semior001/releaseit/app/task"
 	"github.com/andygrunwald/go-jira"
 	"github.com/go-pkgz/requester"
@@ -11,11 +17,6 @@ import (
 	"github.com/go-pkgz/requester/middleware/logger"
 	"github.com/samber/lo"
 	"golang.org/x/sync/errgroup"
-	"log"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 // Jira is a Jira task tracker engine.
@@ -31,7 +32,7 @@ type Jira struct {
 
 // JiraParams is a set of parameters for Jira engine.
 type JiraParams struct {
-	URL        string
+	BaseURL    string
 	Token      string
 	HTTPClient http.Client
 	Enricher   struct {
@@ -46,12 +47,12 @@ func NewJira(ctx context.Context, params JiraParams) (*Jira, error) {
 		logger.New(logger.Func(log.Printf), logger.Prefix("[DEBUG]")).Middleware,
 	)
 
-	cl, err := jira.NewClient(rq, params.URL)
+	cl, err := jira.NewClient(rq, params.BaseURL)
 	if err != nil {
 		return nil, err
 	}
 
-	j := &Jira{cl: cl, baseURL: params.URL, JiraParams: params, httpCl: rq.Client()}
+	j := &Jira{cl: cl, baseURL: params.BaseURL, JiraParams: params, httpCl: rq.Client()}
 
 	ctx, cancel := context.WithTimeout(ctx, defaultSetupTimeout)
 	defer cancel()

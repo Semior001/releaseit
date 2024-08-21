@@ -30,6 +30,7 @@ func (e *EvalAddon) Funcs(ctx context.Context) (template.FuncMap, error) {
 		"loadTicketsTree":  e.loadTicketsTree(ctx),
 		"listTaskUsers":    e.listTaskUsers,
 		"listPRs":          e.listPRs,
+		"listCommits":      e.listCommits,
 		"mdTaskLink":       e.mdTaskLink,
 		"brackets":         e.brackets,
 		"log":              e.log,
@@ -96,6 +97,18 @@ func (e *EvalAddon) listPRs(prs []git.PullRequest) string {
 	var parts []string
 	for _, pr := range prs {
 		parts = append(parts, fmt.Sprintf("[%s](%s)", pr.Title, pr.URL))
+	}
+	return strings.Join(parts, ", ")
+}
+
+func (e *EvalAddon) listCommits(commits []git.Commit) string {
+	var parts []string
+	for _, commit := range commits {
+		short := commit.SHA
+		if len(short) > 7 {
+			short = short[:7]
+		}
+		parts = append(parts, fmt.Sprintf("[%s](%s)", short, commit.URL))
 	}
 	return strings.Join(parts, ", ")
 }

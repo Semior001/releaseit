@@ -172,6 +172,26 @@ func TestEvalAddon_listPRs(t *testing.T) {
 	assert.Equal(t, "[PR1](https://pr1), [PR2](https://pr2)", buf.String())
 }
 
+func TestEvalAddon_listCommits(t *testing.T) {
+	addon := &EvalAddon{}
+
+	fns, err := addon.Funcs(context.Background())
+	require.NoError(t, err)
+
+	tmpl, err := template.New("").
+		Funcs(fns).
+		Parse(`{{ listCommits . }}`)
+	require.NoError(t, err)
+
+	buf := &bytes.Buffer{}
+	require.NoError(t, tmpl.Execute(buf, []git.Commit{
+		{SHA: "SHA123456789", URL: "https://sha1"},
+		{SHA: "SHA234567890", URL: "https://sha2"},
+	}))
+
+	assert.Equal(t, "[SHA1234](https://sha1), [SHA2345](https://sha2)", buf.String())
+}
+
 func TestEvalAddon_mdTaskLink(t *testing.T) {
 	addon := &EvalAddon{}
 
