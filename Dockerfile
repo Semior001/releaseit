@@ -12,6 +12,7 @@ RUN apk add --no-cache --update git bash curl tzdata && \
     rm -rf /var/cache/apk/*
 
 COPY ./app /srv/app
+COPY ./main.go /srv/app/main.go
 COPY ./go.mod /srv/go.mod
 COPY ./go.sum /srv/go.sum
 

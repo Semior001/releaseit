@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+  install:
+    desc: "install releaseit from local source"
+    silent: true
+    cmd: |
+      version=$(git describe --tags --abbrev=0)
+      go install -ldflags "-X 'main.version=local-$version' -s -w" ./...
