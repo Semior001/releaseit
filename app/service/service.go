@@ -70,6 +70,11 @@ func (s *Service) closedPRsBetweenSHA(ctx context.Context, commits []git.Commit)
 	var res []git.PullRequest
 
 	ewg, ctx := errgroup.WithContext(ctx)
+
+	if s.MaxConcurrentPRRequests < 1 {
+		s.MaxConcurrentPRRequests = 1
+	}
+	
 	ewg.SetLimit(s.MaxConcurrentPRRequests)
 	mu := sync.Mutex{}
 

@@ -40,9 +40,10 @@ Help Options:
           --from=                              commit ref to start release notes from (default: {{ previousTag .To (headed (filter semver tags)) }}) [$FROM]
           --to=                                commit ref to end release notes to (default: {{ last (filter semver tags) }}) [$TO]
           --timeout=                           timeout for assembling the release (default: 5m) [$TIMEOUT]
-          --squash-commit-rx=                  regexp to match squash commits (default: (#\d+)) [$SQUASH_COMMIT_RX]
+          --fetch-merge-commits-filter=        regexp to filter merge commits (default: .*) [$FETCH_MERGE_COMMITS_FILTER]
           --conf-location=                     location to the config file [$CONF_LOCATION]
           --extras=                            extra variables to use in the template [$EXTRAS]
+          --max-concurrent-pr-requests=        maximum number of concurrent PR requests (default: 10) [$MAX_CONCURRENT_PR_REQUESTS]
 
     engine:
           --engine.type=[github|gitlab]        type of the repository engine [$ENGINE_TYPE]
