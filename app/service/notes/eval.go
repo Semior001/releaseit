@@ -93,12 +93,20 @@ func (e *EvalAddon) brackets(s string, square ...bool) string {
 	return fmt.Sprintf("(%s)", s)
 }
 
-func (e *EvalAddon) listPRs(prs []git.PullRequest) string {
+func (e *EvalAddon) listPRs(prs []git.PullRequest, mode string) (string, error) {
 	var parts []string
 	for _, pr := range prs {
-		parts = append(parts, fmt.Sprintf("[%s](%s)", pr.Title, pr.URL))
+		switch {
+		case mode == "title":
+			parts = append(parts, fmt.Sprintf("[%s](%s)", pr.Title, pr.URL))
+		case mode == "number":
+			parts = append(parts, fmt.Sprintf("[!%d](%s)", pr.Number, pr.URL))
+		default:
+			return "", fmt.Errorf("unknown mode %q", mode)
+		}
 	}
-	return strings.Join(parts, ", ")
+
+	return strings.Join(parts, ", "), nil
 }
 
 func (e *EvalAddon) listCommits(commits []git.Commit) string {

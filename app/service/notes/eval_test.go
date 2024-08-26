@@ -153,23 +153,45 @@ func TestEvalAddon_brackets(t *testing.T) {
 }
 
 func TestEvalAddon_listPRs(t *testing.T) {
-	addon := &EvalAddon{}
+	t.Run("title", func(t *testing.T) {
+		addon := &EvalAddon{}
 
-	fns, err := addon.Funcs(context.Background())
-	require.NoError(t, err)
+		fns, err := addon.Funcs(context.Background())
+		require.NoError(t, err)
 
-	tmpl, err := template.New("").
-		Funcs(fns).
-		Parse(`{{ listPRs . }}`)
-	require.NoError(t, err)
+		tmpl, err := template.New("").
+			Funcs(fns).
+			Parse(`{{ listPRs . "title" }}`)
+		require.NoError(t, err)
 
-	buf := &bytes.Buffer{}
-	require.NoError(t, tmpl.Execute(buf, []git.PullRequest{
-		{Title: "PR1", URL: "https://pr1"},
-		{Title: "PR2", URL: "https://pr2"},
-	}))
+		buf := &bytes.Buffer{}
+		require.NoError(t, tmpl.Execute(buf, []git.PullRequest{
+			{Title: "PR1", URL: "https://pr1"},
+			{Title: "PR2", URL: "https://pr2"},
+		}))
 
-	assert.Equal(t, "[PR1](https://pr1), [PR2](https://pr2)", buf.String())
+		assert.Equal(t, "[PR1](https://pr1), [PR2](https://pr2)", buf.String())
+	})
+
+	t.Run("number", func(t *testing.T) {
+		addon := &EvalAddon{}
+
+		fns, err := addon.Funcs(context.Background())
+		require.NoError(t, err)
+
+		tmpl, err := template.New("").
+			Funcs(fns).
+			Parse(`{{ listPRs . "number" }}`)
+		require.NoError(t, err)
+
+		buf := &bytes.Buffer{}
+		require.NoError(t, tmpl.Execute(buf, []git.PullRequest{
+			{Number: 1, URL: "https://pr1"},
+			{Number: 2, URL: "https://pr2"},
+		}))
+
+		assert.Equal(t, "[!1](https://pr1), [!2](https://pr2)", buf.String())
+	})
 }
 
 func TestEvalAddon_listCommits(t *testing.T) {
