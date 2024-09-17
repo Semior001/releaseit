@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -281,4 +282,36 @@ func utcTimes(tickets []task.Ticket) []task.Ticket {
 	}
 
 	return tickets
+}
+
+func TestJira_errIsNotFound(t *testing.T) {
+	//goland:noinspection GoErrorStringFormat
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{
+			name: "actual error",
+			err: errors.New("An issue with key 'PROJECT-0' does not exist for field 'key'.: request failed. " +
+				"Please analyze the request body for more details. " +
+				"Status code: 400"),
+			want: true,
+		},
+		{
+			name: "arbitrary error",
+			err:  errors.New("arbitrary error"),
+			want: false,
+		},
+		{
+			name: "nil",
+			err:  nil,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, (&Jira{}).isNotFoundErr(tt.err), "isNotFoundErr(%v)", tt.err)
+		})
+	}
 }

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -69,6 +70,9 @@ func (j *Jira) List(ctx context.Context, keys []string) ([]task.Ticket, error) {
 	query := fmt.Sprintf("key in (%s)", strings.Join(keys, ","))
 	issues, _, err := j.cl.Issue.SearchWithContext(ctx, query, nil)
 	if err != nil {
+		if j.isNotFoundErr(err) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("jira returned error: %w", err)
 	}
 
@@ -249,4 +253,13 @@ func (j *Jira) transformUser(user *jira.User) task.User {
 		Username: user.Name,
 		Email:    user.EmailAddress,
 	}
+}
+
+var notFoundRx = regexp.MustCompile(`An issue with key '(.*)' does not exist for field 'key'.: request failed`)
+
+func (j *Jira) isNotFoundErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	return notFoundRx.MatchString(err.Error())
 }
