@@ -26,6 +26,7 @@ type Service struct {
 	Notifier                notify.Destination
 	FetchMergeCommitsFilter *regexp.Regexp
 	MaxConcurrentPRRequests int
+	CommitsOnly             bool
 }
 
 // Changelog makes a release between two commit SHAs.
@@ -43,16 +44,16 @@ func (s *Service) Changelog(ctx context.Context, fromExpr, toExpr string) error 
 	}
 
 	log.Printf("[DEBUG] got total of %d commits", len(compare.Commits))
-	log.Printf("[DEBUG] aggregating closed pull requests between %s and %s", from, to)
 
-	prs, err := s.closedPRsBetweenSHA(ctx, compare.Commits)
-	if err != nil {
-		return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
+	req := notes.BuildRequest{From: from, To: to, Commits: compare.Commits}
+	if !s.CommitsOnly {
+		log.Printf("[DEBUG] aggregating closed pull requests between %s and %s", from, to)
+		if req.ClosedPRs, err = s.closedPRsBetweenSHA(ctx, compare.Commits); err != nil {
+			return fmt.Errorf("get closed pull requests between %s and %s: %w", from, to, err)
+		}
 	}
 
-	req := notes.BuildRequest{From: from, To: to, ClosedPRs: prs, Commits: compare.Commits}
-
-	log.Printf("[DEBUG] building release notes for %d pull requests", len(prs))
+	log.Printf("[DEBUG] building release notes for %d pull requests", len(req.ClosedPRs))
 	text, err := s.ReleaseNotesBuilder.Build(ctx, req)
 	if err != nil {
 		return fmt.Errorf("build release notes: %w", err)

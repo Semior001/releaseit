@@ -44,6 +44,7 @@ Help Options:
           --conf-location=                     location to the config file [$CONF_LOCATION]
           --extras=                            extra variables to use in the template [$EXTRAS]
           --max-concurrent-pr-requests=        maximum number of concurrent PR requests (default: 10) [$MAX_CONCURRENT_PR_REQUESTS]
+          --commits-only                       only include commits, do not try to fetch PRs [$COMMITS_ONLY]
 
     engine:
           --engine.type=[github|gitlab]        type of the repository engine [$ENGINE_TYPE]

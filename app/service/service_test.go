@@ -112,4 +112,46 @@ func TestService_Changelog(t *testing.T) {
 
 		require.Equal(t, "Features: 1 Bug fixes: 2 Unused: 4 ", buf.String())
 	})
+
+	t.Run("commits only mode", func(t *testing.T) {
+		buf := &strings.Builder{}
+
+		eng := &gengine.InterfaceMock{
+			CompareFunc: func(ctx context.Context, from, to string) (git.CommitsComparison, error) {
+				return git.CommitsComparison{
+					Commits: []git.Commit{
+						{SHA: "from", ParentSHAs: []string{"parent", "pr1"}, Message: "feat: Pull request #1"},
+						{SHA: "intermediate", ParentSHAs: []string{"from"}, Message: "fix: Pull request #3"},
+						{SHA: "intermediate_squashed", ParentSHAs: []string{"intermediate"}, Message: "squash: Pull request #4"},
+						{SHA: "to", ParentSHAs: []string{"intermediate", "pr2"}, Message: "fix: Pull request #2"},
+					},
+					TotalCommits: 4,
+				}, nil
+			},
+		}
+
+		svc := &Service{
+			FetchMergeCommitsFilter: regexp.MustCompile(`^squash: (.*)$`),
+			Evaluator:               &eval.Evaluator{},
+			Engine:                  eng,
+			ReleaseNotesBuilder: lo.Must(notes.NewBuilder(notes.Config{
+				Categories: []notes.CategoryConfig{
+					{Title: "Features", CommitMsgRe: regexp.MustCompile(`^feat:.*$`)},
+					{Title: "Bug fixes", CommitMsgRe: regexp.MustCompile(`^fix:.*$`)},
+				},
+				IgnoreLabels: []string{"ignore"},
+				SortField:    "number",
+				Template:     `{{range .Categories}}{{.Title}}:{{range .Commits}} {{.SHA}},{{end}};{{end}}`,
+				UnusedTitle:  "Unused",
+			}, &eval.Evaluator{}, nil)),
+			Notifier:    &notify.WriterNotifier{Writer: buf, Name: "buf"},
+			CommitsOnly: true,
+		}
+
+		err := svc.Changelog(context.Background(), "from", "to")
+		require.NoError(t, err)
+
+		got := strings.NewReplacer("\n", "", "\t", "").Replace(buf.String())
+		require.Equal(t, "Features: from,;Bug fixes: intermediate, to,;Unused: intermediate_squashed,;", got)
+	})
 }

@@ -21,6 +21,7 @@ type Changelog struct {
 	ConfLocation            string            `long:"conf-location" env:"CONF_LOCATION" description:"location to the config file" required:"true"`
 	Extras                  map[string]string `long:"extras" env:"EXTRAS" env-delim:"," description:"extra variables to use in the template"`
 	MaxConcurrentPRRequests int               `long:"max-concurrent-pr-requests" env:"MAX_CONCURRENT_PR_REQUESTS" description:"maximum number of concurrent PR requests" default:"10"`
+	CommitsOnly             bool              `long:"commits-only" env:"COMMITS_ONLY" description:"only include commits, do not try to fetch PRs"`
 
 	Engine EngineGroup `group:"engine" namespace:"engine" env-namespace:"ENGINE"`
 	Notify NotifyGroup `group:"notify" namespace:"notify" env-namespace:"NOTIFY"`
@@ -81,6 +82,7 @@ func (r Changelog) Execute(_ []string) error {
 		Notifier:                notif,
 		FetchMergeCommitsFilter: rx,
 		MaxConcurrentPRRequests: r.MaxConcurrentPRRequests,
+		CommitsOnly:             r.CommitsOnly,
 	}
 
 	if err = svc.Changelog(ctx, r.From, r.To); err != nil {
