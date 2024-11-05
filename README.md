@@ -93,7 +93,7 @@ Help Options:
           --notify.github.basic-auth.password= password for basic auth [$NOTIFY_GITHUB_BASIC_AUTH_PASSWORD]
 
     mattermost-hook:
-          --notify.mattermost-hook.url=        url of the mattermost hook [$NOTIFY_MATTERMOST_HOOK_URL]
+          --notify.mattermost-hook.url=        url of the mattermost hook, can take multiple values, delim envs with ',' [$NOTIFY_MATTERMOST_HOOK_URL]
           --notify.mattermost-hook.timeout=    timeout for http requests (default: 5s) [$NOTIFY_MATTERMOST_HOOK_TIMEOUT]
 
     mattermost-bot:
