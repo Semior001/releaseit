@@ -24,7 +24,7 @@ func TestJira_List(t *testing.T) {
 		require.Equal(t, http.MethodGet, r.Method, "method is not set")
 
 		jql := r.URL.Query().Get("jql")
-		assert.Equal(t, "key in (KEY-1,KEY-2)", jql, "jql is not set")
+		assert.Equal(t, "key in (key-1,key-2)", jql, "jql is not set")
 
 		w.WriteHeader(http.StatusOK)
 		err := json.NewEncoder(w).Encode(J{"issues": []jira.Issue{

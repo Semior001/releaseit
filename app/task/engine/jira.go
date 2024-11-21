@@ -68,6 +68,11 @@ func NewJira(ctx context.Context, params JiraParams) (*Jira, error) {
 // List lists tasks from the provided project by their IDs.
 func (j *Jira) List(ctx context.Context, keys []string) ([]task.Ticket, error) {
 	query := fmt.Sprintf("key in (%s)", strings.Join(keys, ","))
+
+	// jira returns error on non-existing tickets, if key is in uppercase,
+	// so we need to lowercase it to avoid the error.
+	// ref: https://jira.atlassian.com/browse/JRASERVER-23287
+	query = strings.ToLower(query)
 	issues, _, err := j.cl.Issue.SearchWithContext(ctx, query, nil)
 	if err != nil {
 		if j.isNotFoundErr(err) {
