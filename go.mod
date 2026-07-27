@@ -12,7 +12,7 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/samber/lo v1.37.0
 	github.com/stretchr/testify v1.8.4
-	github.com/xanzy/go-gitlab v0.79.1
+	github.com/xanzy/go-gitlab v0.115.0
 	golang.org/x/sync v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -40,7 +40,7 @@ require (
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/oauth2 v0.3.0 // indirect
+	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/sys v0.23.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
