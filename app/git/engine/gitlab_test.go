@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/Semior001/releaseit/app/git"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	gl "github.com/xanzy/go-gitlab"
+	gl "gitlab.com/gitlab-org/api/client-go"
 )
 
 func TestGitlab_Compare(t *testing.T) {
@@ -68,16 +67,18 @@ func TestGitlab_ListPRsOfCommit(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 
 		err := json.NewEncoder(w).Encode([]*gl.MergeRequest{{
-			IID:          1,
-			Title:        "title",
-			Description:  "description",
-			Author:       &gl.BasicUser{Username: "author"},
-			Labels:       []string{"label1", "label2"},
-			MergedAt:     lo.ToPtr(now.UTC()),
-			SourceBranch: "source",
-			TargetBranch: "target",
-			WebURL:       "url",
-			Assignees:    []*gl.BasicUser{{Username: "assignee1"}},
+			BasicMergeRequest: gl.BasicMergeRequest{
+				IID:          1,
+				Title:        "title",
+				Description:  "description",
+				Author:       &gl.BasicUser{Username: "author"},
+				Labels:       []string{"label1", "label2"},
+				MergedAt:     new(now.UTC()),
+				SourceBranch: "source",
+				TargetBranch: "target",
+				WebURL:       "url",
+				Assignees:    []*gl.BasicUser{{Username: "assignee1"}},
+			},
 		}})
 		require.NoError(t, err)
 	})

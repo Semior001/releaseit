@@ -1,27 +1,34 @@
+version: "2"
 run:
   tests: false
-  output:
-    format: tab
-  skip-dirs:
-    - vendor
 
 linters:
+  default: none
   enable:
-    - unconvert
-    - megacheck
-    - gas
-    - gocyclo
     - dupl
-    - misspell
-    - unparam
-    - typecheck
+    - gocyclo
+    - gosec
     - ineffassign
+    - misspell
     - revive
-  disable-all: true
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+  exclusions:
+    generated: lax
+    rules:
+      - { linters: [ staticcheck ], text: 'SA5008: duplicate struct tag' }
+      - { linters: [ staticcheck ], text: 'QF1008: could remove embedded field' }
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 
-issues:
-  exclude-use-default: false
-  # supress duplicating struct tags in staticcheck
-  exclude-rules:
-      - linters: [staticcheck]
-        text: "SA5008: duplicate struct tag"
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

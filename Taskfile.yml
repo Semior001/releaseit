@@ -7,3 +7,27 @@ tasks:
     cmd: |
       version=$(git describe --tags --abbrev=0)
       go install -ldflags "-X 'main.version=local-$version' -s -w" ./...
+
+  check:
+    desc: "run all CI/CD checks"
+    deps:
+      - test
+      - lint
+
+  run:
+    desc: "run application from local source"
+    cmd: |
+      go run -ldflags "-X 'main.version=local'" ./cmd/groxy {{.CLI_ARGS}}
+
+  lint:
+    desc: "lint"
+    cmd: |
+      golangci-lint run \
+          --timeout 5m \
+          --issues-exit-code 1 \
+          --config .golangci.yml ./...
+
+  test:
+    desc: "run tests"
+    cmd: |
+      go test -race -count=1 ./...

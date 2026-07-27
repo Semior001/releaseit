@@ -11,7 +11,7 @@ import (
 	"github.com/go-pkgz/requester"
 	"github.com/go-pkgz/requester/middleware/logger"
 	"github.com/samber/lo"
-	gl "github.com/xanzy/go-gitlab"
+	gl "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Gitlab implements Repository with gitlab API below it.
@@ -98,7 +98,7 @@ func (g *Gitlab) ListPRsOfCommit(ctx context.Context, sha string) ([]git.PullReq
 
 // ListTags returns all tags of the repository.
 func (g *Gitlab) ListTags(ctx context.Context) ([]git.Tag, error) {
-	opts := &gl.ListTagsOptions{OrderBy: gl.String("updated"), Sort: gl.String("desc")}
+	opts := &gl.ListTagsOptions{OrderBy: new("updated"), Sort: new("desc")}
 	tags, _, err := g.cl.Tags.ListTags(g.projectID, opts, gl.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("github returned error: %w", err)
@@ -135,9 +135,9 @@ func (g *Gitlab) transformCommit(commit *gl.Commit) git.Commit {
 	}
 }
 
-func (g *Gitlab) transformMR(mr *gl.MergeRequest) git.PullRequest {
+func (g *Gitlab) transformMR(mr *gl.BasicMergeRequest) git.PullRequest {
 	return git.PullRequest{
-		Number: mr.IID,
+		Number: int(mr.IID),
 		Title:  mr.Title,
 		Body:   mr.Description,
 		Author: git.User{Username: lo.FromPtr(mr.Author).Username},

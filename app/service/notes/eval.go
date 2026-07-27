@@ -96,10 +96,10 @@ func (e *EvalAddon) brackets(s string, square ...bool) string {
 func (e *EvalAddon) listPRs(prs []git.PullRequest, mode string) (string, error) {
 	var parts []string
 	for _, pr := range prs {
-		switch {
-		case mode == "title":
+		switch mode {
+		case "title":
 			parts = append(parts, fmt.Sprintf("[%s](%s)", pr.Title, pr.URL))
-		case mode == "number":
+		case "number":
 			parts = append(parts, fmt.Sprintf("[!%d](%s)", pr.Number, pr.URL))
 		default:
 			return "", fmt.Errorf("unknown mode %q", mode)
